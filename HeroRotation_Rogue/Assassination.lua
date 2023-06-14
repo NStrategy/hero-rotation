@@ -478,7 +478,7 @@ local function CDs ()
     end
     if not S.ArterialPrecision:IsAvailable() and not S.ArterialPrecision:IsAvailable() then
       if S.Sepsis:IsAvailable() then
-        if (BoolToInt(S.Sepsis:CooldownUp() or S.Sepsis:CooldownRemains() > 12) + BoolToInt(S.Deathmark:CooldownUp() or S.Deathmark:CooldownRemains() > 12) == 2) then
+        if (BoolToInt(S.Sepsis:CooldownUp() or S.Sepsis:CooldownRemains() > 14) + BoolToInt(S.Deathmark:CooldownUp() or S.Deathmark:CooldownRemains() > 12) == 2) then
           if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv (Sepsis)" end
         end
       else
@@ -536,7 +536,7 @@ local function Stealthed ()
   if S.IndiscriminateCarnage:IsReady() and MeleeEnemies10yCount > 1 then
     if Cast(S.IndiscriminateCarnage, Settings.Assassination.OffGCDasOffGCD.IndiscriminateCarnage) then return "Cast Indiscriminate Carnage" end
   end
-  if S.Garrote:IsCastable() and ImprovedGarroteRemains() > 0 then
+  if S.Garrote:IsCastable() and (ImprovedGarroteRemains() > 0 or (Player:BuffUp(S.SepsisBuff) and Player:BuffRemains(S.SepsisBuff) <= 3)) then
     -- actions.stealthed+=/garrote,target_if=min:remains,if=stealthed.improved_garrote&!will_lose_exsanguinate&(remains<12%exsanguinated_rate|pmultiplier<=1)&target.time_to_die-remains>2
     local function GarroteTargetIfFunc(TargetUnit)
       return TargetUnit:DebuffRemains(S.Garrote)
@@ -595,11 +595,20 @@ local function Dot ()
   -- actions.dot+=/garrote,cycle_targets=1,if=!variable.skip_cycle_garrote&target!=self.target&refreshable&combo_points.deficit>=1&(pmultiplier<=1|remains<=tick_time&spell_targets.fan_of_knives>=3)&(!will_lose_exsanguinate|remains<=tick_time*2&spell_targets.fan_of_knives>=3)&(target.time_to_die-remains)>12&master_assassin_remains=0
   if S.Garrote:IsCastable() and ComboPointsDeficit >= 1 then
     local function Evaluate_Garrote_Target(TargetUnit)
-      GarroteTickTime = Rogue.Exsanguinated(TargetUnit, S.Garrote) and ExsanguinatedBleedTickTime or BleedTickTime
-      return IsDebuffRefreshable(TargetUnit, S.Garrote) and MasterAssassinRemains() <= 0
-        and (TargetUnit:PMultiplier(S.Garrote) <= 1 or (MeleeEnemies10yCount >= 3 and TargetUnit:DebuffRemains(S.Garrote) <= GarroteTickTime))
-        and (not Rogue.WillLoseExsanguinate(TargetUnit, S.Garrote) or TargetUnit:DebuffRemains(S.Garrote) <= GarroteTickTime * (1 + BoolToInt(MeleeEnemies10yCount >= 3)))
-    end
+  GarroteTickTime = Rogue.Exsanguinated(TargetUnit, S.Garrote) and ExsanguinatedBleedTickTime or BleedTickTime
+  local SepsisBuffRemain = Player:BuffRemains(S.SepsisBuff)
+
+  -- Check if Sepsis buff is about to expire
+  if SepsisBuffRemain > 0 and SepsisBuffRemain <= 3 then
+    return true
+  end
+
+  -- If not, continue with the usual checks
+  return IsDebuffRefreshable(TargetUnit, S.Garrote) and MasterAssassinRemains() <= 0
+    and (TargetUnit:PMultiplier(S.Garrote) <= 1 or (MeleeEnemies10yCount >= 3 and TargetUnit:DebuffRemains(S.Garrote) <= GarroteTickTime))
+    and (not Rogue.WillLoseExsanguinate(TargetUnit, S.Garrote) or TargetUnit:DebuffRemains(S.Garrote) <= GarroteTickTime * (1 + BoolToInt(MeleeEnemies10yCount >= 3)))
+end
+
     if Evaluate_Garrote_Target(Target) and Rogue.CanDoTUnit(Target, GarroteDMGThreshold)
       and (Target:FilteredTimeToDie(">", 4, -Target:DebuffRemains(S.Garrote)) or Target:TimeToDieIsNotValid()) then
       -- actions.dot+=/pool_resource,for_next=1
