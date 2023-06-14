@@ -401,7 +401,7 @@ local function CDs ()
   if not Player:StealthUp(true, false) and HR.CDsON() then
     -- actions.cds+=/sepsis,if=!stealthed.rogue&!stealthed.improved_garrote&(!talent.improved_garrote&dot.garrote.ticking|talent.improved_garrote&cooldown.garrote.up)&(target.time_to_die>10|fight_remains<10)
     if S.Sepsis:IsReady() and ImprovedGarroteRemains() == 0 and (S.ImprovedGarrote:IsAvailable() and S.Garrote:CooldownUp() or Target:DebuffUp(S.Garrote))
-      and (Target:FilteredTimeToDie(">", 10) or HL.BossFilteredFightRemains("<=", 10)) then
+      and (Target:FilteredTimeToDie(">", 10) or HL.BossFilteredFightRemains("<=", 10)) and Target:DebuffUp(S.Rupture) then
       if Cast(S.Sepsis, nil, Settings.Commons.CovenantDisplayStyle) then return "Cast Sepsis" end
     end
 
