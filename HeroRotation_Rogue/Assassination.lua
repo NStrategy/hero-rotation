@@ -145,10 +145,12 @@ local function MasterAssassinRemains ()
   return Player:BuffRemains(S.MasterAssassinBuff)
 end
 
--- Improved Garrote Remains Check
 local function ImprovedGarroteRemains ()
   -- Currently stealthed (i.e. Aura)
   if Player:BuffUp(S.ImprovedGarroteAura) then
+    return Player:GCDRemains() + 3
+  -- Sepsis is up and less than or equal to 3 seconds (i.e. Buff)
+  elseif Player:BuffUp(S.SepsisBuff) and Player:BuffRemains(S.SepsisBuff) <= 3 then
     return Player:GCDRemains() + 3
   end
   -- Broke stealth recently (i.e. Buff)
