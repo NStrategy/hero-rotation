@@ -232,7 +232,7 @@ local function Finish (ReturnSpellOnly, StealthSpell)
   local FinishComboPoints = ComboPoints
 
   -- State changes based on predicted Stealth casts
-  local PremeditationBuff = Player:BuffUp(S.PremeditationBuff) or (StealthSpell and S.Premeditation:IsAvailable())
+  local PremeditationBuff = StealthSpell or Player:BuffUp(S.PremeditationBuff)
   if StealthSpell and StealthSpell:ID() == S.ShadowDance:ID() then
     ShadowDanceBuff = true
     ShadowDanceBuffRemains = 8 + S.ImprovedShadowDance:TalentRank()
@@ -571,7 +571,7 @@ local function CDs ()
   -- actions.cds+=/shadow_dance,off_gcd=1,if=!buff.shadow_dance.up&buff.shuriken_tornado.up&buff.shuriken_tornado.remains<=3.5
   -- actions.cds+=/symbols_of_death,use_off_gcd=1,if=buff.shuriken_tornado.up&buff.shuriken_tornado.remains<=3.5
     if S.SymbolsofDeath:IsCastable() and S.ShadowDance:IsCastable() and not Player:BuffUp(S.SymbolsofDeath) and not Player:BuffUp(S.ShadowDanceBuff) then
-      if HR.CastQueue(S.SymbolsofDeath, S.ShadowDance) then return "Dance + Symbols (during Tornado)" end
+      if HR.CastQueue(S.SymbolsofDeath, S.ShadowDance) then return "Cast Shadow Dance (during Tornado)" end
     elseif S.SymbolsofDeath:IsCastable() and not Player:BuffUp(S.SymbolsofDeath) then
       if HR.Cast(S.SymbolsofDeath) then return "Cast Symbols of Death (during Tornado)" end
     elseif S.ShadowDance:IsCastable() and not Player:BuffUp(S.ShadowDanceBuff) then
@@ -594,7 +594,7 @@ local function CDs ()
   end
   if TargetInMeleeRange then
     -- actions.cds+=/flagellation,target_if=max:target.time_to_die,if=variable.snd_condition&combo_points>=5&target.time_to_die>10
-    if HR.CDsON() and S.Flagellation:IsReady() and SnDCondition and not Player:StealthUp(false, false) and ComboPoints >= 5 and Target:FilteredTimeToDie(">", 10) then
+    if HR.CDsON() and S.Flagellation:IsReady() and SnDCondition and not Player:StealthUp(false, false) and ComboPoints >= 5 and Target:FilteredTimeToDie(">", 10) and not Player:StealthUp() then
       if HR.Cast(S.Flagellation, nil, Settings.Commons.CovenantDisplayStyle) then return "Cast Flagellation" end
     end
   end
@@ -616,7 +616,7 @@ local function CDs ()
     end
     -- actions.cds+=/symbols_of_death,if=(buff.symbols_of_death.remains<=3&!cooldown.shadow_dance.ready|!set_bonus.tier30_2pc)&variable.rotten_condition&variable.snd_condition&(!talent.flagellation&(combo_points<=1|!talent.the_rotten)|cooldown.flagellation.remains>10|cooldown.flagellation.up&combo_points>=5)
     if S.SymbolsofDeath:IsCastable() then
-      if ((Player:BuffRemains(S.SymbolsofDeath) <= 3 and not S.ShadowDance:CooldownUp()) or not Player:HasTier(30, 2)) and Rotten_Condition() and SnDCondition
+      if ((Player:BuffRemains(S.SymbolsofDeath) <= 3 and S.ShadowDance:CooldownRemains() > 9) or not Player:HasTier(30, 2)) and Rotten_Condition() and SnDCondition
         and ((not S.Flagellation:IsAvailable() and (ComboPoints <= 1 or not S.TheRotten:IsAvailable()))
           or S.Flagellation:CooldownRemains() > 10 or (S.Flagellation:CooldownUp() and ComboPoints >= 5)) then
         if HR.Cast(S.SymbolsofDeath, Settings.Subtlety.OffGCDasOffGCD.SymbolsofDeath) then
@@ -1166,7 +1166,7 @@ HR.SetAPL(261, APL, Init)
 -- actions.finish+=/rupture,if=!variable.skip_rupture&buff.finality_rupture.up&cooldown.shadow_dance.remains<12&cooldown.shadow_dance.charges_fractional<=1&spell_targets.shuriken_storm=1&(talent.dark_brew|talent.danse_macabre)
 -- # Sync Cold Blood with Secret Technique when possible
 -- actions.finish+=/cold_blood,if=variable.secret_condition&cooldown.secret_technique.ready
--- actions.finish+=/secret_technique,if=variable.secret_condition&(!talent.cold_blood|cooldown.cold_blood.remains>buff.shadow_dance.remains-2)
+-- actions.finish+=/secret_technique,if=variable.secret_condition&(!talent.cold_blood|cooldown.cold_blood.remains>buff.shadow_dance.remains-3)
 -- # Multidotting targets that will live for the duration of Rupture, refresh during pandemic.
 -- actions.finish+=/rupture,cycle_targets=1,if=!variable.skip_rupture&!variable.priority_rotation&spell_targets.shuriken_storm>=2&target.time_to_die>=(2*combo_points)&refreshable
 -- # Refresh Rupture early if it will expire during Symbols. Do that refresh if SoD gets ready in the next 5s.
