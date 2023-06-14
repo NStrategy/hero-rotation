@@ -719,7 +719,7 @@ local function Direct ()
     end
   end
   -- actions.direct+=/ambush,if=variable.use_filler
-  if S.Ambush:IsCastable() and (Player:StealthUp(true, true) or Player:BuffUp(S.BlindsideBuff)) then
+  if S.Ambush:IsCastable() and (Player:StealthUp(true, false) or Player:BuffUp(S.BlindsideBuff)) then
     if CastPooling(S.Ambush, nil, not TargetInMeleeRange) then return "Cast Ambush" end
   end
   -- actions.direct+=/mutilate,target_if=!dot.deadly_poison_dot.ticking&!debuff.amplifying_poison.up,if=variable.use_filler&spell_targets.fan_of_knives=2
