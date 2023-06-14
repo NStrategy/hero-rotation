@@ -594,11 +594,11 @@ local function CDs ()
   end
   if TargetInMeleeRange then
     -- actions.cds+=/flagellation,target_if=max:target.time_to_die,if=variable.snd_condition&combo_points>=5&target.time_to_die>10
-    if HR.CDsON() and S.Flagellation:IsReady() and SnDCondition and not Player:StealthUp(false, false) and ComboPoints >= 6 and Target:FilteredTimeToDie(">", 10) and Player:BuffStack(S.DanseMacabreBuff) == 0 then
+    if HR.CDsON() and S.Flagellation:IsReady() and SnDCondition and not Player:StealthUp(false, false) and ComboPoints >= 6 and Target:FilteredTimeToDie(">", 10) and not Player:BuffUp(S.ShadowDanceBuff) then
       if HR.Cast(S.Flagellation, nil, Settings.Commons.CovenantDisplayStyle) then return "Cast Flagellation" end
     end
   end
-  -- actions.cds+=/shuriken_tornado,if=spell_targets.shuriken_storm<=1&energy>=60&variable.snd_condition&cooldown.symbols_of_death.up&cooldown.shadow_dance.charges>=1&(!talent.flagellation.enabled&!cooldown.flagellation.up|buff.flagellation_buff.up|spell_targets.shuriken_storm>=5)&combo_points<=2&!buff.premeditation.up
+  -- actions.cds+=/shuriken_tornado,if=spell_targets.shuriken_storm<=1&energy>=60&variable.snd_condition&cooldown.symbols_of_death.up&cooldown.shadow_dance.charges>=1&(!talent.flagellation.enabled&!cooldown.flagellation.up|buff.flagellation_buff.up|spell_targets.shuriken_storm>=5)&combo_points<=2&!buff.premeditation.up --- maybe add that it should only suggest shuriken tornado in dance if secret technique is on cd
   if S.ShurikenTornado:IsCastable() and MeleeEnemies10yCount <= 1 and SnDCondition and S.SymbolsofDeath:CooldownUp() and S.ShadowDance:Charges() >= 1
     and (not S.Flagellation:IsAvailable() or Player:BuffUp(S.Flagellation) or MeleeEnemies10yCount >= 5)
     and ComboPoints <= 2 and not Player:BuffUp(S.PremeditationBuff) then
@@ -614,9 +614,9 @@ local function CDs ()
     if HR.CDsON() and S.Sepsis:IsReady() and SnDCondition and ComboPointsDeficit >= 1 and not Target:FilteredTimeToDie("<", 16) then
       if HR.Cast(S.Sepsis, nil, Settings.Commons.CovenantDisplayStyle) then return "Cast Sepsis" end
     end
-    -- actions.cds+=/symbols_of_death,if=(buff.symbols_of_death.remains<=3&!cooldown.shadow_dance.ready|!set_bonus.tier30_2pc)&variable.rotten_condition&variable.snd_condition&(!talent.flagellation&(combo_points<=1|!talent.the_rotten)|cooldown.flagellation.remains>10|cooldown.flagellation.up&combo_points>=5)
+    -- actions.cds+=/symbols_of_death,if=(buff.symbols_of_death.remains<=3&!cooldown.shadow_dance.ready|!set_bonus.tier30_2pc)&variable.rotten_condition&variable.snd_condition&(!talent.flagellation&(combo_points<=1|!talent.the_rotten)|cooldown.flagellation.remains>10|cooldown.flagellation.up&combo_points>=5) --- do a special check here, if 3 or more targets, do not use Symbols when Shadowdacecd remains 20sec
     if S.SymbolsofDeath:IsCastable() then
-      if ((Player:BuffRemains(S.SymbolsofDeath) <= 3 and S.ShadowDance:CooldownRemains() > 9) or not Player:HasTier(30, 2)) and Rotten_Condition() and SnDCondition
+      if ((Player:BuffRemains(S.SymbolsofDeath) <= 3 and S.ShadowDance:CooldownRemains() > 10) or not Player:HasTier(30, 2)) and Rotten_Condition() and SnDCondition
         and ((not S.Flagellation:IsAvailable() and (ComboPoints <= 1 or not S.TheRotten:IsAvailable()))
           or S.Flagellation:CooldownRemains() > 10 or (S.Flagellation:CooldownUp() and ComboPoints >= 5)) then
         if HR.Cast(S.SymbolsofDeath, Settings.Subtlety.OffGCDasOffGCD.SymbolsofDeath) then
