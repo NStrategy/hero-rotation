@@ -66,7 +66,6 @@ local RuptureThreshold, CrimsonTempestThreshold, RuptureDMGThreshold, GarroteDMG
 local PriorityRotation
 local ExsanguinateSyncRemains, PoisonedBleeds, EnergyRegenCombined, EnergyTimeToMaxCombined, EnergyRegenSaturated, SingleTarget
 local TrinketSyncSlot = 0
-_G.MyAddon_ShivCast = _G.MyAddon_ShivCast or false
 
 -- Covenant and Legendaries
 local Equipment = Player:GetEquipment()
@@ -466,30 +465,26 @@ local function CDs ()
   -- actions.cds+=/shiv,if=talent.sepsis&!talent.kingsbane&!talent.arterial_precision&!debuff.shiv.up&dot.garrote.ticking&dot.rupture.ticking&((cooldown.sepsis.ready|cooldown.sepsis.remains>12)+(cooldown.deathmark.ready|cooldown.deathmark.remains>12)=2)
   -- actions.cds+=/shiv,if=!talent.kingsbane&!talent.arterial_precision&!talent.sepsis&!debuff.shiv.up&dot.garrote.ticking&dot.rupture.ticking&(!talent.crimson_tempest.enabled|variable.single_target|dot.crimson_tempest.ticking)&(!talent.exsanguinate|variable.exsang_sync_remains>2)
   if S.Shiv:IsCastable()
-    and not Target:DebuffUp(S.ShivDebuff) and Target:DebuffUp(S.Garrote) and Target:DebuffUp(S.Rupture) and (not S.Sepsis:IsAvailable() or Target:DebuffRemains(S.Sepsis) <= 7 or not _G.MyAddon_ShivCast) then
+     and not Target:DebuffUp(S.ShivDebuff) and Target:DebuffUp(S.Garrote) and Target:DebuffUp(S.Rupture) and not S.Sepsis:CooldownUp() then
     if S.Kingsbane:IsAvailable() then
       if Target:DebuffUp(S.Kingsbane) and (not S.CrimsonTempest:IsAvailable() or SingleTarget or Target:DebuffUp(S.CrimsonTempest)) then
         if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv (Kingsbane)" end
       end
-	  _G.MyAddon_ShivCast = true
     end
     if S.ArterialPrecision:IsAvailable() then
       if S.Deathmark:AnyDebuffUp() or S.Shiv:ChargesFractional() > (S.Shiv:MaxCharges() - 0.5) and S.Deathmark:CooldownRemains() > 10 then
         if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv (Arterial Precision)" end
       end
-	  _G.MyAddon_ShivCast = true
     end
     if not S.ArterialPrecision:IsAvailable() and not S.ArterialPrecision:IsAvailable() then
       if S.Sepsis:IsAvailable() then
         if (BoolToInt(S.Sepsis:CooldownUp() or S.Sepsis:CooldownRemains() > 14) + BoolToInt(S.Deathmark:CooldownUp() or S.Deathmark:CooldownRemains() > 12) == 2) then
           if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv (Sepsis)" end
         end
-		_G.MyAddon_ShivCast = true
       else
         if (not S.CrimsonTempest:IsAvailable() or SingleTarget or Target:DebuffUp(S.CrimsonTempest)) and (not S.Exsanguinate:IsAvailable() or ExsanguinateSyncRemains > 2) then
           if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv" end
         end
-		_G.MyAddon_ShivCast = true
       end
     end
   end
@@ -541,7 +536,7 @@ local function Stealthed ()
   if S.IndiscriminateCarnage:IsReady() and MeleeEnemies10yCount > 1 then
     if Cast(S.IndiscriminateCarnage, Settings.Assassination.OffGCDasOffGCD.IndiscriminateCarnage) then return "Cast Indiscriminate Carnage" end
   end
-  if S.Garrote:IsCastable() and (ImprovedGarroteRemains() > 0 or (Player:BuffUp(S.SepsisBuff) and Player:BuffRemains(S.SepsisBuff) <= 2.5)) then
+  if S.Garrote:IsCastable() and (ImprovedGarroteRemains() > 0) then
     -- actions.stealthed+=/garrote,target_if=min:remains,if=stealthed.improved_garrote&!will_lose_exsanguinate&(remains<12%exsanguinated_rate|pmultiplier<=1)&target.time_to_die-remains>2
     local function GarroteTargetIfFunc(TargetUnit)
       return TargetUnit:DebuffRemains(S.Garrote)
@@ -613,7 +608,7 @@ local function Dot ()
     if SepsisCooldownRemains > 0 and SepsisCooldownRemains <= 5 then
       return false
     end
-
+	
     -- If not, continue with the usual checks
     return IsDebuffRefreshable(TargetUnit, S.Garrote) and MasterAssassinRemains() <= 0
       and (TargetUnit:PMultiplier(S.Garrote) <= 1 or (MeleeEnemies10yCount >= 3 and TargetUnit:DebuffRemains(S.Garrote) <= GarroteTickTime))
