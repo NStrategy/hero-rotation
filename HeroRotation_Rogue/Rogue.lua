@@ -137,6 +137,7 @@ Spell.Rogue.Assassination = MergeTableByKey(Spell.Rogue.Commons, {
   DragonTemperedBlades    = Spell(381801),
   Elusiveness             = Spell(79008),
   Exsanguinate            = Spell(200806),
+  LightweightShiv         = Spell(394983),
   ImprovedGarrote         = Spell(381632),
   ImprovedGarroteBuff     = Spell(392401),
   ImprovedGarroteAura     = Spell(392403),
