@@ -463,7 +463,7 @@ local function CDs ()
   end
 -- 	shiv,if=talent.kingsbane&!debuff.shiv.up&dot.kingsbane.ticking&dot.garrote.ticking&dot.rupture.ticking&(!talent.crimson_tempest.enabled|variable.single_target|dot.crimson_tempest.ticking)
   if S.Shiv:IsReady() and S.Kingsbane:IsAvailable() and not Target:DebuffUp(S.ShivDebuff) and Target:DebuffUp(S.Kingsbane) and Target:DebuffUp(S.Garrote) and Target:DebuffUp(S.Rupture)
-    and (not S.CrimsonTempest:IsAvailable() or SingleTarget or Target:DebuffUp(S.CrimsonTempest)) then
+    and (not S.CrimsonTempest:IsAvailable() or Target:DebuffUp(S.CrimsonTempest)) then
     if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv (Kingsbane)" end
   end
 
@@ -475,7 +475,7 @@ if S.Shiv:IsReady() and S.ArterialPrecision:IsAvailable() and not Target:DebuffU
 
 -- shiv,if=talent.sepsis&!talent.kingsbane&!talent.arterial_precision&!debuff.shiv.up&dot.garrote.ticking&dot.rupture.ticking&((cooldown.shiv.charges_fractional>0.9+talent.lightweight_shiv.enabled&variable.sepsis_sync_remains>5)|dot.sepsis.ticking|dot.deathmark.ticking|fight_remains<20)
  if S.Shiv:IsReady() and not Target:DebuffUp(S.ShivDebuff) and Target:DebuffUp(S.Garrote) and Target:DebuffUp(S.Rupture)
-   and (S.Shiv:ChargesFractional() > 0.9 + num(S.LightweightShiv:IsAvailable()) or Target:DebuffUp(S.Deathmark) or (Target:DebuffUp(S.Sepsis) and (S.EchoingReprimand:IsReady() or HL.CombatTime() < 20))) then
+   and (S.Shiv:ChargesFractional() > 0.9 + num(S.LightweightShiv:IsAvailable()) or Target:DebuffUp(S.Deathmark) or (Target:DebuffUp(S.Sepsis) and (S.EchoingReprimand:CooldownRemains() <= 1 or HL.CombatTime() < 20))) then
     if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv (Sepsis)" end
  end
 
