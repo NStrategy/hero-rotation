@@ -312,7 +312,7 @@ local function Finish (ReturnSpellOnly, StealthSpell)
   -- Attention: Due to the SecTec/ColdBlood interaction, this adaption has additional checks not found in the APL string
   if S.SecretTechnique:IsReady() and Secret_Condition(ShadowDanceBuff, PremeditationBuff)
     and (not S.ColdBlood:IsAvailable() or (Settings.Commons.OffGCDasOffGCD.ColdBlood and S.ColdBlood:IsReady())
-      or Player:BuffUp(S.ColdBlood) or S.ColdBlood:CooldownRemains() > ShadowDanceBuffRemains - 3) then
+      or Player:BuffUp(S.ColdBlood) or S.ColdBlood:CooldownRemains() > ShadowDanceBuffRemains - 2.8) then
       if ReturnSpellOnly then return S.SecretTechnique end
       if HR.Cast(S.SecretTechnique) then return "Cast Secret Technique" end
   end
@@ -582,7 +582,7 @@ local function CDs ()
   local SnDCondition = SnD_Condition()
 
   -- actions.cds+=/vanish,if=buff.danse_macabre.stack>3&combo_points<=2&(cooldown.secret_technique.remains>=30|!talent.secret_technique)
-  if S.Vanish:IsCastable() and ComboPoints <= 2 and Player:BuffStack(S.DanseMacabreBuff) > 3
+  if S.Vanish:IsCastable() and ComboPoints <= 2 and Player:BuffStack(S.DanseMacabreBuff) > 3 and ShadowDanceBuffRemains > 1
    and (S.SecretTechnique:CooldownRemains() >= 30 or not S.SecretTechnique:IsAvailable()) then
     ShouldReturn = StealthMacro(S.Vanish)
     if ShouldReturn then return "Vanish Macro (DM) " .. ShouldReturn end
