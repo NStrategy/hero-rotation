@@ -273,7 +273,7 @@ local function Finish (ReturnSpellOnly, StealthSpell)
 
   local SkipRupture = Skip_Rupture(ShadowDanceBuff)
   -- actions.finish+=/rupture,if=(!variable.skip_rupture|variable.priority_rotation)&target.time_to_die-remains>6&refreshable
-  if (not SkipRupture or PriorityRotation) and S.Rupture:IsCastable() then
+  if (not Player:BuffUp(S.ShadowDanceBuff) and not SkipRupture or PriorityRotation) and S.Rupture:IsCastable() then
     if TargetInMeleeRange
       and (Target:FilteredTimeToDie(">", 6, -Target:DebuffRemains(S.Rupture)) or Target:TimeToDieIsNotValid())
       and Rogue.CanDoTUnit(Target, RuptureDMGThreshold)
@@ -287,7 +287,7 @@ local function Finish (ReturnSpellOnly, StealthSpell)
     end
   end
   -- actions.finish+=/rupture,if=!variable.skip_rupture&buff.finality_rupture.up&cooldown.shadow_dance.remains<12&cooldown.shadow_dance.charges_fractional<=1&spell_targets.shuriken_storm=1&(talent.dark_brew|talent.danse_macabre)
-  if not SkipRupture and S.Rupture:IsCastable() then
+  if not Player:BuffUp(S.ShadowDanceBuff) and not SkipRupture and S.Rupture:IsCastable() then
     if MeleeEnemies10yCount == 1 and Player:BuffUp(S.FinalityRuptureBuff) and (S.DarkBrew:IsAvailable() or S.DanseMacabre:IsAvailable())
       and S.ShadowDance:CooldownRemains() < 12 and S.ShadowDance:ChargesFractional() <= 1 then
       if ReturnSpellOnly then
@@ -317,7 +317,7 @@ local function Finish (ReturnSpellOnly, StealthSpell)
       if HR.Cast(S.SecretTechnique) then return "Cast Secret Technique" end
   end
 
-  if not SkipRupture and S.Rupture:IsCastable() then
+  if not Player:BuffUp(S.ShadowDanceBuff) and not SkipRupture and S.Rupture:IsCastable() then
     -- actions.finish+=/rupture,cycle_targets=1,if=!variable.skip_rupture&!variable.priority_rotation&spell_targets.shuriken_storm>=2&target.time_to_die>=(2*combo_points)&refreshable
     if not ReturnSpellOnly and HR.AoEON() and not PriorityRotation and MeleeEnemies10yCount >= 2 then
       local function Evaluate_Rupture_Target(TargetUnit)
@@ -397,13 +397,13 @@ local function Stealthed (ReturnSpellOnly, StealthSpell)
   end
 
   -- actions.stealthed=shadowstrike,if=(buff.stealth.up|buff.vanish.up)&(spell_targets.shuriken_storm<4|variable.priority_rotation)
-  if ShadowstrikeIsCastable and (StealthBuff or VanishBuffCheck) and (MeleeEnemies10yCount < 4 or PriorityRotation) and ShadowDanceBuffRemains > 0.7 then
+  if ShadowstrikeIsCastable and (StealthBuff or VanishBuffCheck) and (MeleeEnemies10yCount < 4 or PriorityRotation) then
     if ReturnSpellOnly then
       return S.Shadowstrike
     else
       if HR.Cast(S.Shadowstrike) then return "Cast Shadowstrike (Stealth)" end
     end
-  end
+   end
 
   -- #Variable to Gloomblade / Backstab when on 4 or 5 combo points with premediation and when the combo point is not anima charged
   -- actions.stealthed+=/variable,name=gloomblade_condition,value=buff.danse_macabre.stack<5&(combo_points.deficit=2|combo_points.deficit=3)&(buff.premeditation.up|effective_combo_points<7)&(spell_targets.shuriken_storm<=8|talent.lingering_shadow)
@@ -420,7 +420,7 @@ local function Stealthed (ReturnSpellOnly, StealthSpell)
     end
   end
   -- actions.stealthed+=/gloomblade,if=variable.gloomblade_condition&(!used_for_danse|spell_targets.shuriken_storm!=2)|combo_points<=2&buff.the_rotten.up&spell_targets.shuriken_storm<=3
-  if S.Gloomblade:IsCastable() and ((GloombladeCondition and (not Used_For_Danse(S.Gloomblade) or MeleeEnemies10yCount ~= 2)) or (ShadowDanceBuff and ShadowDanceBuffRemains < 0.7 and StealthComboPoints <= 5)
+  if S.Gloomblade:IsCastable() and ((GloombladeCondition and (not Used_For_Danse(S.Gloomblade) or MeleeEnemies10yCount ~= 2))
     or (StealthComboPoints <= 2 and TheRottenBuff and MeleeEnemies10yCount <= 3)) then
     if ReturnSpellOnly then
       -- If calling from a Stealth macro, we don't need the PV suggestion since it's already a macro cast
@@ -432,7 +432,8 @@ local function Stealthed (ReturnSpellOnly, StealthSpell)
     else
       if HR.CastQueue(S.Gloomblade, S.Stealth) then return "Cast Gloomblade (Stealth)" end
     end
-  end
+   end
+
   -- actions.stealthed+=/backstab,if=variable.gloomblade_condition&talent.danse_macabre&buff.danse_macabre.stack<=2&spell_targets.shuriken_storm<=2
   if S.Backstab:IsCastable() and GloombladeCondition and S.DanseMacabre:IsAvailable() and not Used_For_Danse(S.Backstab)
     and Player:BuffStack(S.DanseMacabreBuff) <= 2 and MeleeEnemies10yCount <= 2 then
@@ -521,13 +522,13 @@ local function Stealthed (ReturnSpellOnly, StealthSpell)
     end
   end
   -- actions.stealthed+=/shadowstrike
-  if ShadowstrikeIsCastable and ShadowDanceBuffRemains > 0.7 then
+  if ShadowstrikeIsCastable then
     if ReturnSpellOnly then
       return S.Shadowstrike
     else
       if HR.Cast(S.Shadowstrike) then return "Cast Shadowstrike 2" end
     end
-  end
+   end
 
   return false
 end
@@ -956,7 +957,7 @@ local function APL ()
     if S.SliceandDice:IsCastable() and MeleeEnemies10yCount < Rogue.CPMaxSpend() and HL.FilteredFightRemains(MeleeEnemies10y, ">", 6)
       and Player:BuffRemains(S.SliceandDice) < Player:GCD() and ComboPoints >= 4 then
       -- check if the PremeditationBuff is not available and there are less than 5 targets in range and Shadow Dance will be ready in less than 5 seconds
-      if not Player:BuffUp(S.PremeditationBuff) and MeleeEnemies10yCount <= 5 and S.ShadowDance:CooldownRemains() > 5 then
+      if not Player:BuffUp(S.PremeditationBuff) and MeleeEnemies10yCount <= 5 and S.ShadowDance:CooldownRemains() > 10 then
       if S.SliceandDice:IsReady() and HR.Cast(S.SliceandDice) then return "Cast Slice and Dice (Low Duration)" end
       SetPoolingFinisher(S.SliceandDice)
       end
@@ -1122,7 +1123,7 @@ HR.SetAPL(261, APL, Init)
 -- actions.cds=variable,name=rotten_condition,value=!buff.premeditation.up&spell_targets.shuriken_storm=1|!talent.the_rotten|spell_targets.shuriken_storm>1
 -- # Cooldowns Use Dance off-gcd before the first Shuriken Storm from Tornado comes in.
 -- actions.cds+=/shadow_dance,use_off_gcd=1,if=!buff.shadow_dance.up&buff.shuriken_tornado.up&buff.shuriken_tornado.remains<=3.5
--- # (Unless already up because we took Shadow Focus) use    off-gcd before the first Shuriken Storm from Tornado comes in.
+-- # (Unless already up because we took Shadow Focus) use Symbols off-gcd before the first Shuriken Storm from Tornado comes in.
 -- actions.cds+=/symbols_of_death,use_off_gcd=1,if=buff.shuriken_tornado.up&buff.shuriken_tornado.remains<=3.5
 -- # Vanish for Shadowstrike with Danse Macabre at adaquate stacks
 -- actions.cds+=/vanish,if=buff.danse_macabre.stack>3&combo_points<=2&(cooldown.secret_technique.remains>=30|!talent.secret_technique)
