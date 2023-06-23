@@ -397,7 +397,7 @@ local function Stealthed (ReturnSpellOnly, StealthSpell)
   end
 
   -- actions.stealthed=shadowstrike,if=(buff.stealth.up|buff.vanish.up)&(spell_targets.shuriken_storm<4|variable.priority_rotation)
-  if ShadowstrikeIsCastable and (StealthBuff or VanishBuffCheck) and (MeleeEnemies10yCount < 4 or PriorityRotation) then
+  if ShadowstrikeIsCastable and (StealthBuff or VanishBuffCheck) and (MeleeEnemies10yCount < 4 or PriorityRotation) and ShadowDanceBuffRemains > 0.7 then
     if ReturnSpellOnly then
       return S.Shadowstrike
     else
@@ -420,7 +420,7 @@ local function Stealthed (ReturnSpellOnly, StealthSpell)
     end
   end
   -- actions.stealthed+=/gloomblade,if=variable.gloomblade_condition&(!used_for_danse|spell_targets.shuriken_storm!=2)|combo_points<=2&buff.the_rotten.up&spell_targets.shuriken_storm<=3
-  if S.Gloomblade:IsCastable() and ((GloombladeCondition and (not Used_For_Danse(S.Gloomblade) or MeleeEnemies10yCount ~= 2))
+  if S.Gloomblade:IsCastable() and ((GloombladeCondition and (not Used_For_Danse(S.Gloomblade) or MeleeEnemies10yCount ~= 2)) or (ShadowDanceBuff and ShadowDanceBuffRemains < 0.7 and StealthComboPoints <= 5)
     or (StealthComboPoints <= 2 and TheRottenBuff and MeleeEnemies10yCount <= 3)) then
     if ReturnSpellOnly then
       -- If calling from a Stealth macro, we don't need the PV suggestion since it's already a macro cast
@@ -521,7 +521,7 @@ local function Stealthed (ReturnSpellOnly, StealthSpell)
     end
   end
   -- actions.stealthed+=/shadowstrike
-  if ShadowstrikeIsCastable then
+  if ShadowstrikeIsCastable and ShadowDanceBuffRemains > 0.7 then
     if ReturnSpellOnly then
       return S.Shadowstrike
     else
@@ -955,8 +955,11 @@ local function APL ()
     -- actions+=/slice_and_dice,if=spell_targets.shuriken_storm<cp_max_spend&buff.slice_and_dice.remains<gcd.max&fight_remains>6&combo_points>=4
     if S.SliceandDice:IsCastable() and MeleeEnemies10yCount < Rogue.CPMaxSpend() and HL.FilteredFightRemains(MeleeEnemies10y, ">", 6)
       and Player:BuffRemains(S.SliceandDice) < Player:GCD() and ComboPoints >= 4 then
+      -- check if the PremeditationBuff is not available and there are less than 5 targets in range and Shadow Dance will be ready in less than 5 seconds
+      if not Player:BuffUp(S.PremeditationBuff) and MeleeEnemies10yCount <= 5 and S.ShadowDance:CooldownRemains() > 5 then
       if S.SliceandDice:IsReady() and HR.Cast(S.SliceandDice) then return "Cast Slice and Dice (Low Duration)" end
       SetPoolingFinisher(S.SliceandDice)
+      end
     end
 
     -- # Run fully switches to the Stealthed Rotation (by doing so, it forces pooling if nothing is available).
@@ -1119,7 +1122,7 @@ HR.SetAPL(261, APL, Init)
 -- actions.cds=variable,name=rotten_condition,value=!buff.premeditation.up&spell_targets.shuriken_storm=1|!talent.the_rotten|spell_targets.shuriken_storm>1
 -- # Cooldowns Use Dance off-gcd before the first Shuriken Storm from Tornado comes in.
 -- actions.cds+=/shadow_dance,use_off_gcd=1,if=!buff.shadow_dance.up&buff.shuriken_tornado.up&buff.shuriken_tornado.remains<=3.5
--- # (Unless already up because we took Shadow Focus) use Symbols off-gcd before the first Shuriken Storm from Tornado comes in.
+-- # (Unless already up because we took Shadow Focus) use    off-gcd before the first Shuriken Storm from Tornado comes in.
 -- actions.cds+=/symbols_of_death,use_off_gcd=1,if=buff.shuriken_tornado.up&buff.shuriken_tornado.remains<=3.5
 -- # Vanish for Shadowstrike with Danse Macabre at adaquate stacks
 -- actions.cds+=/vanish,if=buff.danse_macabre.stack>3&combo_points<=2&(cooldown.secret_technique.remains>=30|!talent.secret_technique)
