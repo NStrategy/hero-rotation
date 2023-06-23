@@ -582,7 +582,7 @@ local function CDs ()
   local SnDCondition = SnD_Condition()
 
   -- actions.cds+=/vanish,if=buff.danse_macabre.stack>3&combo_points<=2&(cooldown.secret_technique.remains>=30|!talent.secret_technique)
-  if S.Vanish:IsCastable() and ComboPoints <= 2 and Player:BuffStack(S.DanseMacabreBuff) > 3 and ShadowDanceBuffRemains > 1
+  if S.Vanish:IsCastable() and ComboPoints <= 2 and Player:BuffStack(S.DanseMacabreBuff) > 3 and Player:BuffRemains(S.ShadowDanceBuff) > 1
    and (S.SecretTechnique:CooldownRemains() >= 30 or not S.SecretTechnique:IsAvailable()) then
     ShouldReturn = StealthMacro(S.Vanish)
     if ShouldReturn then return "Vanish Macro (DM) " .. ShouldReturn end
