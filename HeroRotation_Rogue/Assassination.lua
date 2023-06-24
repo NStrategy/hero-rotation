@@ -467,7 +467,7 @@ local function CDs ()
     if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv (Kingsbane)" end
   end
 
-  	-- shiv,if=talent.arterial_precision&!debuff.shiv.up&dot.garrote.ticking&dot.rupture.ticking&(debuff.deathmark.up|cooldown.shiv.charges_fractional>max_charges-0.5&cooldown.deathmark.remains>10)
+ -- shiv,if=talent.arterial_precision&!debuff.shiv.up&dot.garrote.ticking&dot.rupture.ticking&(debuff.deathmark.up|cooldown.shiv.charges_fractional>max_charges-0.5&cooldown.deathmark.remains>10)
 if S.Shiv:IsReady() and S.ArterialPrecision:IsAvailable() and not Target:DebuffUp(S.ShivDebuff) and Target:DebuffUp(S.Garrote) and Target:DebuffUp(S.Rupture)
     and (Target:DebuffUp(S.Deathmark) or S.Shiv:ChargesFractional() > S.Shiv:MaxCharges() - 0.5 and S.Deathmark:CooldownRemains() > 10) then
     if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv (Arterial Precision)" end
@@ -479,7 +479,12 @@ if S.Shiv:IsReady() and S.ArterialPrecision:IsAvailable() and not Target:DebuffU
     if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv (Sepsis)" end
  end
 
- ----- redo the one condition with the talent that no one plays lol and maybe add an extra condition as in (Target:DebuffUp(S.Sepsis) and (S.EchoingReprimand:IsReady() or will be ready in 2 seconds // maybe "(S.Deathmark) or (Target:DebuffUp(S.Sepsis) and (S.EchoingReprimand:CooldownRemains() <= 2 or Target:DebuffUp(S.Deathmark) or HL.CombatTime() < 20)))" )) or something like that
+  -- actions.cds+=/shiv,if=!talent.kingsbane&!talent.arterial_precision&!talent.sepsis&!debuff.shiv.up&dot.garrote.ticking&dot.rupture.ticking&(!talent.crimson_tempest.enabled|variable.single_target|dot.crimson_tempest.ticking)&(!talent.exsanguinate|variable.exsang_sync_remains>2)
+if S.Shiv:IsReady() and not Target:DebuffUp(S.ShivDebuff) and Target:DebuffUp(S.Garrote) and Target:DebuffUp(S.Rupture)
+    and (not S.CrimsonTempest:IsAvailable() or SingleTarget or Target:DebuffUp(S.CrimsonTempest))
+    and (not S.Exsanguinate:IsAvailable() or ExsanguinateSyncRemains > 2) then
+    if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv" end
+  end
 
   -- actions.cds+=/thistle_tea,if=!buff.thistle_tea.up&(energy.deficit>=100|charges=3&(dot.kingsbane.ticking|debuff.deathmark.up)|fight_remains<charges*6)
   if S.ThistleTea:IsCastable() and not Player:BuffUp(S.ThistleTea)
