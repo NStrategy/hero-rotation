@@ -955,7 +955,7 @@ local function APL ()
     -- # Apply Slice and Dice at 4+ CP if it expires within the next GCD or is not up
     -- actions+=/slice_and_dice,if=spell_targets.shuriken_storm<cp_max_spend&buff.slice_and_dice.remains<gcd.max&fight_remains>6&combo_points>=4
     if S.SliceandDice:IsCastable() and MeleeEnemies10yCount < Rogue.CPMaxSpend() and HL.FilteredFightRemains(MeleeEnemies10y, ">", 6)
-      and Player:BuffRemains(S.SliceandDice) < Player:GCD() and ComboPoints >= 4 then
+      and Player:BuffRemains(S.SliceandDice) < 1.5 and ComboPoints >= 4 then
       -- check if the PremeditationBuff is not available and there are less than 5 targets in range and Shadow Dance will be ready in less than 5 seconds
       if not Player:BuffUp(S.PremeditationBuff) and MeleeEnemies10yCount <= 5 and S.ShadowDance:CooldownRemains() > 10 then
       if S.SliceandDice:IsReady() and HR.Cast(S.SliceandDice) then return "Cast Slice and Dice (Low Duration)" end
