@@ -482,7 +482,8 @@ if S.Shiv:IsReady() and S.ArterialPrecision:IsAvailable() and not Target:DebuffU
   -- actions.cds+=/shiv,if=!talent.kingsbane&!talent.arterial_precision&!talent.sepsis&!debuff.shiv.up&dot.garrote.ticking&dot.rupture.ticking&(!talent.crimson_tempest.enabled|variable.single_target|dot.crimson_tempest.ticking)&(!talent.exsanguinate|variable.exsang_sync_remains>2)
 if S.Shiv:IsReady() and not Target:DebuffUp(S.ShivDebuff) and Target:DebuffUp(S.Garrote) and Target:DebuffUp(S.Rupture)
     and (not S.CrimsonTempest:IsAvailable() or SingleTarget or Target:DebuffUp(S.CrimsonTempest))
-    and (not S.Exsanguinate:IsAvailable() or ExsanguinateSyncRemains > 2) then
+    and (not S.Exsanguinate:IsAvailable() or ExsanguinateSyncRemains > 2)
+    and (not S.Sepsis:IsAvailable() and not S.Kingsbane:IsAvailable() and not S.ArterialPrecision:IsAvailable()) then
     if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv" end
   end
 
