@@ -194,6 +194,15 @@ local function ExsangSyncRemains()
   return S.Exsanguinate:CooldownRemains()
 end
 
+-- variable,name=sepsis_sync_remains,op=setif,condition=cooldown.deathmark.remains>cooldown.sepsis.remains&cooldown.deathmark.remains<fight_remains,value=cooldown.deathmark.remains,value_else=cooldown.sepsis.remains
+local function SepsisSyncRemains()
+  if S.Deathmark:CooldownRemains() > S.Sepsis:CooldownRemains()
+    and (HL.BossFightRemainsIsNotValid() or HL.BossFilteredFightRemains(">", S.Deathmark:CooldownRemains())) then
+    return S.Deathmark:CooldownRemains()
+  end
+  return S.Sepsis:CooldownRemains()
+end
+
 -- Custom Override for Handling 4pc Pandemics
 local function IsDebuffRefreshable(TargetUnit, Spell, PandemicThreshold)
   local PandemicThreshold = PandemicThreshold or Spell:PandemicThreshold()
@@ -474,8 +483,8 @@ if S.Shiv:IsReady() and S.ArterialPrecision:IsAvailable() and not Target:DebuffU
   end
 
 -- shiv,if=talent.sepsis&!talent.kingsbane&!talent.arterial_precision&!debuff.shiv.up&dot.garrote.ticking&dot.rupture.ticking&((cooldown.shiv.charges_fractional>0.9+talent.lightweight_shiv.enabled&variable.sepsis_sync_remains>5)|dot.sepsis.ticking|dot.deathmark.ticking|fight_remains<20)
- if S.Shiv:IsReady() and not Target:DebuffUp(S.ShivDebuff) and Target:DebuffUp(S.Garrote) and Target:DebuffUp(S.Rupture)
-   and (S.Shiv:ChargesFractional() > 0.9 + num(S.LightweightShiv:IsAvailable()) or Target:DebuffUp(S.Deathmark) or (Target:DebuffUp(S.Sepsis) and (Target:DebuffRemains(S.Garrote) > 19 or HL.CombatTime() < 20))) then
+if S.Shiv:IsReady() and not Target:DebuffUp(S.ShivDebuff) and Target:DebuffUp(S.Garrote) and Target:DebuffUp(S.Rupture)
+   and (S.Shiv:ChargesFractional() > 0.9 + num(S.LightweightShiv:IsAvailable()) and SepsisSyncRemains() > 5 or Target:DebuffUp(S.Deathmark) or (Target:DebuffUp(S.Sepsis) and (Target:DebuffRemains(S.Garrote) > 19 or HL.BossFightRemains() < 20))) then
     if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv (Sepsis)" end
  end
 
@@ -638,7 +647,7 @@ local function Dot ()
   end
   -- actions.dot+=/rupture,if=!variable.skip_rupture&effective_combo_points>=4&refreshable&(pmultiplier<=1|remains<=tick_time&spell_targets.fan_of_knives>=3)&(!will_lose_exsanguinate|remains<=tick_time*2&spell_targets.fan_of_knives>=3)&target.time_to_die-remains>(4+(talent.dashing_scoundrel*5)+(talent.doomblade*5)+(variable.regen_saturated*6))
   -- actions.dot+=/rupture,cycle_targets=1,if=!variable.skip_cycle_rupture&!variable.skip_rupture&target!=self.target&effective_combo_points>=4&refreshable&(pmultiplier<=1|remains<=tick_time&spell_targets.fan_of_knives>=3)&(!will_lose_exsanguinate|remains<=tick_time*2&spell_targets.fan_of_knives>=3)&target.time_to_die-remains>(4+(talent.dashing_scoundrel*5)+(talent.doomblade*5)+(variable.regen_saturated*6))
-  if S.Rupture:IsReady() and ComboPoints >= 4 then
+  if S.Rupture:IsReady() and ComboPoints >= 5 then
     -- target.time_to_die-remains>(4+(talent.dashing_scoundrel*5)+(talent.doomblade*5)+(variable.regen_saturated*6))
     RuptureDurationThreshold = 4 + BoolToInt(S.DashingScoundrel:IsAvailable()) * 5 + BoolToInt(S.Doomblade:IsAvailable()) * 5 + BoolToInt(EnergyRegenSaturated) * 6
     local function Evaluate_Rupture_Target(TargetUnit)
