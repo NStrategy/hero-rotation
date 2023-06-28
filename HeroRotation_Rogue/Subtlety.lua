@@ -39,6 +39,7 @@ local I = Item.Rogue.Subtlety
 local OnUseExcludes = {
   I.ManicGrieftorch:ID(),
   I.BeaconToTheBeyond:ID(),
+  I.NeedlesslyComplexWristguards:ID(),
 }
 
 -- Rotation Var
@@ -957,7 +958,7 @@ local function APL ()
     if S.SliceandDice:IsCastable() and MeleeEnemies10yCount < Rogue.CPMaxSpend() and HL.FilteredFightRemains(MeleeEnemies10y, ">", 6)
       and Player:BuffRemains(S.SliceandDice) < 1.5 and ComboPoints >= 4 then
       -- check if the PremeditationBuff is not available and there are less than 5 targets in range and Shadow Dance will be ready in less than 5 seconds
-      if not Player:BuffUp(S.PremeditationBuff) and MeleeEnemies10yCount <= 5 and S.ShadowDance:CooldownRemains() > 5 then
+      if not Player:BuffUp(S.PremeditationBuff) and MeleeEnemies10yCount <= 5 and S.ShadowDance:CooldownRemains() > 2 then
       if S.SliceandDice:IsReady() and HR.Cast(S.SliceandDice) then return "Cast Slice and Dice (Low Duration)" end
       SetPoolingFinisher(S.SliceandDice)
       end

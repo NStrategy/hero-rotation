@@ -260,19 +260,22 @@ if not Item.Rogue then Item.Rogue = {} end
 Item.Rogue.Assassination = {
   -- Trinkets
   AlgetharPuzzleBox       = Item(193701, {13, 14}),
+  NeedlesslyComplexWristguards    = Item(198327),
 }
 
 Item.Rogue.Outlaw = {
   -- Trinkets
   ManicGrieftorch         = Item(194308, {13, 14}),
   WindscarWhetstone       = Item(137486, {13, 14}),
+  NeedlesslyComplexWristguards    = Item(198327),
 }
 
 Item.Rogue.Subtlety = {
   -- Trinkets
   ManicGrieftorch         = Item(194308, {13, 14}),
   StormEatersBoon         = Item(194302, {13, 14}),
-  BeaconToTheBeyond       = Item(203963, {13, 14})
+  BeaconToTheBeyond       = Item(203963, {13, 14}),
+  NeedlesslyComplexWristguards    = Item(198327)
 }
 
 function Commons.StealthSpell()
