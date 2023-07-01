@@ -574,8 +574,8 @@ local function CDs ()
   -- actions.cds+=/symbols_of_death,use_off_gcd=1,if=buff.shuriken_tornado.up&buff.shuriken_tornado.remains<=3.5
     if S.SymbolsofDeath:IsCastable() and S.ShadowDance:IsCastable() and not Player:BuffUp(S.SymbolsofDeath) and not Player:BuffUp(S.ShadowDanceBuff) then
       if HR.CastQueue(S.SymbolsofDeath, S.ShadowDance) then return "Cast Shadow Dance (during Tornado)" end
-    elseif S.SymbolsofDeath:IsCastable() and not Player:BuffUp(S.SymbolsofDeath) then
-      if HR.Cast(S.SymbolsofDeath) then return "Cast Symbols of Death (during Tornado)" end
+    elseif S.SymbolsofDeath:IsCastable() and not Player:BuffUp(S.SymbolsofDeath) or Player:BuffRemains(S.SymbolsofDeath) <= 3 then
+      if HR.Cast(S.SymbolsofDeath, Settings.Subtlety.OffGCDasOffGCD.SymbolsofDeath) then return "Cast Symbols of Death (during Tornado)" end
     elseif S.ShadowDance:IsCastable() and not Player:BuffUp(S.ShadowDanceBuff) then
       if HR.Cast(S.ShadowDance) then return "Cast Shadow Dance (during Tornado)" end
     end
@@ -603,7 +603,7 @@ local function CDs ()
   -- actions.cds+=/shuriken_tornado,if=spell_targets.shuriken_storm<=1&energy>=60&variable.snd_condition&cooldown.symbols_of_death.up&cooldown.shadow_dance.charges>=1&(!talent.flagellation.enabled&!cooldown.flagellation.up|buff.flagellation_buff.up|spell_targets.shuriken_storm>=5)&combo_points<=2&!buff.premeditation.up --- maybe add that it should only suggest shuriken tornado in dance if secret technique is on cd
   if S.ShurikenTornado:IsCastable() and MeleeEnemies10yCount <= 1 and SnDCondition and S.SymbolsofDeath:CooldownUp() and S.ShadowDance:Charges() >= 1
     and (not S.Flagellation:IsAvailable() or Player:BuffUp(S.Flagellation) or MeleeEnemies10yCount >= 5)
-    and ComboPoints <= 2 and not Player:BuffUp(S.PremeditationBuff) then
+    and ComboPoints <= 2 and not Player:BuffUp(S.PremeditationBuff) and not (S.SymbolsofDeath:IsCastable() and S.ShadowDance:IsCastable()) then
     -- actions.cds+=/pool_resource,for_next=1,if=talent.shuriken_tornado.enabled&!talent.shadow_focus.enabled
     if Player:Energy() >= 60 then
       if HR.Cast(S.ShurikenTornado, Settings.Subtlety.GCDasOffGCD.ShurikenTornado) then return "Cast Shuriken Tornado" end
@@ -618,7 +618,7 @@ local function CDs ()
     end
     -- actions.cds+=/symbols_of_death,if=(buff.symbols_of_death.remains<=3&!cooldown.shadow_dance.ready|!set_bonus.tier30_2pc)&variable.rotten_condition&variable.snd_condition&(!talent.flagellation&(combo_points<=1|!talent.the_rotten)|cooldown.flagellation.remains>10|cooldown.flagellation.up&combo_points>=5) --- do a special check here, if 3 or more targets, do not use Symbols when Shadowdacecd remains 20sec
     if S.SymbolsofDeath:IsCastable() then
-      if ((Player:BuffRemains(S.SymbolsofDeath) <= 3 and S.ShadowDance:CooldownRemains() > 10) or not Player:HasTier(30, 2)) and Rotten_Condition() and SnDCondition
+      if ((Player:BuffRemains(S.SymbolsofDeath) <= 3 and S.ShadowDance:CooldownRemains() > 10 and not S.ShadowDance:IsCastable()) or not Player:HasTier(30, 2)) and Rotten_Condition() and SnDCondition
         and ((not S.Flagellation:IsAvailable() and (ComboPoints <= 1 or not S.TheRotten:IsAvailable()))
           or S.Flagellation:CooldownRemains() > 10 or (S.Flagellation:CooldownUp() and ComboPoints >= 5)) then
         if HR.Cast(S.SymbolsofDeath, Settings.Subtlety.OffGCDasOffGCD.SymbolsofDeath) then
