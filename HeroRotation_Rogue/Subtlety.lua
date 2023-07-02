@@ -574,7 +574,7 @@ local function CDs ()
   -- actions.cds+=/symbols_of_death,use_off_gcd=1,if=buff.shuriken_tornado.up&buff.shuriken_tornado.remains<=3.5
     if S.SymbolsofDeath:IsCastable() and S.ShadowDance:IsCastable() and not Player:BuffUp(S.SymbolsofDeath) and not Player:BuffUp(S.ShadowDanceBuff) then
       if HR.CastQueue(S.ShadowDance, S.BlackPowder) then return "Cast Shadow Dance (during Tornado 1)" end
-    elseif S.SymbolsofDeath:IsCastable() and not Player:BuffUp(S.SymbolsofDeath) or Player:BuffRemains(S.SymbolsofDeath) <= 3 then
+    elseif S.SymbolsofDeath:IsCastable() and not Player:BuffUp(S.SymbolsofDeath) then
       if HR.Cast(S.SymbolsofDeath, Settings.Subtlety.OffGCDasOffGCD.SymbolsofDeath) then return "Cast Symbols of Death (during Tornado)" end
     elseif S.ShadowDance:IsCastable() and not Player:BuffUp(S.ShadowDanceBuff) then
       if HR.Cast(S.ShadowDance) then return "Cast Shadow Dance (during Tornado 2)" end
