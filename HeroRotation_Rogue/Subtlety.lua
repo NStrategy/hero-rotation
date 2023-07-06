@@ -39,7 +39,6 @@ local I = Item.Rogue.Subtlety
 local OnUseExcludes = {
   I.ManicGrieftorch:ID(),
   I.BeaconToTheBeyond:ID(),
-  I.NeedlesslyComplexWristguards:ID(),
 }
 
 -- Rotation Var
