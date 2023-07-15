@@ -310,9 +310,10 @@ local function Finish (ReturnSpellOnly, StealthSpell)
   end
   -- actions.finish+=/secret_technique,if=variable.secret_condition&(!talent.improved_shadow_dance|!talent.cold_blood|cooldown.cold_blood.remains>buff.shadow_dance.remains-2)
   -- Attention: Due to the SecTec/ColdBlood interaction, this adaption has additional checks not found in the APL string
-  if S.SecretTechnique:IsReady() and Secret_Condition(ShadowDanceBuff, PremeditationBuff) 
-    and (not S.ColdBlood:IsAvailable() or (Settings.Commons.OffGCDasOffGCD.ColdBlood and S.ColdBlood:IsReady())
-      or Player:BuffUp(S.ColdBlood) or S.ColdBlood:CooldownRemains() > ShadowDanceBuffRemains - 2.8) then
+  if S.SecretTechnique:IsReady() and (Secret_Condition(ShadowDanceBuff, PremeditationBuff) 
+    and ((not S.ColdBlood:IsAvailable() or (Settings.Commons.OffGCDasOffGCD.ColdBlood and S.ColdBlood:IsReady())
+      or Player:BuffUp(S.ColdBlood) or S.ColdBlood:CooldownRemains() > ShadowDanceBuffRemains - 3.1))
+      or (Player:BuffUp(S.ShurikenTornado) and Player:BuffStack(S.DanseMacabreBuff) >= 2)) then ---this is a test
       if ReturnSpellOnly then return S.SecretTechnique end
       if HR.Cast(S.SecretTechnique) then return "Cast Secret Technique" end
   end
@@ -973,7 +974,7 @@ local function APL ()
         else
           -- Special case for Shuriken Tornado
           if Player:BuffUp(S.ShurikenTornado) and ComboPoints ~= Player:ComboPoints()
-            and (PoolingAbility == S.BlackPowder or PoolingAbility == S.Eviscerate or PoolingAbility == S.Rupture or PoolingAbility == S.SliceandDice) then
+            and (PoolingAbility == S.BlackPowder or PoolingAbility == S.SecretTechnique or PoolingAbility == S.Eviscerate or PoolingAbility == S.Rupture or PoolingAbility == S.SliceandDice) then
             if HR.CastQueuePooling(nil, S.ShurikenTornado, PoolingAbility) then return "Stealthed Tornado Cast  " .. PoolingAbility:Name() end
           else
             if HR.CastPooling(PoolingAbility) then return "Stealthed Cast " .. PoolingAbility:Name() end
