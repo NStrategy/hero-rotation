@@ -313,7 +313,7 @@ local function Finish (ReturnSpellOnly, StealthSpell)
   if S.SecretTechnique:IsReady() and (Secret_Condition(ShadowDanceBuff, PremeditationBuff) 
     and ((not S.ColdBlood:IsAvailable() or (Settings.Commons.OffGCDasOffGCD.ColdBlood and S.ColdBlood:IsReady())
       or Player:BuffUp(S.ColdBlood) or S.ColdBlood:CooldownRemains() > ShadowDanceBuffRemains - 3.1))
-      or (Player:BuffUp(S.ShurikenTornado) and Player:BuffStack(S.DanseMacabreBuff) >= 2)) then ---this is a test
+      or (Player:BuffUp(S.ShurikenTornado) and Player:BuffStack(S.DanseMacabreBuff) >= 2 and MeleeEnemies10yCount >= 3)) then ---this is a test
       if ReturnSpellOnly then return S.SecretTechnique end
       if HR.Cast(S.SecretTechnique) then return "Cast Secret Technique" end
   end
@@ -618,7 +618,7 @@ local function CDs ()
     end
     -- actions.cds+=/symbols_of_death,if=(buff.symbols_of_death.remains<=3&!cooldown.shadow_dance.ready|!set_bonus.tier30_2pc)&variable.rotten_condition&variable.snd_condition&(!talent.flagellation&(combo_points<=1|!talent.the_rotten)|cooldown.flagellation.remains>10|cooldown.flagellation.up&combo_points>=5) --- do a special check here, if 3 or more targets, do not use Symbols when Shadowdacecd remains 20sec
     if S.SymbolsofDeath:IsCastable() then
-      if ((Player:BuffRemains(S.SymbolsofDeath) <= 3 and S.ShadowDance:CooldownRemains() > 10 and not S.ShadowDance:IsCastable()) or not Player:HasTier(30, 2)) and Rotten_Condition() and SnDCondition
+      if ((Player:BuffRemains(S.SymbolsofDeath) <= 3 and S.ShadowDance:CooldownRemains() > 10) or not Player:HasTier(30, 2)) and Rotten_Condition() and SnDCondition
         and ((not S.Flagellation:IsAvailable() and (ComboPoints <= 1 or not S.TheRotten:IsAvailable()))
           or S.Flagellation:CooldownRemains() > 10 or (S.Flagellation:CooldownUp() and ComboPoints >= 5)) then
         if HR.Cast(S.SymbolsofDeath, Settings.Subtlety.OffGCDasOffGCD.SymbolsofDeath) then
@@ -655,7 +655,7 @@ local function CDs ()
     end
     -- actions.cds+=/shuriken_tornado,if=variable.snd_condition&buff.symbols_of_death.up&combo_points<=2&(!buff.premeditation.up|spell_targets.shuriken_storm>4)
     -- actions.cds+=/shuriken_tornado,if=cooldown.shadow_dance.ready&!stealthed.all&spell_targets.shuriken_storm>=3&!talent.flagellation.enabled
-    if S.ShurikenTornado:IsReady() then
+    if S.ShurikenTornado:IsReady() and not (Player:BuffUp(S.ShadowDanceBuff) and MeleeEnemies10yCount == 2) then
       if SnD_Condition and Player:BuffUp(S.SymbolsofDeath) and ComboPoints <= 2 and (not Player:BuffUp(S.PremeditationBuff) or MeleeEnemies10yCount > 4) then
         if HR.Cast(S.ShurikenTornado, Settings.Subtlety.GCDasOffGCD.ShurikenTornado) then return "Cast Shuriken Tornado (SoD)" end
       end
@@ -958,7 +958,7 @@ local function APL ()
     if S.SliceandDice:IsCastable() and MeleeEnemies10yCount < Rogue.CPMaxSpend() and HL.FilteredFightRemains(MeleeEnemies10y, ">", 6)
       and Player:BuffRemains(S.SliceandDice) < 2 and ComboPoints >= 4 then
       -- check if the PremeditationBuff is not available and there are less than 5 targets in range and Shadow Dance will be ready in less than 2 seconds
-      if not Player:BuffUp(S.PremeditationBuff) and MeleeEnemies10yCount <= 5 and S.ShadowDance:CooldownRemains() > 2 and not S.ShadowDance:IsCastable() then
+      if not Player:BuffUp(S.PremeditationBuff) and MeleeEnemies10yCount <= 5 and S.ShadowDance:CooldownRemains() > 2 then
       if S.SliceandDice:IsReady() and HR.Cast(S.SliceandDice) then return "Cast Slice and Dice (Low Duration)" end
       SetPoolingFinisher(S.SliceandDice)
       end
@@ -974,9 +974,9 @@ local function APL ()
         else
           -- Special case for Shuriken Tornado
           if Player:BuffUp(S.ShurikenTornado) and ComboPoints ~= Player:ComboPoints()
-            and (PoolingAbility == S.BlackPowder or PoolingAbility == S.SecretTechnique or PoolingAbility == S.Eviscerate or PoolingAbility == S.Rupture or PoolingAbility == S.SliceandDice) then
+            and (PoolingAbility == S.SecretTechnique or PoolingAbility == S.BlackPowder or PoolingAbility == S.Eviscerate or PoolingAbility == S.Rupture or PoolingAbility == S.SliceandDice) then
             if HR.CastQueuePooling(nil, S.ShurikenTornado, PoolingAbility) then return "Stealthed Tornado Cast  " .. PoolingAbility:Name() end
-          else
+          else  --- here is the other test
             if HR.CastPooling(PoolingAbility) then return "Stealthed Cast " .. PoolingAbility:Name() end
           end
         end
