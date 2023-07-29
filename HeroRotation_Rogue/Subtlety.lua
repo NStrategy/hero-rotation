@@ -656,7 +656,7 @@ local function CDs ()
     -- actions.cds+=/shuriken_tornado,if=variable.snd_condition&buff.symbols_of_death.up&combo_points<=2&(!buff.premeditation.up|spell_targets.shuriken_storm>4)
     -- actions.cds+=/shuriken_tornado,if=cooldown.shadow_dance.ready&!stealthed.all&spell_targets.shuriken_storm>=3&!talent.flagellation.enabled
     if S.ShurikenTornado:IsReady() and not (Player:BuffUp(S.ShadowDanceBuff) and MeleeEnemies10yCount == 2) then
-      if SnD_Condition and Player:BuffUp(S.SymbolsofDeath) and ComboPoints <= 2 and (not Player:BuffUp(S.PremeditationBuff) or MeleeEnemies10yCount > 4) then
+      if SnD_Condition and Player:BuffUp(S.SymbolsofDeath) and ComboPoints <= 2 and (not Player:BuffUp(S.PremeditationBuff) or MeleeEnemies10yCount > 4) and (Player:BuffRemains(S.ShadowDanceBuff) > 1 or not Player:BuffUp(S.ShadowDanceBuff)) then
         if HR.Cast(S.ShurikenTornado, Settings.Subtlety.GCDasOffGCD.ShurikenTornado) then return "Cast Shuriken Tornado (SoD)" end
       end
       if not S.Flagellation:IsAvailable() and MeleeEnemies10yCount >= 3 and S.ShadowDance:Charges() >= 1 and not Player:StealthUp(true, true) then
