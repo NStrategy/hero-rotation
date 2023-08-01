@@ -555,8 +555,8 @@ local function Build ()
       end
     end
   end
-  -- actions.build+=/echoing_reprimand
-  if CDsON() and S.EchoingReprimand:IsReady() then
+  -- actions.build+=/echoing_reprimand,if=!buff.dreadblades.up
+  if CDsON() and S.EchoingReprimand:IsReady() and not Player:DebuffUp(S.Dreadblades) then
     if HR.Cast(S.EchoingReprimand, nil, Settings.Commons.CovenantDisplayStyle) then return "Cast Echoing Reprimand" end
   end
   -- actions.build+=/pool_resource,for_next=1
