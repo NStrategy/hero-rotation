@@ -364,12 +364,13 @@ end
   if S.RolltheBones:IsReady() and not Player:DebuffUp(S.Dreadblades) and (RtB_Buffs() == 0 or RtB_Reroll()) then
     if HR.Cast(S.RolltheBones) then return "Cast Roll the Bones" end
   end
-  -- actions.cds+=/keep_it_rolling,if=!variable.rtb_reroll&(buff.broadside.up+buff.true_bearing.up+buff.skull_and_crossbones.up+buff.ruthless_precision.up)>2&(buff.shadow_dance.down|rtb_buffs>=6)
+  -- actions.cds+=/keep_it_rolling,if=!variable.rtb_reroll&(buff.broadside.up+buff.true_bearing.up+buff.skull_and_crossbones.up+buff.ruthless_precision.up+buff.grand_melee.up)>2&(buff.shadow_dance.down|rtb_buffs>=6)
   if S.KeepItRolling:IsCastable() and not RtB_Reroll()
-    and (num(Player:BuffUp(S.Broadside)) + num(Player:BuffUp(S.TrueBearing)) + num(Player:BuffUp(S.SkullandCrossbones)) + num(Player:BuffUp(S.RuthlessPrecision))) > 2
+    and (num(Player:BuffUp(S.Broadside)) + num(Player:BuffUp(S.TrueBearing)) + num(Player:BuffUp(S.SkullandCrossbones)) + num(Player:BuffUp(S.RuthlessPrecision)) + num(Player:BuffUp(S.GrandMelee))) > 2
     and (Player:BuffDown(S.ShadowDanceBuff) or RtB_Buffs() >= 6) then
     if HR.Cast(S.KeepItRolling, Settings.Outlaw.GCDasOffGCD.KeepItRolling) then return "Cast Keep it Rolling" end
   end
+
   -- actions.cds+=/blade_rush,if=variable.blade_flurry_sync&!buff.dreadblades.up&(energy.base_time_to_max>4+stealthed.rogue-spell_targets%3)
   if S.BladeRush:IsCastable() and Target:IsSpellInRange(S.BladeRush) and Blade_Flurry_Sync() and not Player:DebuffUp(S.Dreadblades)
     and EnergyTimeToMax > (4 + num(Player:StealthUp(true, false)) - (EnemiesBFCount / 3)) and HL.FilteredFightRemains(EnemiesBF, ">", 4) then
