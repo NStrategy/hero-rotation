@@ -340,25 +340,25 @@ local function StealthCDs ()
     end
   end
 end
--- moved BF above AR according to priority - feel free to move back.
+-- dunno where it should be, cba
 local function CDs ()
-	-- actions.cds+=/blade_flurry,if=buff.grand_melee.remains>10&buff.blade_flurry.remains<gcd&!stealthed.all&buff.dreadblades.down
-  -- actions.cds+=/blade_flurry,if=spell_targets>=2&buff.blade_flurry.remains<gcd
-if S.BladeFlurry:IsReady() and Player:BuffRemains(S.GrandMelee) > 10 and Player:BuffRemains(S.BladeFlurry) < (Player:GCD() + 0.1) and not Player:StealthUp(true, true, true) and not Player:BuffUp(S.Dreadblades) then
+  -- blade_flurry,if=(spell_targets>=2|((buff.grand_melee.up&talent.hidden_opportunity)|(buff.grand_melee.remains>10))&!stealthed.rogue&!buff.dreadblades.up)&buff.blade_flurry.remains<gcd
+  if S.BladeFlurry:IsReady() and Player:BuffRemains(S.BladeFlurry) < (Player:GCD() + 0.1)
+   and (
+       (AoEON() and EnemiesBFCount >= 2)
+       or (
+           ((Player:BuffUp(S.GrandMelee) and S.HiddenOpportunity:IsAvailable()) or Player:BuffRemains(S.GrandMelee) > 10)
+           and not Player:StealthUp(true, true, true)
+           and not Player:BuffUp(S.Dreadblades)
+       )
+   ) then
     if Settings.Outlaw.GCDasOffGCD.BladeFlurry then
         HR.CastSuggested(S.BladeFlurry)
     else
         if HR.Cast(S.BladeFlurry) then return "Cast Blade Flurry" end
     end
-end
+  end
 
-if S.BladeFlurry:IsReady() and AoEON() and EnemiesBFCount >= 2 and Player:BuffRemains(S.BladeFlurry) < (Player:GCD() + 0.1) then
-    if Settings.Outlaw.GCDasOffGCD.BladeFlurry then
-        HR.CastSuggested(S.BladeFlurry)
-    else
-        if HR.Cast(S.BladeFlurry) then return "Cast Blade Flurry" end
-    end
-end
 
 	-- actions.cds=adrenaline_rush,if=!buff.adrenaline_rush.up&(!talent.improved_adrenaline_rush|combo_points<=2)
   if CDsON() and S.AdrenalineRush:IsCastable() and not Player:BuffUp(S.AdrenalineRush)
@@ -371,9 +371,11 @@ end
   end
   -- actions.cds+=/keep_it_rolling,if=!variable.rtb_reroll&(buff.broadside.up+buff.true_bearing.up+buff.skull_and_crossbones.up+buff.ruthless_precision.up+buff.grand_melee.up)>2&(buff.shadow_dance.down|rtb_buffs>=6)
   if S.KeepItRolling:IsCastable() and not RtB_Reroll()
-    and (num(Player:BuffUp(S.Broadside)) + num(Player:BuffUp(S.TrueBearing)) + num(Player:BuffUp(S.SkullandCrossbones)) + num(Player:BuffUp(S.RuthlessPrecision)) + num(Player:BuffUp(S.GrandMelee))) > 2
-    and (Player:BuffDown(S.ShadowDanceBuff) or RtB_Buffs() >= 6) then
-    if HR.Cast(S.KeepItRolling, Settings.Outlaw.GCDasOffGCD.KeepItRolling) then return "Cast Keep it Rolling" end
+  and (num(Player:BuffUp(S.Broadside)) + num(Player:BuffUp(S.TrueBearing)) + num(Player:BuffUp(S.SkullandCrossbones)) + num(Player:BuffUp(S.RuthlessPrecision)) + num(Player:BuffUp(S.GrandMelee))) > 2
+  and (Player:BuffDown(S.ShadowDanceBuff) or RtB_Buffs() >= 6)
+  and not (S.ShadowDance:IsReady() and (num(Player:BuffUp(S.Broadside)) + num(Player:BuffUp(S.TrueBearing)) + num(Player:BuffUp(S.SkullandCrossbones)) + num(Player:BuffUp(S.RuthlessPrecision)) + num(Player:BuffUp(S.GrandMelee))) < 4)
+  and not (S.ShadowDance:CooldownRemains() <= 10 and (num(Player:BuffUp(S.Broadside)) + num(Player:BuffUp(S.TrueBearing)) + num(Player:BuffUp(S.SkullandCrossbones)) + num(Player:BuffUp(S.RuthlessPrecision)) + num(Player:BuffUp(S.GrandMelee))) < 4) then
+  if HR.Cast(S.KeepItRolling, Settings.Outlaw.GCDasOffGCD.KeepItRolling) then return "Cast Keep it Rolling" end
   end
 
   -- actions.cds+=/blade_rush,if=variable.blade_flurry_sync&!buff.dreadblades.up&(energy.base_time_to_max>4+stealthed.rogue-spell_targets%3)
@@ -440,7 +442,7 @@ end
       -- actions.cds+=/use_item,name=beacon_to_the_beyond,use_off_gcd=1,if=gcd.remains>gcd.max-0.1&!stealthed.all&debuff.between_the_eyes.up&(!talent.ghostly_strike|debuff.ghostly_strike.up|spell_targets.blade_flurry>2)|fight_remains<=5
      if I.BeaconToTheBeyond:IsEquippedAndReady() and not Player:StealthUp(true, true) and 
      ((Target:DebuffRemains(S.BetweentheEyes) > 0 and (not S.GhostlyStrike:IsAvailable() or Target:DebuffUp(S.GhostlyStrike) or EnemiesBFCount > 2)) or HL.BossFilteredFightRemains("<", 5)) and 
-     Player:GCDRemains() > Player:GCD() - 0.1 then
+     Player:GCDRemains() > Player:GCD() - 0.5 then
     if HR.Cast(I.BeaconToTheBeyond, nil, Settings.Commons.TrinketDisplayStyle) then return "Beacon To The Beyond"; end
      end
 
