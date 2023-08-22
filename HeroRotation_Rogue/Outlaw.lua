@@ -199,10 +199,15 @@ local function RtB_Reroll ()
 
     -- actions+=/variable,name=rtb_reroll,if=talent.hidden_opportunity,value=!rtb_buffs.will_lose.skull_and_crossbones&(rtb_buffs.will_lose)<2&buff.shadow_dance.down&buff.subterfuge.down
     if S.HiddenOpportunity:IsAvailable() then
-  Cache.APLVar.RtB_Reroll = not Cache.APLVar.RtB_Buffs.WillLose.SkullandCrossbones
-  and Cache.APLVar.RtB_Buffs.WillLose.Total < 2 
-  and Player:BuffDown(S.ShadowDanceBuff) 
-  and Player:BuffDown(S.SubterfugeBuff)
+    RtB_Buffs() -- Update cache
+    if (Player:BuffDown(S.SkullandCrossbones) or Player:BuffRemains(S.SkullandCrossbones) > Rogue.RtBRemains())
+    and Player:BuffDown(S.SubterfugeBuff) and Player:BuffDown(S.ShadowDanceBuff)
+    and ((Cache.APLVar.RtB_Buffs.Normal + Cache.APLVar.RtB_Buffs.Shorter) -
+      num(Player:BuffUp(S.GrandMelee) and Player:BuffRemains(S.GrandMelee) <= Rogue.RtBRemains())) < 2 then
+    Cache.APLVar.RtB_Reroll = true
+      else
+    Cache.APLVar.RtB_Reroll = false
+    end
   else
   -- actions+=/variable,name=rtb_reroll,if=!talent.hidden_opportunity,value=rtb_buffs<2&(!buff.broadside.up&(!talent.fan_the_hammer|!buff.skull_and_crossbones.up)&!buff.true_bearing.up|buff.loaded_dice.up)|rtb_buffs=2&(buff.buried_treasure.up&buff.grand_melee.up|!buff.broadside.up&!buff.true_bearing.up&buff.loaded_dice.up)
   Cache.APLVar.RtB_Reroll = (Cache.APLVar.RtB_Buffs.Total < 2 
