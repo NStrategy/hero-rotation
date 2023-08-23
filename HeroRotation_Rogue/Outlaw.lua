@@ -240,7 +240,7 @@ end
         if not (Player:BuffUp(S.Broadside) and Player:BuffUp(S.TrueBearing) and Player:BuffUp(S.SkullandCrossbones))
             and not (Player:BuffRemains(S.Broadside) > 39 or Player:BuffRemains(S.GrandMelee) > 39 or Player:BuffRemains(S.TrueBearing) > 39
               or Player:BuffRemains(S.RuthlessPrecision) > 39 or Player:BuffRemains(S.SkullandCrossbones) > 39)
-              and RtB_Buffs() <= 5 then
+              and RtB_Buffs() <= 4 and Player:BuffUp(S.LoadedDiceBuff) then
             Cache.APLVar.RtB_Reroll = true
            end
           end
