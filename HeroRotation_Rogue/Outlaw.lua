@@ -197,18 +197,34 @@ end
       -- actions+=/variable,name=rtb_reroll,if=!talent.hidden_opportunity,value=rtb_buffs<2&(!buff.broadside.up&(!talent.fan_the_hammer|!buff.skull_and_crossbones.up)&!buff.true_bearing.up|buff.loaded_dice.up)|rtb_buffs=2&(buff.buried_treasure.up&buff.grand_melee.up|!buff.broadside.up&!buff.true_bearing.up&buff.loaded_dice.up)
       -- actions+=/variable,name=rtb_reroll,if=!talent.hidden_opportunity&(talent.keep_it_rolling|talent.count_the_odds),value=variable.rtb_reroll|((rtb_buffs.normal=0&rtb_buffs.longer>=1)&!(buff.broadside.up&buff.true_bearing.up&buff.skull_and_crossbones.up)&!(buff.broadside.remains>39|buff.true_bearing.remains>39|buff.ruthless_precision.remains>39|buff.skull_and_crossbones.remains>39))
       -- actions+=/variable,name=rtb_reroll,if=talent.hidden_opportunity,value=!rtb_buffs.will_lose.skull_and_crossbones&(rtb_buffs.will_lose-rtb_buffs.will_lose.grand_melee)<2&buff.shadow_dance.down&buff.subterfuge.down
-    if S.HiddenOpportunity:IsAvailable() then
-     -- Check if only one buff is present and it's not Skull and Crossbones
-    if RtB_Buffs() == 1 and not Player:BuffUp(S.SkullandCrossbones) then
-    Cache.APLVar.RtB_Reroll = true
-    else
-    Cache.APLVar.RtB_Reroll = false
-    end
-     
+         if S.HiddenOpportunity:IsAvailable() then
+         RtB_Buffs() -- Update cache
+         if (Player:BuffDown(S.SkullandCrossbones) or Player:BuffRemains(S.SkullandCrossbones) > Rogue.RtBRemains())
+         and Player:BuffDown(S.SubterfugeBuff) and Player:BuffDown(S.ShadowDanceBuff) and Player:BuffDown(S.Dreadblades)
+         and ((Cache.APLVar.RtB_Buffs.Normal + Cache.APLVar.RtB_Buffs.Shorter) -
+         num(Player:BuffUp(S.GrandMelee) and Player:BuffRemains(S.GrandMelee) <= Rogue.RtBRemains())) < 2 then
+          Cache.APLVar.RtB_Reroll = true
+         else
+          Cache.APLVar.RtB_Reroll = false
+         end
+         else
+         -- Additional condition for 2 buffs and Loaded Dice
+         if RtB_Buffs() == 2 then
+         if Player:BuffUp(S.LoadedDiceBuff) and not Player:BuffUp(S.Broadside) and not Player:BuffUp(S.TrueBearing) then
+         Cache.APLVar.RtB_Reroll = true
+         end
+         -- Additional condition for less than 2 buffs with the exeption of SnB
+         elseif RtB_Buffs() < 2 and not Player:BuffUp(S.SkullandCrossbones) then
+         Cache.APLVar.RtB_Reroll = true
+         else
+         Cache.APLVar.RtB_Reroll = false
+         end
+
 
 
         if Cache.APLVar.RtB_Reroll == false and (S.KeepItRolling:IsAvailable() or S.CountTheOdds:IsAvailable()) then
         if Cache.APLVar.RtB_Buffs.Normal == 0 and Cache.APLVar.RtB_Buffs.Longer > 0 then
+        if Player:BuffDown(S.ShadowDanceBuff) and Player:BuffDown(S.Dreadblades) then -- Check for Dance or Dreadblades
         if Player:BuffUp(S.LoadedDiceBuff) then
         -- Condition 2: If Loaded Dice is active, roll away any single buff, or 2 buff combination that does not contain Broadside or True Bearing or Skull and Crossbones
         if (RtB_Buffs() == 1) or (RtB_Buffs() == 2 and not (Player:BuffUp(S.Broadside) or Player:BuffUp(S.TrueBearing) or Player:BuffUp(S.SkullandCrossbones))) then
@@ -220,15 +236,18 @@ end
         Cache.APLVar.RtB_Reroll = true
         end
         end
-        -- Condition 3: KiR builds should press RTB once after using KiR if the KIR buffs have under 39s remaining and any of BS, TB or SnC is missing
-        if (Player:BuffRemains(S.Broadside) < 39 or Player:BuffRemains(S.TrueBearing) < 39 or Player:BuffRemains(S.SkullandCrossbones) < 39) and not (Player:BuffUp(S.Broadside) and Player:BuffUp(S.TrueBearing) and Player:BuffUp(S.SkullandCrossbones)) then
-        Cache.APLVar.RtB_Reroll = true
+        -- Condition 3: KiR builds should press RTB once after using KiR if the KIR buffs have under 39s remaining and any of BS, TB or SnC is missing - sicne a check for KiR and RTB cant be made, I check the buffs.
+        if not (Player:BuffUp(S.Broadside) and Player:BuffUp(S.TrueBearing) and Player:BuffUp(S.SkullandCrossbones))
+            and not (Player:BuffRemains(S.Broadside) > 39 or Player:BuffRemains(S.GrandMelee) > 39 or Player:BuffRemains(S.TrueBearing) > 39
+              or Player:BuffRemains(S.RuthlessPrecision) > 39 or Player:BuffRemains(S.SkullandCrossbones) > 39)
+              and RtB_Buffs() <= 5 then
+            Cache.APLVar.RtB_Reroll = true
+           end
+          end
+         end
+        end
        end
       end
-     end
-    end
-   end
- 
 
     -- Defensive Override : Grand Melee if HP < 60
     if Everyone.IsSoloMode() then
@@ -366,23 +385,8 @@ local function CDs ()
   end
 
   -- actions.cds+=/roll_the_bones,if=buff.dreadblades.down&(rtb_buffs.total=0|variable.rtb_reroll)
-  if S.RolltheBones:IsReady() and (RtB_Buffs() == 0 or RtB_Reroll()) then
-  if S.HiddenOpportunity:IsAvailable() then
-    -- HO build logic, e.g., check for Subterfuge
-    if not Player:DebuffUp(S.Dreadblades) and not Player:BuffUp(S.SubterfugeBuff) then
-      if HR.Cast(S.RolltheBones) then return "Cast Roll the Bones HO" end
-    end
-  elseif S.KeepItRolling:IsAvailable() then
-    -- KIR build logic
-    if not Player:DebuffUp(S.Dreadblades) and not Player:BuffUp(S.ShadowDanceBuff) then
-      if HR.Cast(S.RolltheBones) then return "Cast Roll the Bones KIR" end
-    end
-  else
-    -- General logic
-    if not Player:DebuffUp(S.Dreadblades) and not Player:BuffUp(S.ShadowDanceBuff) then
-      if HR.Cast(S.RolltheBones) then return "Cast Roll the Bones GEN" end
-    end
-   end
+  if S.RolltheBones:IsReady() and not Player:DebuffUp(S.Dreadblades) and not Player:BuffUp(S.ShadowDanceBuff) and (RtB_Buffs() == 0 or RtB_Reroll()) then
+    if HR.Cast(S.RolltheBones) then return "Cast Roll the Bones" end
   end
 
 
