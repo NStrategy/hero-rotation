@@ -257,7 +257,6 @@ local function Finish (ReturnSpellOnly, StealthSpell)
           return S.SliceandDice
         else
           if S.SliceandDice:IsReady() and HR.Cast(S.SliceandDice) then return "Cast Slice and Dice (Premed)" end
-          SetPoolingFinisher(S.SliceandDice)
         end
       end
     else
@@ -268,7 +267,6 @@ local function Finish (ReturnSpellOnly, StealthSpell)
           return S.SliceandDice
         else
           if S.SliceandDice:IsReady() and HR.Cast(S.SliceandDice) then return "Cast Slice and Dice" end
-          SetPoolingFinisher(S.SliceandDice)
         end
       end
     end
@@ -961,13 +959,12 @@ local function APL ()
     ShouldReturn = CDs()
     if ShouldReturn then return "CDs: " .. ShouldReturn end
 
-    -- # Apply Slice and Dice at 4+ CP if it expires within the next 2 seconds or is not up
-    -- actions+=/slice_and_dice,if=spell_targets.shuriken_storm<cp_max_spend&buff.slice_and_dice.remains<2&fight_remains>6&combo_points>=4&!buff.premeditation.up&spell_targets.shuriken_storm<=5&cooldown.shadow_dance.remains>2
+    -- # Apply Slice and Dice at 4+ CP if it expires within the next 3 seconds or is not up
+    -- actions+=/slice_and_dice,if=spell_targets.shuriken_storm<cp_max_spend&buff.slice_and_dice.remains<3&fight_remains>6&combo_points>=4&!buff.premeditation.up&spell_targets.shuriken_storm<=5
     if S.SliceandDice:IsCastable() and MeleeEnemies10yCount < Rogue.CPMaxSpend() and HL.FilteredFightRemains(MeleeEnemies10y, ">", 6)
-      and Player:BuffRemains(S.SliceandDice) < 2 and ComboPoints >= 4 then
-      if not Player:BuffUp(S.PremeditationBuff) and MeleeEnemies10yCount <= 5 and S.ShadowDance:CooldownRemains() > 2 then
+      and Player:BuffRemains(S.SliceandDice) < 3 and ComboPoints >= 4 then
+      if not Player:BuffUp(S.PremeditationBuff) and MeleeEnemies10yCount <= 5 then
       if S.SliceandDice:IsReady() and HR.Cast(S.SliceandDice) then return "Cast Slice and Dice (Low Duration)" end
-      SetPoolingFinisher(S.SliceandDice)
       end
     end
 
@@ -981,7 +978,7 @@ local function APL ()
         else
           -- Special case for Shuriken Tornado
           if Player:BuffUp(S.ShurikenTornado) and ComboPoints ~= Player:ComboPoints()
-            and (PoolingAbility == S.SecretTechnique or PoolingAbility == S.BlackPowder or PoolingAbility == S.Eviscerate or PoolingAbility == S.Rupture or PoolingAbility == S.SliceandDice) then
+            and (PoolingAbility == S.SecretTechnique or PoolingAbility == S.BlackPowder or PoolingAbility == S.Eviscerate or PoolingAbility == S.Rupture) then
             if HR.CastQueuePooling(nil, S.ShurikenTornado, PoolingAbility) then return "Stealthed Tornado Cast  " .. PoolingAbility:Name() end
           else  --- here is the other test
             if HR.CastPooling(PoolingAbility) then return "Stealthed Cast " .. PoolingAbility:Name() end
