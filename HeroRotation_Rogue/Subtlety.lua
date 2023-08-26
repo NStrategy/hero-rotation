@@ -141,9 +141,6 @@ local function UsePriorityRotation()
     -- Anduin (Remnant of a Fallen King/Monstrous Soul)
     elseif Target:NPCID() == 183463 or Target:NPCID() == 183671 then
       return true
-    -- Neltharion Add
-    elseif Target:NPCID() == 203812 then
-      return true
     end
   end
 
