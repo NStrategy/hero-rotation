@@ -141,6 +141,9 @@ local function UsePriorityRotation()
     -- Anduin (Remnant of a Fallen King/Monstrous Soul)
     elseif Target:NPCID() == 183463 or Target:NPCID() == 183671 then
       return true
+    -- Neltharion Add
+    elseif Target:NPCID() == 203812 then
+      return true
     end
   end
 
@@ -272,7 +275,7 @@ local function Finish (ReturnSpellOnly, StealthSpell)
   end
 
   local SkipRupture = Skip_Rupture(ShadowDanceBuff)
-  -- actions.finish+=/rupture,if=(!variable.skip_rupture|variable.priority_rotation)&target.time_to_die-remains>6&refreshable
+  -- actions.finish+=/rupture,if=(!variable.skip_rupture|variable.priority_rotation)&target.time_to_die-remains>6&refreshable (if not Player:BuffUp(S.ShadowDanceBuff) instead of Skip_Rupture as it does not work correctly.)
   if (not Player:BuffUp(S.ShadowDanceBuff) and not SkipRupture or PriorityRotation) and S.Rupture:IsCastable() then
     if TargetInMeleeRange
       and (Target:FilteredTimeToDie(">", 6, -Target:DebuffRemains(S.Rupture)) or Target:TimeToDieIsNotValid())
@@ -286,7 +289,7 @@ local function Finish (ReturnSpellOnly, StealthSpell)
       end
     end
   end
-  -- actions.finish+=/rupture,if=!variable.skip_rupture&buff.finality_rupture.up&cooldown.shadow_dance.remains<12&cooldown.shadow_dance.charges_fractional<=1&spell_targets.shuriken_storm=1&(talent.dark_brew|talent.danse_macabre)
+  -- actions.finish+=/rupture,if=!variable.skip_rupture&buff.finality_rupture.up&cooldown.shadow_dance.remains<12&cooldown.shadow_dance.charges_fractional<=1&spell_targets.shuriken_storm=1&(talent.dark_brew|talent.danse_macabre) (if not Player:BuffUp(S.ShadowDanceBuff) instead of Skip_Rupture as it does not work correctly.)
   if not Player:BuffUp(S.ShadowDanceBuff) and not SkipRupture and S.Rupture:IsCastable() then
     if MeleeEnemies10yCount == 1 and Player:BuffUp(S.FinalityRuptureBuff) and (S.DarkBrew:IsAvailable() or S.DanseMacabre:IsAvailable())
       and S.ShadowDance:CooldownRemains() < 12 and S.ShadowDance:ChargesFractional() <= 1 then
@@ -308,7 +311,7 @@ local function Finish (ReturnSpellOnly, StealthSpell)
       if HR.Cast(S.ColdBlood) then return "Cast Cold Blood (SecTec)" end
     end
   end
-  -- actions.finish+=/secret_technique,if=variable.secret_condition&(!talent.cold_blood|cooldown.cold_blood.remains>buff.shadow_dance.remains-2)
+  -- actions.finish+=/secret_technique,if=variable.secret_condition&(!talent.cold_blood|cooldown.cold_blood.remains>buff.shadow_dance.remains-3.1)
   -- Attention: Due to the SecTec/ColdBlood interaction, this adaption has additional checks not found in the APL string
   if S.SecretTechnique:IsReady() and (Secret_Condition(ShadowDanceBuff, PremeditationBuff) 
     and ((not S.ColdBlood:IsAvailable() or (Settings.Commons.OffGCDasOffGCD.ColdBlood and S.ColdBlood:IsReady())
@@ -319,7 +322,7 @@ local function Finish (ReturnSpellOnly, StealthSpell)
   end
 
   if not Player:BuffUp(S.ShadowDanceBuff) and not SkipRupture and S.Rupture:IsCastable() then
-    -- actions.finish+=/rupture,cycle_targets=1,if=!variable.skip_rupture&!variable.priority_rotation&spell_targets.shuriken_storm>=2&target.time_to_die>=(2*combo_points)&refreshable
+    -- actions.finish+=/rupture,cycle_targets=1,if=!variable.skip_rupture&!variable.priority_rotation&spell_targets.shuriken_storm>=2&target.time_to_die>=(2*combo_points)&refreshable (if not Player:BuffUp(S.ShadowDanceBuff) instead of Skip_Rupture as it does not work correctly.)
     if not ReturnSpellOnly and HR.AoEON() and not PriorityRotation and MeleeEnemies10yCount >= 2 then
       local function Evaluate_Rupture_Target(TargetUnit)
         return Everyone.CanDoTUnit(TargetUnit, RuptureDMGThreshold)
@@ -327,7 +330,7 @@ local function Finish (ReturnSpellOnly, StealthSpell)
       end
       SuggestCycleDoT(S.Rupture, Evaluate_Rupture_Target, (2 * FinishComboPoints), MeleeEnemies5y)
     end
-    -- actions.finish+=/rupture,if=!variable.skip_rupture&remains<cooldown.symbols_of_death.remains+10&cooldown.symbols_of_death.remains<=5&target.time_to_die-remains>cooldown.symbols_of_death.remains+5
+    -- actions.finish+=/rupture,if=!variable.skip_rupture&remains<cooldown.symbols_of_death.remains+10&cooldown.symbols_of_death.remains<=5&target.time_to_die-remains>cooldown.symbols_of_death.remains+5 (if not Player:BuffUp(S.ShadowDanceBuff) instead of Skip_Rupture as it does not work correctly.)
     if TargetInMeleeRange and Target:DebuffRemains(S.Rupture) < S.SymbolsofDeath:CooldownRemains() + 10
       and S.SymbolsofDeath:CooldownRemains() <= 5
       and Rogue.CanDoTUnit(Target, RuptureDMGThreshold)
@@ -583,7 +586,7 @@ local function CDs ()
 
   local SnDCondition = SnD_Condition()
 
-  -- actions.cds+=/vanish,if=buff.danse_macabre.stack>3&combo_points<=2&(cooldown.secret_technique.remains>=30|!talent.secret_technique)
+  -- actions.cds+=/vanish,if=buff.danse_macabre.stack>3&combo_points<=2&buff.shadow_dance.remains>1&(cooldown.secret_technique.remains>=30|!talent.secret_technique)
   if S.Vanish:IsCastable() and ComboPoints <= 2 and Player:BuffStack(S.DanseMacabreBuff) > 3 and Player:BuffRemains(S.ShadowDanceBuff) > 1
    and (S.SecretTechnique:CooldownRemains() >= 30 or not S.SecretTechnique:IsAvailable()) then
     ShouldReturn = StealthMacro(S.Vanish)
@@ -621,7 +624,7 @@ local function CDs ()
     if HR.CDsON() and S.Sepsis:IsReady() and SnDCondition and ComboPointsDeficit >= 1 and not Target:FilteredTimeToDie("<", 16) then
       if HR.Cast(S.Sepsis, nil, Settings.Commons.CovenantDisplayStyle) then return "Cast Sepsis" end
     end
-    -- actions.cds+=/symbols_of_death,if=(buff.symbols_of_death.remains<=3&!cooldown.shadow_dance.ready|!set_bonus.tier30_2pc)&variable.rotten_condition&variable.snd_condition&(!talent.flagellation&(combo_points<=1|!talent.the_rotten)|cooldown.flagellation.remains>10|cooldown.flagellation.up&combo_points>=5) 
+    -- actions.cds+=/symbols_of_death,if=(buff.symbols_of_death.remains<=3&cooldown.shadow_dance.remains>10|!set_bonus.tier30_2pc)&variable.rotten_condition&variable.snd_condition&(!talent.flagellation&(combo_points<=1|!talent.the_rotten)|cooldown.flagellation.remains>10|cooldown.flagellation.up&combo_points>=5)
     if S.SymbolsofDeath:IsCastable() then
       if ((Player:BuffRemains(S.SymbolsofDeath) <= 3 and S.ShadowDance:CooldownRemains() > 10) or not Player:HasTier(30, 2)) and Rotten_Condition() and SnDCondition
         and ((not S.Flagellation:IsAvailable() and (ComboPoints <= 1 or not S.TheRotten:IsAvailable()))
@@ -958,11 +961,10 @@ local function APL ()
     ShouldReturn = CDs()
     if ShouldReturn then return "CDs: " .. ShouldReturn end
 
-    -- # Apply Slice and Dice at 4+ CP if it expires within the next GCD or is not up
-    -- actions+=/slice_and_dice,if=spell_targets.shuriken_storm<cp_max_spend&buff.slice_and_dice.remains<gcd.max&fight_remains>6&combo_points>=4
+    -- # Apply Slice and Dice at 4+ CP if it expires within the next 2 seconds or is not up
+    -- actions+=/slice_and_dice,if=spell_targets.shuriken_storm<cp_max_spend&buff.slice_and_dice.remains<2&fight_remains>6&combo_points>=4&!buff.premeditation.up&spell_targets.shuriken_storm<=5&cooldown.shadow_dance.remains>2
     if S.SliceandDice:IsCastable() and MeleeEnemies10yCount < Rogue.CPMaxSpend() and HL.FilteredFightRemains(MeleeEnemies10y, ">", 6)
       and Player:BuffRemains(S.SliceandDice) < 2 and ComboPoints >= 4 then
-      -- check if the PremeditationBuff is not available and there are less than 5 targets in range and Shadow Dance will be ready in less than 2 seconds
       if not Player:BuffUp(S.PremeditationBuff) and MeleeEnemies10yCount <= 5 and S.ShadowDance:CooldownRemains() > 2 then
       if S.SliceandDice:IsReady() and HR.Cast(S.SliceandDice) then return "Cast Slice and Dice (Low Duration)" end
       SetPoolingFinisher(S.SliceandDice)
