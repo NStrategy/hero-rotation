@@ -580,9 +580,9 @@ local function Dot ()
   local SkipCycleGarrote, SkipCycleRupture, SkipRupture = false, false, false
   if PriorityRotation then
     -- actions.dot=variable,name=skip_cycle_garrote,value=priority_rotation&(dot.garrote.remains<cooldown.garrote.duration|variable.regen_saturated)
-    SkipCycleGarrote = MeleeEnemies10yCount > 3 and (Target:DebuffRemains(S.Garrote) < 6 or EnergyRegenSaturated)
+    SkipCycleGarrote = MeleeEnemies10yCount > 3 and (Target:DebuffRemains(S.Garrote) < 6 or EnergyRegenSaturated) or Target:NPCID() == 202969 or Target:NPCID() == 203230 or Target:NPCID() == 202824
     -- actions.dot+=/variable,name=skip_cycle_rupture,value=priority_rotation&(debuff.shiv.up&spell_targets.fan_of_knives>2|variable.regen_saturated)
-    SkipCycleRupture = (Target:DebuffUp(S.ShivDebuff) and MeleeEnemies10yCount > 2) or EnergyRegenSaturated
+    SkipCycleRupture = (Target:DebuffUp(S.ShivDebuff) and MeleeEnemies10yCount > 2) or EnergyRegenSaturated or Target:NPCID() == 202969 or Target:NPCID() == 203230 or Target:NPCID() == 202824
   end
   -- actions.dot+=/variable,name=skip_rupture,value=0
   -- SkipRupture = false
@@ -607,8 +607,9 @@ local function Dot ()
     local SepsisBuffRemain = Player:BuffRemains(S.SepsisBuff)
     local SepsisCooldownRemains = S.Sepsis:CooldownRemains()
 
-    -- Check if Sepsis buff is about to expire
-    if SepsisBuffRemain > 0 and SepsisBuffRemain <= 2.5 then
+    -- Check if Sepsis buff is about to expire or Garrote has 5.4 seconds or less remaining
+    if (SepsisBuffRemain > 0 and SepsisBuffRemain <= 2.5) or
+       (SepsisBuffRemain > 0 and SepsisBuffRemain <= 5 and Target:DebuffRemains(S.Garrote) <= 5.4) then
       return true
     end
 
