@@ -1,27 +1,3 @@
-ptr=1
-iterations=100000
-
-rogue="Subtlety"
-source=default
-spec=subtlety
-level=70
-race=tauren
-role=attack
-position=back
-#dust
-talents=BUQAAAAAAAAAAAAAAAAAAAAAAAAEEAAAAAASLJJlEQKSSiIRcAJJRi0ikkolkgEISKpEAAAASQA
-#no dust
-#talents=BUQAAAAAAAAAAAAAAAAAAAAAAAAEEAAAAAASLJJlEQKIJiEJRSSkItIJJaJJIBikSKBAAAgEkA
-#adadada
-#talents=BUQAAAAAAAAAAAAAAAAAAAAAAAAEEAAAAAASLJJlEQKIJiEJRSSkItIJJaJJIBikSKBAAAgEkA
-
-# Default consumables
-potion=elemental_potion_of_ultimate_power_3
-flask=iced_phial_of_corrupting_rage_3
-food=fated_fortune_cookie
-augmentation=draconic
-temporary_enchant=main_hand:buzzing_rune_3/off_hand:buzzing_rune_3
-
 # Executed before combat begins. Accepts non-harmful actions only.
 actions.precombat=apply_poison
 actions.precombat+=/flask
@@ -123,20 +99,3 @@ actions.stealthed+=/call_action_list,name=finish,if=combo_points.deficit<=1+(tal
 actions.stealthed+=/shadowstrike,if=stealthed.sepsis&spell_targets.shuriken_storm<4
 actions.stealthed+=/shuriken_storm,if=spell_targets>=3+buff.the_rotten.up&(!buff.premeditation.up|spell_targets>=7&!variable.priority_rotation)
 actions.stealthed+=/shadowstrike
-
-head=peripheral_vision_projectors,id=198324,bonus_id=8780,ilevel=447,gem_id=192988,crafted_stats=40
-neck=tuskarr_bone_necklace,id=193666,bonus_id=8782,ilevel=447,gem_id=192932/192932/192932
-shoulder=lurking_specters_shoulderblades,id=202495,ilevel=450
-back=voice_of_the_silent_star,id=204465,ilevel=457
-chest=lurking_specters_brigandine,id=202500,ilevel=447,enchant_id=6625
-wrist=lifebound_bindings,id=193419,bonus_id=8797/8780/8960,ilevel=447,gem_id=192932,crafted_stats=32/49
-hands=lurking_specters_handgrips,id=202498,ilevel=450
-waist=oblivions_immortal_coil,id=204399,bonus_id=1808,ilevel=450,gem_id=192932
-legs=lurking_specters_tights,id=202496,ilevel=447,enchant_id=6830
-feet=slimy_expulsion_boots,id=193451,ilevel=447
-finger1=band_of_the_wyrm_matron,id=134524,bonus_id=6654/1808,ilevel=447,gem_id=192932,enchant_id=6568
-finger2=signet_of_titanic_insight,id=192999,bonus_id=8780,ilevel=447,gem_id=192932,enchant_id=6568,crafted_stats=32/49
-trinket1=dragonfire_bomb_dispenser,id=202610,ilevel=447
-trinket2=beacon_to_the_beyond,id=203963,ilevel=450
-main_hand=fang_of_the_sundered_flame,id=202564,ilevel=450,enchant_id=6643
-off_hand=nick_of_time,id=207996,ilevel=441,enchant_id=6643
