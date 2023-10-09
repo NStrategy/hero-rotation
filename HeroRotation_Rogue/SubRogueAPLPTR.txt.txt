@@ -42,7 +42,7 @@ actions.cds+=/shadow_dance,use_off_gcd=1,if=!buff.shadow_dance.up&buff.shuriken_
 actions.cds+=/symbols_of_death,use_off_gcd=1,if=buff.shuriken_tornado.up&buff.shuriken_tornado.remains<=3.5&!set_bonus.tier30_2pc
 actions.cds+=/cold_blood,if=!talent.secret_technique&combo_points>=5
 actions.cds+=/sepsis,if=variable.snd_condition&target.time_to_die>=16
-actions.cds+=/flagellation,target_if=max:target.time_to_die,if=variable.snd_condition&combo_points>=5&target.time_to_die>10&cooldown.shadow_blades.up
+actions.cds+=/flagellation,target_if=max:target.time_to_die,if=variable.snd_condition&combo_points>=5&target.time_to_die>10&cooldown.shadow_blades.remains<=3*(!talent.invigorating_shadowdust&!raid_event.adds.up|!talent.shadow_dance&talent.invigorating_shadowdust)
 actions.cds+=/pool_resource,for_next=1,if=talent.shuriken_tornado.enabled&!talent.shadow_focus.enabled
 actions.cds+=/symbols_of_death,if=(!buff.the_rotten.up|spell_targets.shuriken_storm>=3)&(buff.symbols_of_death.remains<=3&cooldown.shadow_dance.charges_fractional<1+talent.shadow_dance|!set_bonus.tier30_2pc)&variable.rotten_condition&variable.snd_condition&(!talent.flagellation|cooldown.flagellation.remains>10|cooldown.flagellation.up&combo_points>=5)
 actions.cds+=/shadow_blades,if=variable.snd_condition&combo_points<=1&(buff.flagellation_buff.up|!talent.flagellation)
