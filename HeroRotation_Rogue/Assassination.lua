@@ -410,7 +410,7 @@ local function CDs ()
   end
 
   if not Player:StealthUp(true, false) and HR.CDsON() then
--- actions.cds+=/	sepsis,if=!stealthed.rogue&!stealthed.improved_garrote&dot.rupture.ticking&(!talent.exsanguinate|variable.exsang_sync_remains>7|dot.rupture.remains>20)&(!talent.improved_garrote&dot.garrote.ticking|talent.improved_garrote&cooldown.garrote.up)&(target.time_to_die>10|fight_remains<10)
+  -- actions.cds+=/	sepsis,if=!stealthed.rogue&!stealthed.improved_garrote&dot.rupture.ticking&(!talent.exsanguinate|variable.exsang_sync_remains>7|dot.rupture.remains>20)&(!talent.improved_garrote&dot.garrote.ticking|talent.improved_garrote&cooldown.garrote.up)&(target.time_to_die>10|fight_remains<10)
     if S.Sepsis:IsCastable() and Target:DebuffUp(S.Rupture) and (not S.Exsanguinate:IsAvailable() or ExsangSyncRemains > 7 or Target:DebuffRemains(S.Rupture) > 20)
       and (not S.ImprovedGarrote:IsAvailable() and Target:DebuffUp(S.Garrote) or S.ImprovedGarrote:IsAvailable() and S.Garrote:CooldownUp())
       and (Target:FilteredTimeToDie(">", 10) or Target:FilteredTimeToDie("<", 10)) then
@@ -470,26 +470,26 @@ local function CDs ()
       end
     end
   end
--- 	shiv,if=talent.kingsbane&!debuff.shiv.up&dot.kingsbane.ticking&dot.garrote.ticking&dot.rupture.ticking&(!talent.crimson_tempest.enabled|variable.single_target|dot.crimson_tempest.ticking)
+  -- 	shiv,if=talent.kingsbane&!debuff.shiv.up&dot.kingsbane.ticking&dot.garrote.ticking&dot.rupture.ticking&(!talent.crimson_tempest.enabled|variable.single_target|dot.crimson_tempest.ticking)
   if S.Shiv:IsReady() and S.Kingsbane:IsAvailable() and not Target:DebuffUp(S.ShivDebuff) and Target:DebuffUp(S.Kingsbane) and Target:DebuffUp(S.Garrote) and Target:DebuffUp(S.Rupture)
     and (not S.CrimsonTempest:IsAvailable() or SingleTarget or Target:DebuffUp(S.CrimsonTempest)) then
     if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv (Kingsbane)" end
   end
 
- -- shiv,if=talent.arterial_precision&!debuff.shiv.up&dot.garrote.ticking&dot.rupture.ticking&(debuff.deathmark.up|cooldown.shiv.charges_fractional>max_charges-0.5&cooldown.deathmark.remains>10)
-if S.Shiv:IsReady() and S.ArterialPrecision:IsAvailable() and not Target:DebuffUp(S.ShivDebuff) and Target:DebuffUp(S.Garrote) and Target:DebuffUp(S.Rupture)
+  -- shiv,if=talent.arterial_precision&!debuff.shiv.up&dot.garrote.ticking&dot.rupture.ticking&(debuff.deathmark.up|cooldown.shiv.charges_fractional>max_charges-0.5&cooldown.deathmark.remains>10)
+  if S.Shiv:IsReady() and S.ArterialPrecision:IsAvailable() and not Target:DebuffUp(S.ShivDebuff) and Target:DebuffUp(S.Garrote) and Target:DebuffUp(S.Rupture)
     and (Target:DebuffUp(S.Deathmark) or S.Shiv:ChargesFractional() > S.Shiv:MaxCharges() - 0.5 and S.Deathmark:CooldownRemains() > 10) then
     if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv (Arterial Precision)" end
   end
 
--- shiv,if=talent.sepsis&!talent.kingsbane&!talent.arterial_precision&!debuff.shiv.up&dot.garrote.ticking&dot.rupture.ticking&((cooldown.shiv.charges_fractional>0.9+talent.lightweight_shiv.enabled&variable.sepsis_sync_remains>5)|dot.sepsis.ticking|dot.deathmark.ticking|fight_remains<20)
-if S.Shiv:IsReady() and not Target:DebuffUp(S.ShivDebuff) and Target:DebuffUp(S.Garrote) and Target:DebuffUp(S.Rupture)
+  -- shiv,if=talent.sepsis&!talent.kingsbane&!talent.arterial_precision&!debuff.shiv.up&dot.garrote.ticking&dot.rupture.ticking&((cooldown.shiv.charges_fractional>0.9+talent.lightweight_shiv.enabled&variable.sepsis_sync_remains>5)|dot.sepsis.ticking|dot.deathmark.ticking|fight_remains<20)
+  if S.Shiv:IsReady() and not Target:DebuffUp(S.ShivDebuff) and Target:DebuffUp(S.Garrote) and Target:DebuffUp(S.Rupture)
    and (S.Shiv:ChargesFractional() > 0.9 + num(S.LightweightShiv:IsAvailable()) and SepsisSyncRemains() > 5 or Target:DebuffUp(S.Deathmark) or (Target:DebuffUp(S.Sepsis) and (Target:DebuffRemains(S.Garrote) > 19 or HL.BossFightRemains() < 20))) then
     if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv (Sepsis)" end
- end
+  end
 
   -- actions.cds+=/shiv,if=!talent.kingsbane&!talent.arterial_precision&!talent.sepsis&!debuff.shiv.up&dot.garrote.ticking&dot.rupture.ticking&(!talent.crimson_tempest.enabled|variable.single_target|dot.crimson_tempest.ticking)&(!talent.exsanguinate|variable.exsang_sync_remains>2)
-if S.Shiv:IsReady() and not Target:DebuffUp(S.ShivDebuff) and Target:DebuffUp(S.Garrote) and Target:DebuffUp(S.Rupture)
+  if S.Shiv:IsReady() and not Target:DebuffUp(S.ShivDebuff) and Target:DebuffUp(S.Garrote) and Target:DebuffUp(S.Rupture)
     and (not S.CrimsonTempest:IsAvailable() or SingleTarget or Target:DebuffUp(S.CrimsonTempest))
     and (not S.Exsanguinate:IsAvailable() or ExsanguinateSyncRemains > 2)
     and (not S.Sepsis:IsAvailable() and not S.Kingsbane:IsAvailable() and not S.ArterialPrecision:IsAvailable()) then
@@ -580,9 +580,9 @@ local function Dot ()
   local SkipCycleGarrote, SkipCycleRupture, SkipRupture = false, false, false
   if PriorityRotation then
     -- actions.dot=variable,name=skip_cycle_garrote,value=priority_rotation&(dot.garrote.remains<cooldown.garrote.duration|variable.regen_saturated)
-    SkipCycleGarrote = MeleeEnemies10yCount > 3 and (Target:DebuffRemains(S.Garrote) < 6 or EnergyRegenSaturated) or Target:NPCID() == 202969 or Target:NPCID() == 203230 or Target:NPCID() == 202824
+    SkipCycleGarrote = MeleeEnemies10yCount > 3 and (Target:DebuffRemains(S.Garrote) < 6 or EnergyRegenSaturated)
     -- actions.dot+=/variable,name=skip_cycle_rupture,value=priority_rotation&(debuff.shiv.up&spell_targets.fan_of_knives>2|variable.regen_saturated)
-    SkipCycleRupture = (Target:DebuffUp(S.ShivDebuff) and MeleeEnemies10yCount > 2) or EnergyRegenSaturated or Target:NPCID() == 202969 or Target:NPCID() == 203230 or Target:NPCID() == 202824
+    SkipCycleRupture = (Target:DebuffUp(S.ShivDebuff) and MeleeEnemies10yCount > 2) or EnergyRegenSaturated
   end
   -- actions.dot+=/variable,name=skip_rupture,value=0
   -- SkipRupture = false
@@ -603,31 +603,27 @@ local function Dot ()
   -- actions.dot+=/garrote,cycle_targets=1,if=!variable.skip_cycle_garrote&target!=self.target&refreshable&combo_points.deficit>=1&(pmultiplier<=1|remains<=tick_time&spell_targets.fan_of_knives>=3)&(!will_lose_exsanguinate|remains<=tick_time*2&spell_targets.fan_of_knives>=3)&(target.time_to_die-remains)>12&master_assassin_remains=0
   if S.Garrote:IsCastable() and ComboPointsDeficit >= 1 then
       local function Evaluate_Garrote_Target(TargetUnit)
-    GarroteTickTime = Rogue.Exsanguinated(TargetUnit, S.Garrote) and ExsanguinatedBleedTickTime or BleedTickTime
-    local SepsisBuffRemain = Player:BuffRemains(S.SepsisBuff)
-    local SepsisCooldownRemains = S.Sepsis:CooldownRemains()
-
-    -- Check if Sepsis buff is about to expire or Garrote has 5.4 seconds or less remaining
-    if (SepsisBuffRemain > 0 and SepsisBuffRemain <= 2.5) or
+      GarroteTickTime = Rogue.Exsanguinated(TargetUnit, S.Garrote) and ExsanguinatedBleedTickTime or BleedTickTime
+      local SepsisBuffRemain = Player:BuffRemains(S.SepsisBuff)
+      local SepsisCooldownRemains = S.Sepsis:CooldownRemains()
+      -- Check if Sepsis buff is about to expire or Garrote has 5.4 seconds or less remaining
+      if (SepsisBuffRemain > 0 and SepsisBuffRemain <= 2.5) or
        (SepsisBuffRemain > 0 and SepsisBuffRemain <= 5 and Target:DebuffRemains(S.Garrote) <= 5.4) then
-      return true
-    end
-
-    -- Check if Spesis Buff is on player and sepsis debuff is on target unless Deathmark is on the target - if so, refresh garrote instantly
-    if SepsisBuffRemain > 0 and TargetUnit:DebuffRemains(S.Sepsis) > 0 and not Target:DebuffUp(S.Deathmark) then
-      return true
-    end
-    -- Check if Sepsis cooldown will be up within 5 seconds
-    if SepsisCooldownRemains > 0 and SepsisCooldownRemains <= 5 then
-      return false
-    end
-	
-    -- If not, continue with the usual checks
-    return IsDebuffRefreshable(TargetUnit, S.Garrote) and MasterAssassinRemains() <= 0
+       return true
+      end
+      -- Check if Spesis Buff is on player and sepsis debuff is on target unless Deathmark is on the target - if so, refresh garrote instantly
+      if SepsisBuffRemain > 0 and TargetUnit:DebuffRemains(S.Sepsis) > 0 and not Target:DebuffUp(S.Deathmark) then
+       return true
+      end
+      -- Check if Sepsis cooldown will be up within 5 seconds
+      if SepsisCooldownRemains > 0 and SepsisCooldownRemains <= 5 then
+       return false
+      end
+      -- If not, continue with the usual checks
+      return IsDebuffRefreshable(TargetUnit, S.Garrote) and MasterAssassinRemains() <= 0
       and (TargetUnit:PMultiplier(S.Garrote) <= 1 or (MeleeEnemies10yCount >= 3 and TargetUnit:DebuffRemains(S.Garrote) <= GarroteTickTime))
       and (not Rogue.WillLoseExsanguinate(TargetUnit, S.Garrote) or TargetUnit:DebuffRemains(S.Garrote) <= GarroteTickTime * (1 + BoolToInt(MeleeEnemies10yCount >= 3)))
   end
-
     if Evaluate_Garrote_Target(Target) and Rogue.CanDoTUnit(Target, GarroteDMGThreshold)
       and (Target:FilteredTimeToDie(">", 4, -Target:DebuffRemains(S.Garrote)) or Target:TimeToDieIsNotValid()) then
       -- actions.dot+=/pool_resource,for_next=1
