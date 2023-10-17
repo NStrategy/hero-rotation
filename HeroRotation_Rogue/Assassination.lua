@@ -586,9 +586,9 @@ local function Dot ()
   end
   -- actions.dot+=/variable,name=skip_rupture,value=0
   -- SkipRupture = true if:
-     SkipRupture = Target:NPCID() == 202969 or Target:NPCID() == 203230 or Target:NPCID() == 202824 or Target:NPCID() == 202971
+     SkipRupture = Target:NPCID() == 202969 or Target:NPCID() == 203230 or Target:NPCID() == 202824 or Target:NPCID() == 202971 or Target:NPCID() == 201738 or Target:NPCID() == 202814
   -- SkipGarrote = true if:
-     SkipGarrote = Target:NPCID() == 202969 or Target:NPCID() == 203230 or Target:NPCID() == 202824 or Target:NPCID() == 202971
+     SkipGarrote = Target:NPCID() == 202969 or Target:NPCID() == 203230 or Target:NPCID() == 202824 or Target:NPCID() == 202971 or Target:NPCID() == 201738 or Target:NPCID() == 202814
   if HR.CDsON() and S.Exsanguinate:IsAvailable() and ExsanguinateSyncRemains < 2 then
     -- actions.dot+=/garrote,if=talent.exsanguinate.enabled&!will_lose_exsanguinate&dot.garrote.pmultiplier<=1&cooldown.exsanguinate.remains<2&spell_targets.fan_of_knives=1&raid_event.adds.in>6&dot.garrote.remains*0.5<target.time_to_die
     if S.Garrote:IsCastable() and TargetInMeleeRange and MeleeEnemies10yCount == 1
