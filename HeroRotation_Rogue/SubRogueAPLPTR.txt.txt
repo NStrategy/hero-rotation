@@ -42,7 +42,7 @@ actions.cds+=/shadow_dance,use_off_gcd=1,if=!buff.shadow_dance.up&buff.shuriken_
 actions.cds+=/symbols_of_death,use_off_gcd=1,if=buff.shuriken_tornado.up&buff.shuriken_tornado.remains<=3.5&!set_bonus.tier30_2pc
 actions.cds+=/cold_blood,if=!talent.secret_technique&combo_points>=5
 actions.cds+=/sepsis,if=variable.snd_condition&target.time_to_die>=16
-actions.cds+=/flagellation,target_if=max:target.time_to_die,if=variable.snd_condition&combo_points>=5&target.time_to_die>10&((!equipped.ashes_of_the_embersoul|trinket.ashes_of_the_embersoul.cooldown.remains<=8)&(cooldown.shadow_blades.remains<=3|cooldown.shadow_blades.remains>=14)|fight_remains<=30)
+actions.cds+=/flagellation,target_if=max:target.time_to_die,if=variable.snd_condition&combo_points>=5&target.time_to_die>10&((!equipped.ashes_of_the_embersoul|trinket.ashes_of_the_embersoul.cooldown.remains<=8)&cooldown.shadow_blades.remains<=3|fight_remains<=28|cooldown.shadow_blades.remains>=14&talent.invigorating_shadowdust&talent.shadow_dance)
 actions.cds+=/pool_resource,for_next=1,if=talent.shuriken_tornado.enabled&!talent.shadow_focus.enabled
 actions.cds+=/symbols_of_death,if=(!buff.the_rotten.up|spell_targets.shuriken_storm>=3)&(buff.symbols_of_death.remains<=3&cooldown.shadow_dance.charges_fractional<1+talent.shadow_dance|!set_bonus.tier30_2pc)&variable.rotten_condition&variable.snd_condition&(!talent.flagellation|cooldown.flagellation.remains>10|cooldown.flagellation.up&combo_points>=5)
 actions.cds+=/shadow_blades,if=variable.snd_condition&(combo_points<=1|set_bonus.tier31_4pc)&(buff.flagellation_buff.up|buff.flagellation_persist.up|!talent.flagellation)
@@ -91,6 +91,8 @@ actions.stealthed+=/call_action_list,name=finish,if=variable.effective_combo_poi
 actions.stealthed+=/call_action_list,name=finish,if=buff.shuriken_tornado.up&combo_points.deficit<=2
 actions.stealthed+=/call_action_list,name=finish,if=spell_targets.shuriken_storm>=4
 actions.stealthed+=/call_action_list,name=finish,if=combo_points.deficit<=1+(talent.deeper_stratagem|talent.secret_stratagem)
-actions.stealthed+=/shadowstrike,if=stealthed.sepsis&spell_targets.shuriken_storm<4
-actions.stealthed+=/shuriken_storm,if=spell_targets>=3+buff.the_rotten.up&!buff.premeditation.up
+actions.stealthed+=/backstab,if=buff.shadow_dance.remains>=3&buff.shadow_blades.up&!used_for_danse&talent.danse_macabre&spell_targets.shuriken_storm<=3&!talent.the_rotten
+actions.stealthed+=/gloomblade,if=buff.shadow_dance.remains>=3&buff.shadow_blades.up&!used_for_danse&talent.danse_macabre&spell_targets.shuriken_storm<=4
+actions.stealthed+=/shadowstrike,if=stealthed.sepsis&spell_targets.shuriken_storm<4|!used_for_danse&buff.shadow_blades.up
+actions.stealthed+=/shuriken_storm,if=!buff.premeditation.up&spell_targets>=4-(!used_for_danse&talent.danse_macabre)
 actions.stealthed+=/shadowstrike
