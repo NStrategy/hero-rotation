@@ -347,7 +347,7 @@ end
 
 -- # Vanish Handling
 local function Vanish ()
-  if S.Vanish:IsCastable() and not Player:IsTanking(Target) then
+  if S.Vanish:IsCastable() and not Player:IsTanking(Target) and not SkipGarrote then
     if S.ImprovedGarrote:IsAvailable() and S.Garrote:CooldownUp() and not Rogue.Exsanguinated(Target, S.Garrote)
       and (Target:PMultiplier(S.Garrote) <= 1 or IsDebuffRefreshable(Target, S.Garrote)) then
       -- actions.vanish+=/vanish,if=talent.improved_garrote&cooldown.garrote.up&!exsanguinated.garrote&(dot.garrote.pmultiplier<=1|dot.garrote.refreshable)&(debuff.deathmark.up|cooldown.deathmark.remains<4)&combo_points.deficit>=(spell_targets.fan_of_knives>?4)
@@ -577,7 +577,7 @@ end
 
 -- # Damage over time abilities
 local function Dot ()
-  local SkipCycleGarrote, SkipCycleRupture, SkipRupture = false, false, false
+  local SkipCycleGarrote, SkipCycleRupture, SkipRupture, SkipGarrote  = false, false, false, false
   if PriorityRotation then
     -- actions.dot=variable,name=skip_cycle_garrote,value=priority_rotation&(dot.garrote.remains<cooldown.garrote.duration|variable.regen_saturated)
     SkipCycleGarrote = MeleeEnemies10yCount > 3 and (Target:DebuffRemains(S.Garrote) < 6 or EnergyRegenSaturated)
@@ -585,7 +585,10 @@ local function Dot ()
     SkipCycleRupture = (Target:DebuffUp(S.ShivDebuff) and MeleeEnemies10yCount > 2) or EnergyRegenSaturated
   end
   -- actions.dot+=/variable,name=skip_rupture,value=0
-  -- SkipRupture = false
+  -- SkipRupture = true if:
+     SkipRupture = Target:NPCID() == 202969 or Target:NPCID() == 203230 or Target:NPCID() == 202824 or Target:NPCID() == 202971
+  -- SkipGarrote = true if:
+     SkipGarrote = Target:NPCID() == 202969 or Target:NPCID() == 203230 or Target:NPCID() == 202824 or Target:NPCID() == 202971
   if HR.CDsON() and S.Exsanguinate:IsAvailable() and ExsanguinateSyncRemains < 2 then
     -- actions.dot+=/garrote,if=talent.exsanguinate.enabled&!will_lose_exsanguinate&dot.garrote.pmultiplier<=1&cooldown.exsanguinate.remains<2&spell_targets.fan_of_knives=1&raid_event.adds.in>6&dot.garrote.remains*0.5<target.time_to_die
     if S.Garrote:IsCastable() and TargetInMeleeRange and MeleeEnemies10yCount == 1
@@ -603,6 +606,9 @@ local function Dot ()
   -- actions.dot+=/garrote,cycle_targets=1,if=!variable.skip_cycle_garrote&target!=self.target&refreshable&combo_points.deficit>=1&(pmultiplier<=1|remains<=tick_time&spell_targets.fan_of_knives>=3)&(!will_lose_exsanguinate|remains<=tick_time*2&spell_targets.fan_of_knives>=3)&(target.time_to_die-remains)>12&master_assassin_remains=0
   if S.Garrote:IsCastable() and ComboPointsDeficit >= 1 then
       local function Evaluate_Garrote_Target(TargetUnit)
+        if SkipGarrote then
+           return false
+        end
       GarroteTickTime = Rogue.Exsanguinated(TargetUnit, S.Garrote) and ExsanguinatedBleedTickTime or BleedTickTime
       local SepsisBuffRemain = Player:BuffRemains(S.SepsisBuff)
       local SepsisCooldownRemains = S.Sepsis:CooldownRemains()
@@ -624,7 +630,7 @@ local function Dot ()
       and (TargetUnit:PMultiplier(S.Garrote) <= 1 or (MeleeEnemies10yCount >= 3 and TargetUnit:DebuffRemains(S.Garrote) <= GarroteTickTime))
       and (not Rogue.WillLoseExsanguinate(TargetUnit, S.Garrote) or TargetUnit:DebuffRemains(S.Garrote) <= GarroteTickTime * (1 + BoolToInt(MeleeEnemies10yCount >= 3)))
   end
-    if Evaluate_Garrote_Target(Target) and Rogue.CanDoTUnit(Target, GarroteDMGThreshold)
+    if not SkipGarrote and Evaluate_Garrote_Target(Target) and Rogue.CanDoTUnit(Target, GarroteDMGThreshold)
       and (Target:FilteredTimeToDie(">", 4, -Target:DebuffRemains(S.Garrote)) or Target:TimeToDieIsNotValid()) then
       -- actions.dot+=/pool_resource,for_next=1
       if CastPooling(S.Garrote, nil, not TargetInMeleeRange) then return "Pool for Garrote (ST)" end
