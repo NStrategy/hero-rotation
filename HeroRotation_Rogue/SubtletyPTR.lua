@@ -200,10 +200,6 @@ local function Skip_Rupture (ShadowDanceBuff)
   return Player:BuffUp(S.ThistleTea) and MeleeEnemies10yCount == 1
     or ShadowDanceBuff and (MeleeEnemies10yCount == 1 or Target:DebuffUp(S.Rupture) and MeleeEnemies10yCount >= 2) or Target:NPCID() == 202969 or Target:NPCID() == 203230 or Target:NPCID() == 202824 or Target:NPCID() == 202971 or Target:NPCID() == 201738 or Target:NPCID() == 202814
 end
-local function Rotten_Condition ()
-  -- variable,name=rotten_condition,value=!buff.premeditation.up&spell_targets.shuriken_storm=1|!talent.the_rotten|spell_targets.shuriken_storm>1
-  return Player:BuffDown(S.PremeditationBuff) and MeleeEnemies10yCount == 1 or not S.TheRotten:IsAvailable() or MeleeEnemies10yCount > 1
-end
 local function Rotten_Threshold ()
   -- variable,name=rotten_threshold,value=!buff.the_rotten.up|!set_bonus.tier30_2pc (in the APL its called "name=rotten")
   return not Player:BuffUp(S.TheRottenBuff) or not Player:HasTier(30, 2)
@@ -544,13 +540,15 @@ local function CDs ()
       if HR.CastPooling(S.ShurikenTornado) then return "Pool for Shuriken Tornado" end
     end
   end
-    -- actions.cds+=/symbols_of_death,if=(!buff.the_rotten.up|spell_targets.shuriken_storm>=3)&(buff.symbols_of_death.remains<=3&cooldown.shadow_dance.charges_fractional<1+talent.shadow_dance|!set_bonus.tier30_2pc)&variable.rotten_condition&variable.snd_condition&(!talent.flagellation|cooldown.flagellation.remains>10|cooldown.flagellation.up&combo_points>=5)
+    -- actions.cds+=/symbols_of_death,if=variable.snd_condition&(!buff.the_rotten.up|!set_bonus.tier30_2pc)&buff.symbols_of_death.remains<=3&(!talent.flagellation|cooldown.flagellation.remains>10|buff.shadow_dance.remains>=2&talent.invigorating_shadowdust|cooldown.flagellation.up&combo_points>=5&!talent.invigorating_shadowdust)
     -- TODO: Get this to work
     if S.SymbolsofDeath:IsCastable() then
-      if ((not Player:BuffUp(S.TheRottenBuff) or MeleeEnemies10yCount >= 3) and 
-        ((Player:BuffRemains(S.SymbolsofDeath) <= 3 and S.ShadowDance:ChargesFractional() < 1 + BoolToInt(S.ShadowDance:IsAvailable())) or not Player:HasTier(30, 2)) and 
-        Rotten_Condition() and SnDCondition and 
-        (not S.Flagellation:IsAvailable() or S.Flagellation:CooldownRemains() > 10 or (S.Flagellation:CooldownUp() and ComboPoints >= 5))) then
+      if (SnDCondition and 
+        (not Player:BuffUp(S.TheRottenBuff) or not Player:HasTier(30, 2)) and 
+        Player:BuffRemains(S.SymbolsofDeath) <= 3 and 
+        (not S.Flagellation:IsAvailable() or S.Flagellation:CooldownRemains() > 10 or 
+        (Player:BuffRemains(S.ShadowDance) >= 2 and S.InvigoratingShadowdust:IsAvailable()) or 
+        (S.Flagellation:CooldownUp() and ComboPoints >= 5 and not S.InvigoratingShadowdust:IsAvailable()))) then
         if HR.Cast(S.SymbolsofDeath, Settings.Subtlety.OffGCDasOffGCD.SymbolsofDeath) then return "Cast Symbols of Death" end
       end
     end
@@ -708,7 +706,10 @@ local function Stealth_CDs (EnergyThreshold)
     if Rotten_Threshold() and 
         (not S.TheFirstDance:IsAvailable() or ComboPointsDeficit >= 4 or Player:BuffUp(S.ShadowBlades)) and
         (ShD_Combo_Points() and ShD_Threshold() or 
-        (Player:BuffUp(S.ShadowBlades) or (Player:BuffRemains(S.SymbolsofDeath) >= 6 and not Player:HasTier(30, 2)) or (not Player:BuffUp(S.SymbolsofDeath) and Player:HasTier(30, 2))) and
+        (Player:BuffUp(S.ShadowBlades) or 
+        (S.SymbolsofDeath:CooldownUp() and not S.Sepsis:IsAvailable()) or 
+        (Player:BuffRemains(S.SymbolsofDeath) >= 6 and not Player:HasTier(30, 2)) or 
+        (not Player:BuffUp(S.SymbolsofDeath) and Player:HasTier(30, 2))) and
         S.SecretTechnique:CooldownRemains() < 10 + 12 * (not S.InvigoratingShadowdust:IsAvailable() or Player:HasTier(30, 2))) then
         ShouldReturn = StealthMacro(S.ShadowDance, EnergyThreshold)
         if ShouldReturn then return "ShadowDance Macro " .. ShouldReturn end
