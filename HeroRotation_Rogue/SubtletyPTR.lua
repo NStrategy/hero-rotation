@@ -41,6 +41,8 @@ local OnUseExcludes = {
   I.BeaconToTheBeyond:ID(),
   I.MirrorOfFracturedTomorrows:ID(),
   I.AshesOfTheEmbersoul:ID(),
+  I.WitherBarksBranch:ID(),
+  I.BandolierOfTwistedBlades:ID(),
 }
 
 -- Rotation Var
@@ -212,7 +214,13 @@ end
 local function Used_For_Danse(Spell)
   return Player:BuffUp(S.ShadowDanceBuff) and Spell:TimeSinceLastCast() < S.ShadowDance:TimeSinceLastCast()
 end
-
+local function Trinket_Conditions ()
+  -- actions.cds=variable,name=trinket_conditions,value=(!equipped.witherbarks_branch&!equipped.ashes_of_the_embersoul|!equipped.witherbarks_branch&trinket.witherbarks_branch.cooldown.remains<=8|equipped.witherbarks_branch&trinket.witherbarks_branch.cooldown.remains<=8|equipped.bandolier_of_twisted_blades|talent.invigorating_shadowdust)
+  return (not I.WitherBarksBranch:IsEquippedAndReady() and not I.AshesOfTheEmbersoul:IsEquippedAndReady()) or 
+         (not I.WitherBarksBranch:IsEquippedAndReady() and I.WitherBarksBranch:CooldownRemains() <= 8) or 
+         (I.WitherBarksBranch:IsEquippedAndReady() and I.WitherBarksBranch:CooldownRemains() <= 8) or 
+         I.BandolierOfTwistedBlades:IsEquippedAndReady() or S.InvigoratingShadowdust:IsAvailable()
+end
 
 -- # Finishers
 -- ReturnSpellOnly and StealthSpell parameters are to Predict Finisher in case of Stealth Macros
@@ -543,7 +551,7 @@ local function CDs ()
     end
     -- actions.cds+=/flagellation,target_if=max:target.time_to_die,if=variable.snd_condition&combo_points>=5&target.time_to_die>10&((!equipped.ashes_of_the_embersoul|trinket.ashes_of_the_embersoul.cooldown.remains<=8)&cooldown.shadow_blades.remains<=3|fight_remains<=28|cooldown.shadow_blades.remains>=14&talent.invigorating_shadowdust&talent.shadow_dance)
     if HR.CDsON() and S.Flagellation:IsReady() and SnDCondition and not Player:StealthUp(false, false) and ComboPoints >= 5 and Target:FilteredTimeToDie(">", 10) and not Player:BuffUp(S.ShadowDanceBuff) then
-      if ((not I.AshesOfTheEmbersoul:IsEquipped() or I.AshesOfTheEmbersoul:CooldownRemains() <= 8) and S.ShadowBlades:CooldownRemains() <= 3) 
+      if (Trinket_Conditions() and S.ShadowBlades:CooldownRemains() <= 3) 
         or Target:FilteredTimeToDie() <= 28 
         or (S.ShadowBlades:CooldownRemains() >= 14 and S.InvigoratingShadowdust:IsAvailable() and S.ShadowDance:IsAvailable()) then
         if HR.Cast(S.Flagellation, nil, Settings.Commons.CovenantDisplayStyle) then return "Cast Flagellation" end
@@ -645,18 +653,25 @@ local function CDs ()
       end
     end
 
-    -- Trinkets TODO: MirrorOfFracturedTomorrows and ashes_of_the_embersoul itemcheck
+    -- Trinkets TODO: MirrorOfFracturedTomorrows, ashes_of_the_embersoul, witherbarks_branch, BandolierOfTwistedBlades itemcheck
     if Settings.Commons.UseTrinkets then
+      -- actions.cds+=/use_item,name=witherbarks_branch,if=buff.shadow_dance.up&buff.shadow_blades.up|(equipped.bandolier_of_twisted_blades|talent.invigorating_shadowdust)&!stealthed.all
+      if I.WitherbarksBranch:IsEquippedAndReady() then
+        if (Player:BuffUp(S.ShadowDanceBuff) and Player:BuffUp(S.ShadowBlades))
+          or ((I.BandolierOfTwistedBlades:IsEquipped() or S.InvigoratingShadowdust:IsAvailable()) and not Player:StealthUp(true, true)) then
+          if HR.Cast(I.WitherbarksBranch, nil, Settings.Commons.TrinketDisplayStyle) then return "Witherbark's Branch"; end
+        end
+      end
+      -- actions.cds+=/use_item,name=ashes_of_the_embersoul,if=buff.shadow_dance.up&(buff.shadow_blades.up|equipped.witherbarks_branch)
+      if I.AshesOfTheEmbersoul:IsEquippedAndReady() then
+        if Player:BuffUp(S.ShadowDanceBuff) and (Player:BuffUp(S.ShadowBlades) or I.WitherbarksBranch:IsEquipped()) then
+          if HR.Cast(I.AshesOfTheEmbersoul, nil, Settings.Commons.TrinketDisplayStyle) then return "Ashes Of the Embersoul"; end
+        end
+      end
       -- actions.cds+=/use_item,name=mirror_of_fractured_tomorrows,if=buff.shadow_dance.up&(target.time_to_die>=15|equipped.ashes_of_the_embersoul)
       if I.MirrorOfFracturedTomorrows:IsEquippedAndReady() then
         if Player:BuffUp(S.ShadowDanceBuff) and (Target:FilteredTimeToDie() >= 15 or I.AshesOfTheEmbersoul:IsEquipped()) then
           if HR.Cast(I.MirrorOfFracturedTomorrows, nil, Settings.Commons.TrinketDisplayStyle) then return "Mirror Of Fractured Tomorrows"; end
-        end
-      end
-      -- actions.cds+=/use_item,name=ashes_of_the_embersoul,if=buff.shadow_dance.up&buff.shadow_blades.up
-      if I.AshesOfTheEmbersoul:IsEquippedAndReady() then
-        if Player:BuffUp(S.ShadowDanceBuff) and Player:BuffUp(S.ShadowBlades) then
-          if HR.Cast(I.AshesOfTheEmbersoul, nil, Settings.Commons.TrinketDisplayStyle) then return "Ashes Of The Embersoul"; end
         end
       end
       -- actions.cds+=/use_item,name=manic_grieftorch,use_off_gcd=1,if=!stealthed.all&(!raid_event.adds.up|!equipped.stormeaters_boon|trinket.stormeaters_boon.cooldown.remains>20)
@@ -949,11 +964,11 @@ local function APL ()
 
     -- actions+=/call_action_list,name=finish,if=variable.effective_combo_points>=cp_max_spend
     -- # Finish at maximum or close to maximum combo point value
-    -- actions+=/call_action_list,name=finish,if=combo_points.deficit<=1+buff.the_rotten.up|fight_remains<=1&variable.effective_combo_points>=3
+    -- actions+=/call_action_list,name=finish,if=combo_points.deficit<=1|fight_remains<=1&variable.effective_combo_points>=3
     -- # Finish at 4+ against 4 targets (outside stealth)
     -- actions+=/call_action_list,name=finish,if=spell_targets.shuriken_storm>=4&variable.effective_combo_points>=4
     if EffectiveComboPoints >= Rogue.CPMaxSpend()
-      or (ComboPointsDeficit <= (1 + num(Player:BuffUp(S.TheRottenBuff))) or (HL.BossFilteredFightRemains("<", 1) and EffectiveComboPoints >= 3))
+      or (ComboPointsDeficit <= 1 or (HL.BossFilteredFightRemains("<", 1) and EffectiveComboPoints >= 3))
       or (MeleeEnemies10yCount >= 4 and EffectiveComboPoints >= 4) then
       ShouldReturn = Finish()
       if ShouldReturn then return "Finish: " .. ShouldReturn end
