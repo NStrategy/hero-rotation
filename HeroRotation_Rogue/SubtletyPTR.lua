@@ -426,7 +426,7 @@ local function Stealthed (ReturnSpellOnly, StealthSpell)
 
   -- actions.stealthed+=/backstab,if=buff.shadow_dance.remains>=3&buff.shadow_blades.up&!used_for_danse&talent.danse_macabre&spell_targets.shuriken_storm<=3&!buff.the_rotten.up
   if S.Backstab:IsCastable() then
-    if Player:BuffRemains(S.ShadowDance) >= 3 and Player:BuffUp(S.ShadowBlades) and not Used_For_Danse(S.Backstab)
+    if Player:BuffRemains(ShadowDanceBuff) >= 3 and Player:BuffUp(S.ShadowBlades) and not Used_For_Danse(S.Backstab)
         and S.DanseMacabre:IsAvailable() and MeleeEnemies10yCount <= 3 and not Player:BuffUp(S.TheRottenBuff) then
             if ReturnSpellOnly then
                 -- If calling from a Stealth macro, we don't need the PV suggestion since it's already a macro cast
@@ -443,7 +443,7 @@ local function Stealthed (ReturnSpellOnly, StealthSpell)
   end
   -- actions.stealthed+=/gloomblade,if=buff.shadow_dance.remains>=3&buff.shadow_blades.up&!used_for_danse&talent.danse_macabre&spell_targets.shuriken_storm<=4
   if S.Gloomblade:IsCastable() then
-    if Player:BuffRemains(S.ShadowDance) >= 3 and Player:BuffUp(S.ShadowBlades) and not Used_For_Danse(S.Gloomblade)
+    if Player:BuffRemains(ShadowDanceBuff) >= 3 and Player:BuffUp(S.ShadowBlades) and not Used_For_Danse(S.Gloomblade)
         and S.DanseMacabre:IsAvailable() and MeleeEnemies10yCount <= 4 then
         if ReturnSpellOnly then
             -- If calling from a Stealth macro, we don't need the PV suggestion since it's already a macro cast
@@ -553,7 +553,7 @@ local function CDs ()
     if HR.CDsON() and S.Flagellation:IsReady() and SnDCondition and not Player:StealthUp(false, false) and ComboPoints >= 5 and Target:FilteredTimeToDie(">", 10) and not Player:BuffUp(S.ShadowDanceBuff) then
       if (Trinket_Conditions() and S.ShadowBlades:CooldownRemains() <= 3) 
         or Target:FilteredTimeToDie() <= 28 
-        or (S.ShadowBlades:CooldownRemains() >= 14 and S.InvigoratingShadowdust:IsAvailable() and S.ShadowDance:IsAvailable()) then
+        or (S.ShadowBlades:CooldownRemains() >= 14 and S.InvigoratingShadowdust:IsAvailable() and S.ShadowDanceTalent:IsAvailable()) then
         if HR.Cast(S.Flagellation, nil, Settings.Commons.CovenantDisplayStyle) then return "Cast Flagellation" end
       end
     end
@@ -568,11 +568,10 @@ local function CDs ()
     -- actions.cds+=/symbols_of_death,if=variable.snd_condition&(!buff.the_rotten.up|!set_bonus.tier30_2pc)&buff.symbols_of_death.remains<=3&(!talent.flagellation|cooldown.flagellation.remains>10|buff.shadow_dance.remains>=2&talent.invigorating_shadowdust|cooldown.flagellation.up&combo_points>=5&!talent.invigorating_shadowdust)
     -- TODO: Get this to work
     if S.SymbolsofDeath:IsCastable() then
-      if (SnDCondition and 
-        (not Player:BuffUp(S.TheRottenBuff) or not Player:HasTier(30, 2)) and 
+      if (SnDCondition and (not Player:BuffUp(S.TheRottenBuff) or not Player:HasTier(30, 2)) and 
         Player:BuffRemains(S.SymbolsofDeath) <= 3 and 
         (not S.Flagellation:IsAvailable() or S.Flagellation:CooldownRemains() > 10 or 
-        (Player:BuffRemains(S.ShadowDance) >= 2 and S.InvigoratingShadowdust:IsAvailable()) or 
+        (Player:BuffRemains(ShadowDanceBuff) >= 2 and S.InvigoratingShadowdust:IsAvailable()) or 
         (S.Flagellation:CooldownUp() and ComboPoints >= 5 and not S.InvigoratingShadowdust:IsAvailable()))) then
         if HR.Cast(S.SymbolsofDeath, Settings.Subtlety.OffGCDasOffGCD.SymbolsofDeath) then return "Cast Symbols of Death" end
       end
@@ -583,7 +582,7 @@ local function CDs ()
     -- actions.cds+=/shadow_blades,if=variable.snd_condition&(combo_points<=1|set_bonus.tier31_4pc)&(buff.flagellation_buff.up|buff.flagellation_persist.up|!talent.flagellation)
     if S.ShadowBlades:IsCastable() then
       if SnDCondition and (ComboPoints <= 1 or Player:HasTier(31, 4)) and 
-        (Player:BuffUp(S.FlagellationBuff) or Player:BuffUp(S.FlagellationPersist) or not S.Flagellation:IsAvailable()) then
+        (Player:BuffUp(S.Flagellation) or Player:BuffUp(S.FlagellationPersistBuff) or not S.Flagellation:IsAvailable()) then
         if HR.Cast(S.ShadowBlades, Settings.Subtlety.OffGCDasOffGCD.ShadowBlades) then return "Cast Shadow Blades" end
       end
     end
@@ -613,7 +612,7 @@ local function CDs ()
     -- actions.cds+=/goremaws_bite,if=variable.snd_condition&combo_points.deficit>=3&(!cooldown.shadow_dance.up|talent.shadow_dance&buff.shadow_dance.up&!talent.invigorating_shadowdust|spell_targets.shuriken_storm<4&!talent.invigorating_shadowdust|talent.the_rotten|raid_event.adds.up)
     if S.GoremawsBite:IsCastable() then
       if SnD_Condition() and ComboPointsDeficit >= 3 and (not S.ShadowDance:CooldownUp() or 
-        (S.ShadowDance:IsAvailable() and Player:BuffUp(S.ShadowDanceBuff) and not S.InvigoratingShadowdust:IsAvailable()) or 
+        (S.ShadowDanceTalent:IsAvailable() and Player:BuffUp(S.ShadowDanceBuff) and not S.InvigoratingShadowdust:IsAvailable()) or 
         (MeleeEnemies10yCount < 4 and not S.InvigoratingShadowdust:IsAvailable()) or S.TheRotten:IsAvailable()) then
         if HR.Cast(S.GoremawsBite) then return "Cast Goremaw's Bite" end
       end
