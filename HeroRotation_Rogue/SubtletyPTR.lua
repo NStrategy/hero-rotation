@@ -235,6 +235,23 @@ local function Finish (ReturnSpellOnly, StealthSpell)
     end
   end
 
+  -- actions.finish+=/rupture,if=!dot.rupture.ticking&target.time_to_die-remains>6
+  if (not Player:BuffUp(S.ShadowDanceBuff) or PriorityRotation) and S.Rupture:IsCastable() then
+    if TargetInMeleeRange
+      and (Target:FilteredTimeToDie(">", 6, -Target:DebuffRemains(S.Rupture)) or Target:TimeToDieIsNotValid())
+      and Rogue.CanDoTUnit(Target, RuptureDMGThreshold) then
+    -- Added condition: Check if Rupture is not ticking
+      if not Target:DebuffUp(S.Rupture) then
+        if ReturnSpellOnly then
+          return S.Rupture
+          else
+          if S.Rupture:IsReady() and HR.Cast(S.Rupture) then return "Cast Rupture 3" end
+          SetPoolingFinisher(S.Rupture)
+        end
+      end
+    end
+  end
+
     if S.SliceandDice:IsCastable() and HL.FilteredFightRemains(MeleeEnemies10y, ">", Player:BuffRemains(S.SliceandDice)) then
       -- actions.finish+=/variable,name=premed_snd_condition,value=talent.premeditation.enabled&spell_targets.shuriken_storm<5
       local premed_snd_condition = S.Premeditation:IsAvailable() and MeleeEnemies10yCount < 5
@@ -701,7 +718,7 @@ local function Stealth_CDs (EnergyThreshold)
     end
   end
   if TargetInMeleeRange and S.ShadowDance:IsCastable() and HR.CDsON() then
-    -- actions.stealth_cds+=/shadow_dance,if=variable.rotten&(!talent.the_first_dance|combo_points.deficit>=4|buff.shadow_blades.up)&(variable.shd_combo_points&variable.shd_threshold|(buff.shadow_blades.up|buff.symbols_of_death.remains>=6&!set_bonus.tier30_2pc|!buff.symbols_of_death.remains&set_bonus.tier30_2pc)&cooldown.secret_technique.remains<10+12*(!talent.invigorating_shadowdust|set_bonus.tier30_2pc))
+    -- actions.stealth_cds+=/shadow_dance,if=variable.rotten&(!talent.the_first_dance|combo_points.deficit>=4|buff.shadow_blades.up)&(variable.shd_combo_points&variable.shd_threshold|(buff.shadow_blades.up|cooldown.symbols_of_death.up&!talent.sepsis|buff.symbols_of_death.remains>=6&!set_bonus.tier30_2pc|!buff.symbols_of_death.remains&set_bonus.tier30_2pc)&cooldown.secret_technique.remains<10+12*(!talent.invigorating_shadowdust|set_bonus.tier30_2pc))
     -- NOTE: |buff.flagellation.up is a dead operation in SimC due to a typo, since the buff we use in-game is buff.flagellation_buff.up, ignoring
     if Rotten_Threshold() and 
         (not S.TheFirstDance:IsAvailable() or ComboPointsDeficit >= 4 or Player:BuffUp(S.ShadowBlades)) and
