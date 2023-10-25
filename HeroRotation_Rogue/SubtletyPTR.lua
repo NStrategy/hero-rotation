@@ -244,36 +244,33 @@ local function Finish (ReturnSpellOnly, StealthSpell)
   end
 
   -- actions.finish+=/rupture,if=!dot.rupture.ticking&target.time_to_die-remains>6
-  if (not Player:BuffUp(S.ShadowDanceBuff) or PriorityRotation) and S.Rupture:IsCastable() then
-    if TargetInMeleeRange
-      and (Target:FilteredTimeToDie(">", 6, -Target:DebuffRemains(S.Rupture)) or Target:TimeToDieIsNotValid())
-      and Rogue.CanDoTUnit(Target, RuptureDMGThreshold) then
-    -- Added condition: Check if Rupture is not ticking
-      if not Target:DebuffUp(S.Rupture) then
-        if ReturnSpellOnly then
+  if S.Rupture:IsCastable() then
+    if not Target:DebuffUp(S.Rupture)
+       and (Target:FilteredTimeToDie(">", 6, -Target:DebuffRemains(S.Rupture)) or Target:TimeToDieIsNotValid())
+       and Rogue.CanDoTUnit(Target, RuptureDMGThreshold) then
+       if ReturnSpellOnly then
           return S.Rupture
-          else
+       else
           if S.Rupture:IsReady() and HR.Cast(S.Rupture) then return "Cast Rupture 3" end
           SetPoolingFinisher(S.Rupture)
-        end
-      end
+       end
     end
   end
 
-    if S.SliceandDice:IsCastable() and HL.FilteredFightRemains(MeleeEnemies10y, ">", Player:BuffRemains(S.SliceandDice)) then
-      -- actions.finish+=/variable,name=premed_snd_condition,value=talent.premeditation.enabled&spell_targets.shuriken_storm<5
-      local premed_snd_condition = S.Premeditation:IsAvailable() and MeleeEnemies10yCount < 5
-      -- actions.finish+=/slice_and_dice,if=!stealthed.all&!variable.premed_snd_condition&spell_targets.shuriken_storm<6&!buff.shadow_dance.up&buff.slice_and_dice.remains<fight_remains&refreshable
-      if not Player:StealthUp(true, true) and not premed_snd_condition and MeleeEnemies10yCount < 6 and not ShadowDanceBuff
-         and Player:BuffRemains(S.SliceandDice) < (1 + FinishComboPoints * 1.8) then
-         if ReturnSpellOnly then
-            return S.SliceandDice
-         else
-            if S.SliceandDice:IsReady() and HR.Cast(S.SliceandDice) then return "Cast Slice and Dice (Premeditation)" end
-            SetPoolingFinisher(S.SliceandDice)
-         end
-      end
+  if S.SliceandDice:IsCastable() and HL.FilteredFightRemains(MeleeEnemies10y, ">", Player:BuffRemains(S.SliceandDice)) then
+    -- actions.finish+=/variable,name=premed_snd_condition,value=talent.premeditation.enabled&spell_targets.shuriken_storm<5
+    local premed_snd_condition = S.Premeditation:IsAvailable() and MeleeEnemies10yCount < 5
+    -- actions.finish+=/slice_and_dice,if=!stealthed.all&!variable.premed_snd_condition&spell_targets.shuriken_storm<6&!buff.shadow_dance.up&buff.slice_and_dice.remains<fight_remains&refreshable
+    if not Player:StealthUp(true, true) and not premed_snd_condition and MeleeEnemies10yCount < 6 and not ShadowDanceBuff
+       and Player:BuffRemains(S.SliceandDice) < (1 + FinishComboPoints * 1.8) then
+       if ReturnSpellOnly then
+          return S.SliceandDice
+       else
+          if S.SliceandDice:IsReady() and HR.Cast(S.SliceandDice) then return "Cast Slice and Dice (Premeditation)" end
+          SetPoolingFinisher(S.SliceandDice)
+       end
     end
+  end
 
   local SkipRupture = Skip_Rupture(ShadowDanceBuff)
   -- actions.finish+=/rupture,if=(!variable.skip_rupture|variable.priority_rotation)&target.time_to_die-remains>6&(refreshable&(dot.rupture.pmultiplier<=1|buff.finality_rupture.up)|remains<=2) // (if not Player:BuffUp(S.ShadowDanceBuff) instead of Skip_Rupture as it does not work correctly.)
@@ -558,23 +555,23 @@ local function CDs ()
       end
     end
   end -- TODO: implement the trinkets
-    -- actions.cds+=/pool_resource,for_next=1,if=talent.shuriken_tornado.enabled&!talent.shadow_focus.enabled
-    if Player:Energy() >= 60 then
-      if HR.Cast(S.ShurikenTornado, Settings.Subtlety.GCDasOffGCD.ShurikenTornado) then return "Cast Shuriken Tornado" end
-    elseif not S.ShadowFocus:IsAvailable() then
+  -- actions.cds+=/pool_resource,for_next=1,if=talent.shuriken_tornado.enabled&!talent.shadow_focus.enabled
+  if S.ShurikenTornado:IsAvailable() and not S.ShadowFocus:IsAvailable() then
+    if Player:Energy() < 60 then
       if HR.CastPooling(S.ShurikenTornado) then return "Pool for Shuriken Tornado" end
+    else
+      if HR.Cast(S.ShurikenTornado, Settings.Subtlety.GCDasOffGCD.ShurikenTornado) then return "Cast Shuriken Tornado" end
     end
   end
-    -- actions.cds+=/symbols_of_death,if=variable.snd_condition&(!buff.the_rotten.up|!set_bonus.tier30_2pc)&buff.symbols_of_death.remains<=3&(!talent.flagellation|cooldown.flagellation.remains>10|buff.shadow_dance.remains>=2&talent.invigorating_shadowdust|cooldown.flagellation.up&combo_points>=5&!talent.invigorating_shadowdust)
-    -- TODO: Get this to work
-    if S.SymbolsofDeath:IsCastable() then
-      if (SnDCondition and (not Player:BuffUp(S.TheRottenBuff) or not Player:HasTier(30, 2)) and 
-        Player:BuffRemains(S.SymbolsofDeath) <= 3 and 
-        (not S.Flagellation:IsAvailable() or S.Flagellation:CooldownRemains() > 10 or 
-        (Player:BuffRemains(ShadowDanceBuff) >= 2 and S.InvigoratingShadowdust:IsAvailable()) or 
-        (S.Flagellation:CooldownUp() and ComboPoints >= 5 and not S.InvigoratingShadowdust:IsAvailable()))) then
-        if HR.Cast(S.SymbolsofDeath, Settings.Subtlety.OffGCDasOffGCD.SymbolsofDeath) then return "Cast Symbols of Death" end
-      end
+  -- actions.cds+=/symbols_of_death,if=variable.snd_condition&(!buff.the_rotten.up|!set_bonus.tier30_2pc)&buff.symbols_of_death.remains<=3&(!talent.flagellation|cooldown.flagellation.remains>10|buff.shadow_dance.remains>=2&talent.invigorating_shadowdust|cooldown.flagellation.up&combo_points>=5&!talent.invigorating_shadowdust)
+  -- TODO: Get this to work
+  if S.SymbolsofDeath:IsCastable() then
+    if (SnDCondition and (not Player:BuffUp(S.TheRottenBuff) or not Player:HasTier(30, 2)) and 
+      Player:BuffRemains(S.SymbolsofDeath) <= 3 and 
+      (not S.Flagellation:IsAvailable() or S.Flagellation:CooldownRemains() > 10 or 
+      (Player:BuffRemains(ShadowDanceBuff) >= 2 and S.InvigoratingShadowdust:IsAvailable()) or 
+      (S.Flagellation:CooldownUp() and ComboPoints >= 5 and not S.InvigoratingShadowdust:IsAvailable()))) then
+      if HR.Cast(S.SymbolsofDeath, Settings.Subtlety.OffGCDasOffGCD.SymbolsofDeath) then return "Cast Symbols of Death" end
     end
   end
 
@@ -873,12 +870,6 @@ local function APL ()
     if not Player:BuffUp(S.ShadowDanceBuff) and not Player:BuffUp(Rogue.VanishBuffSpell()) then
       ShouldReturn = Rogue.Stealth(Rogue.StealthSpell())
       if ShouldReturn then return ShouldReturn end
-    end
-    -- actions.precombat+=/symbols_of_death,if=talent.invigorating_shadowdust TODO: Get this to work lol
-    if HR.CDsON() then
-      if S.SymbolsOfDeath:IsCastable() and S.InvigoratingShadowdust:IsAvailable() then
-        if HR.Cast(S.SymbolsOfDeath) then return "Cast Symbols of Death (OOC)" end
-      end
     end
     -- Flask
     -- Food
