@@ -243,19 +243,6 @@ local function Finish (ReturnSpellOnly, StealthSpell)
     end
   end
 
-  -- actions.finish+=/rupture,if=!dot.rupture.ticking&target.time_to_die-remains>6
-  if S.Rupture:IsCastable() then
-    if not Target:DebuffUp(S.Rupture)
-       and Target:FilteredTimeToDie(">", 6, -Target:DebuffRemains(S.Rupture)) then
-       if ReturnSpellOnly then
-          return S.Rupture
-       else
-          if S.Rupture:IsReady() and HR.Cast(S.Rupture) then return "Cast Rupture 3" end
-          SetPoolingFinisher(S.Rupture)
-       end
-    end
-  end
-
   if S.SliceandDice:IsCastable() and HL.FilteredFightRemains(MeleeEnemies10y, ">", Player:BuffRemains(S.SliceandDice)) then
     -- actions.finish+=/variable,name=premed_snd_condition,value=talent.premeditation.enabled&spell_targets.shuriken_storm<5
     if S.Premeditation:IsAvailable() and MeleeEnemies10yCount < 5 then
@@ -565,11 +552,11 @@ local function CDs ()
   -- actions.cds+=/symbols_of_death,if=variable.snd_condition&(!buff.the_rotten.up|!set_bonus.tier30_2pc)&buff.symbols_of_death.remains<=3&(!talent.flagellation|cooldown.flagellation.remains>10|buff.shadow_dance.remains>=2&talent.invigorating_shadowdust|cooldown.flagellation.up&combo_points>=5&!talent.invigorating_shadowdust)
   -- TODO: Get this to work
   if S.SymbolsofDeath:IsCastable() then
-    if (SnDCondition and (not Player:BuffUp(S.TheRottenBuff) or not Player:HasTier(30, 2)) and 
-      Player:BuffRemains(S.SymbolsofDeath) <= 3 and 
+    if SnDCondition and (not Player:BuffUp(S.TheRottenBuff) or not Player:HasTier(30, 2)) and
+      Player:BuffRemains(S.SymbolsofDeath) <= 3 and
       (not S.Flagellation:IsAvailable() or S.Flagellation:CooldownRemains() > 10 or 
-      (Player:BuffRemains(ShadowDanceBuff) >= 2 and S.InvigoratingShadowdust:IsAvailable()) or 
-      (S.Flagellation:CooldownUp() and ComboPoints >= 5 and not S.InvigoratingShadowdust:IsAvailable()))) then
+      Player:BuffRemains(ShadowDanceBuff) >= 2 and S.InvigoratingShadowdust:IsAvailable()) or 
+      S.Flagellation:CooldownUp() and ComboPoints >= 5 and not S.InvigoratingShadowdust:IsAvailable()) then
       if HR.Cast(S.SymbolsofDeath, Settings.Subtlety.OffGCDasOffGCD.SymbolsofDeath) then return "Cast Symbols of Death" end
     end
   end
@@ -590,7 +577,6 @@ local function CDs ()
     end
     -- actions.cds+=/shuriken_tornado,if=variable.snd_condition&buff.symbols_of_death.up&combo_points<=2&!buff.premeditation.up&(!talent.flagellation|cooldown.flagellation.remains>20)
     -- actions.cds+=/shuriken_tornado,if=cooldown.shadow_dance.ready&!stealthed.all&spell_targets.shuriken_storm>=3&!talent.flagellation.enabled
-    -- TODO: check if "and not (Player:BuffUp(S.ShadowDanceBuff) and MeleeEnemies10yCount == 2)" is not needed for SoD condition
     if S.ShurikenTornado:IsReady() then
       if SnD_Condition and Player:BuffUp(S.SymbolsofDeath) and ComboPoints <= 2 and 
         not Player:BuffUp(S.PremeditationBuff) and (not S.Flagellation:IsAvailable() or S.Flagellation:CooldownRemains() > 20) then
@@ -708,7 +694,7 @@ local function Stealth_CDs (EnergyThreshold)
     -- actions.stealth_cds+=/vanish,if=(combo_points.deficit>1|buff.shadow_blades.up&talent.invigorating_shadowdust)&!variable.shd_threshold&(cooldown.flagellation.remains>=60|!talent.flagellation|fight_remains<=(30*cooldown.vanish.charges))&(cooldown.symbols_of_death.remains>3|!set_bonus.tier30_2pc)&(cooldown.secret_technique.remains>=10|!talent.secret_technique|cooldown.vanish.charges>=2&talent.invigorating_shadowdust&(buff.the_rotten.up|!talent.the_rotten)&!raid_event.adds.up)
     -- TODO: Get this to work
       if S.Vanish:IsCastable()
-        and (ComboPointsDeficit > 1 or (Player:BuffUp(S.ShadowBlades) and S.InvigoratingShadowdust:IsAvailable()))
+        and (ComboPointsDeficit > 1 or Player:BuffUp(S.ShadowBlades) and S.InvigoratingShadowdust:IsAvailable())
         and not ShD_Threshold()
         and (S.Flagellation:CooldownRemains() >= 60 or not S.Flagellation:IsAvailable() or HL.BossFilteredFightRemains("<=", 30 * S.Vanish:Charges()))
         and (S.SymbolsofDeath:CooldownRemains() > 3 or not Player:HasTier(30, 2))
@@ -881,10 +867,6 @@ local function APL ()
         if S.MarkedforDeath:IsCastable() and Player:ComboPointsDeficit() >= Rogue.CPMaxSpend() then
           if HR.Cast(S.MarkedforDeath, Settings.Commons.OffGCDasOffGCD.MarkedforDeath) then return "Cast Marked for Death (OOC)" end
         end
-      end
-      -- actions.precombat+=/symbols_of_death,if=talent.invigorating_shadowdust
-      if S.SymbolsofDeath:IsReady() and S.InvigoratingShadowdust:IsAvailable() then
-        if HR.Cast(S.SymbolsofDeath) then return "Cast Symbols of Death (Opener)" end
       end
 
       if Player:StealthUp(true, true) then
