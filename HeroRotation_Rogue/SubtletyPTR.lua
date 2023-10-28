@@ -555,18 +555,18 @@ local function CDs ()
     end
   end -- TODO: implement the trinkets
   -- actions.cds+=/pool_resource,for_next=1,if=talent.shuriken_tornado.enabled&!talent.shadow_focus.enabled
-  if S.ShurikenTornado:IsAvailable() and not S.ShadowFocus:IsAvailable() then
+  if S.ShurikenTornado:IsCastable() then
     if Player:Energy() < 60 then
-      if HR.CastPooling(S.ShurikenTornado) then return "Pool for Shuriken Tornado" end
-    else
       if HR.Cast(S.ShurikenTornado, Settings.Subtlety.GCDasOffGCD.ShurikenTornado) then return "Cast Shuriken Tornado" end
+    elseif not S.ShadowFocus:IsAvailable() then
+      if HR.CastPooling(S.ShurikenTornado) then return "Pool for Shuriken Tornado" end
     end
   end
   -- actions.cds+=/symbols_of_death,if=variable.snd_condition&(!buff.the_rotten.up|!set_bonus.tier30_2pc)&buff.symbols_of_death.remains<=3&(!talent.flagellation|cooldown.flagellation.remains>10|buff.shadow_dance.remains>=2&talent.invigorating_shadowdust|cooldown.flagellation.up&combo_points>=5&!talent.invigorating_shadowdust)
-  -- TODO: Get this to work
+  -- Comment: Added "or (not S.ShadowDance:IsReady() and Player:HasTier(30, 2) and S.ShadowDance:ChargesFractional() == 2))" so that it is used in opener, but not when Tier 30-2SetBuff is active, thereby correctly extending SoD)
   if S.SymbolsofDeath:IsCastable() then
     if SnDCondition and (not Player:BuffUp(S.TheRottenBuff) or not Player:HasTier(30, 2)) and
-      Player:BuffRemains(S.SymbolsofDeath) <= 3 and
+      (Player:BuffRemains(S.SymbolsofDeath) <= 3 or (not S.ShadowDance:IsReady() and Player:HasTier(30, 2) and S.ShadowDance:ChargesFractional() == 2)) and
       ((not S.Flagellation:IsAvailable() or S.Flagellation:CooldownRemains() > 10) or 
       ((ShadowDanceBuffRemains or 0) >= 2 and S.InvigoratingShadowdust:IsAvailable()) or 
       (S.Flagellation:CooldownUp() and ComboPoints >= 5 and not S.InvigoratingShadowdust:IsAvailable())) then
@@ -578,7 +578,7 @@ local function CDs ()
     -- actions.cds+=/shadow_blades,if=variable.snd_condition&(combo_points<=1|set_bonus.tier31_4pc)&(buff.flagellation_buff.up|buff.flagellation_persist.up|!talent.flagellation)
     if S.ShadowBlades:IsCastable() then
       if SnDCondition and ComboPoints <= 1 and -- here include "or Player:HasTier(31, 4)) as soon as HeroLib is updates, dont forget "("infront of ComboPoints"
-        (Player:BuffUp(S.Flagellation) or Player:BuffUp(S.FlagellationPersistBuff) or not S.Flagellation:IsAvailable()) then
+        (Player:BuffUp(S.Flagellation) or not S.Flagellation:IsAvailable()) then -- "Player:BuffUp(S.FlagellationPersistBuff)" does not seem correct, deleted till its clear what "buff.flagellation_persist.up" means.
         if HR.Cast(S.ShadowBlades, Settings.Subtlety.OffGCDasOffGCD.ShadowBlades) then return "Cast Shadow Blades" end
       end
     end
@@ -664,7 +664,7 @@ local function CDs ()
       end
       -- actions.cds+=/use_item,name=mirror_of_fractured_tomorrows,if=buff.shadow_dance.up&(target.time_to_die>=15|equipped.ashes_of_the_embersoul)
       if I.MirrorOfFracturedTomorrows:IsEquippedAndReady() then
-        if Player:BuffUp(S.ShadowDanceBuff) and (Target:FilteredTimeToDie() >= 15 or I.AshesOfTheEmbersoul:IsEquipped()) then
+        if Player:BuffUp(S.ShadowDanceBuff) and (Target:FilteredTimeToDie(">=", 15) or I.AshesOfTheEmbersoul:IsEquipped()) then
           if HR.Cast(I.MirrorOfFracturedTomorrows, nil, Settings.Commons.TrinketDisplayStyle) then return "Mirror Of Fractured Tomorrows"; end
         end
       end
