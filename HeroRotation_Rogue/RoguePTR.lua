@@ -214,6 +214,7 @@ Spell.Rogue.Subtlety = MergeTableByKey(Spell.Rogue.Commons, {
   ShadowBlades            = Spell(121471),
   Shadowstrike            = Spell(185438),
   ShurikenStorm           = Spell(197835),
+  ShadowTechniques        = Spell(196911),  
   ShurikenToss            = Spell(114014),
   SymbolsofDeath          = Spell(212283),
   -- Talents
@@ -246,6 +247,7 @@ Spell.Rogue.Subtlety = MergeTableByKey(Spell.Rogue.Commons, {
   PremeditationBuff       = Spell(343173),
   SecretStratagem         = Spell(394320),
   SecretTechnique         = Spell(280719),
+  Shadowcraft             = Spell(426594),
   ShadowFocus             = Spell(108209),
   ShurikenTornado         = Spell(277925),
   SilentStorm             = Spell(385722),
@@ -273,9 +275,13 @@ Item.Rogue.Outlaw = {
 
 Item.Rogue.Subtlety = {
   -- Trinkets
-  ManicGrieftorch         = Item(194308, {13, 14}),
-  StormEatersBoon         = Item(194302, {13, 14}),
-  BeaconToTheBeyond       = Item(203963, {13, 14})
+  ManicGrieftorch            = Item(194308, {13, 14}),
+  StormEatersBoon            = Item(194302, {13, 14}),
+  BeaconToTheBeyond          = Item(203963, {13, 14}),
+  MirrorOfFracturedTomorrows = Item(207581, {13, 14}),
+  AshesOfTheEmbersoul        = Item(207582, {13, 14}), --Placeholder
+  WitherBarksBranch          = Item(207583, {13, 14}), --Placeholder
+  BandolierOfTwistedBlades   = Item(207584, {13, 14})  --Placeholder
 }
 
 function Commons.StealthSpell()
