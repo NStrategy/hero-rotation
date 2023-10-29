@@ -89,7 +89,6 @@ actions.stealth_cds+=/shadow_dance,if=variable.rotten&(!talent.the_first_dance|c
 actions.stealthed=shadowstrike,if=(buff.stealth.up)&(spell_targets.shuriken_storm<4|variable.priority_rotation)
 actions.stealthed+=/call_action_list,name=finish,if=variable.effective_combo_points>=cp_max_spend
 actions.stealthed+=/call_action_list,name=finish,if=buff.shuriken_tornado.up&combo_points.deficit<=2
-actions.stealthed+=/call_action_list,name=finish,if=spell_targets.shuriken_storm>=4
 actions.stealthed+=/call_action_list,name=finish,if=combo_points.deficit<=1+(talent.deeper_stratagem|talent.secret_stratagem)
 actions.stealthed+=/backstab,if=buff.shadow_dance.remains>=3&buff.shadow_blades.up&!used_for_danse&talent.danse_macabre&spell_targets.shuriken_storm<=3&!buff.the_rotten.up
 actions.stealthed+=/gloomblade,if=buff.shadow_dance.remains>=3&buff.shadow_blades.up&!used_for_danse&talent.danse_macabre&spell_targets.shuriken_storm<=4
