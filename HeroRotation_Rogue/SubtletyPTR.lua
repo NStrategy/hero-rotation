@@ -549,10 +549,9 @@ local function CDs ()
     end
   end
   -- actions.cds+=/symbols_of_death,if=variable.snd_condition&(!buff.the_rotten.up|!set_bonus.tier30_2pc)&buff.symbols_of_death.remains<=3&(!talent.flagellation|cooldown.flagellation.remains>10|buff.shadow_dance.remains>=2&talent.invigorating_shadowdust|cooldown.flagellation.up&combo_points>=5&!talent.invigorating_shadowdust)
-  -- Comment: Added "or (not S.ShadowDance:IsCastable() and Player:HasTier(30, 2) and S.ShadowDance:Charges() == 2))" so that it is used in opener, but not when Tier 30-2SetBuff is active, thereby correctly extending SoD)
   if S.SymbolsofDeath:IsCastable() then
     if SnDCondition and (not Player:BuffUp(S.TheRottenBuff) or not Player:HasTier(30, 2)) and
-      (Player:BuffRemains(S.SymbolsofDeath) <= 3 and ((not S.ShadowDance:IsCastable()) or (S.ShadowDance:IsCastable() and Player:HasTier(30, 2) and S.ShadowDance:Charges() == 2))) and
+      Player:BuffRemains(S.SymbolsofDeath) <= 3 and
       ((not S.Flagellation:IsAvailable() or S.Flagellation:CooldownRemains() > 10) or 
       (Player:BuffRemains(S.ShadowDanceBuff) >= 2 and S.InvigoratingShadowdust:IsAvailable()) or 
       (S.Flagellation:CooldownUp() and ComboPoints >= 5 and not S.InvigoratingShadowdust:IsAvailable())) then
