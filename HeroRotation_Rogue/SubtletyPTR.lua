@@ -256,7 +256,7 @@ local function Finish (ReturnSpellOnly, StealthSpell)
     end
   end
 
-  if S.SliceandDice:IsCastable() and HL.FilteredFightRemains(MeleeEnemies10y, ">", Player:BuffRemains(S.SliceandDice)) then -- TODO: Add a Vanish Condition so it correctly, maybe if speced not into Dust, so it does not get recommended. Atm its very agressive in its use.
+  if S.SliceandDice:IsCastable() and HL.FilteredFightRemains(MeleeEnemies10y, ">", Player:BuffRemains(S.SliceandDice)) then -- TODO: Add a Vanish Condition so it correctly, maybe if speced not into Dust, so it does not get recommended. Atm its very agressive in its use. Currently not added because of PTR lag, if less ping, maybe no issue.
     -- actions.finish+=/variable,name=premed_snd_condition,value=talent.premeditation.enabled&spell_targets.shuriken_storm<5
     if S.Premeditation:IsAvailable() and MeleeEnemies10yCount < 5 then
       -- actions.finish+=/slice_and_dice,if=!stealthed.all&!variable.premed_snd_condition&spell_targets.shuriken_storm<6&!buff.shadow_dance.up&buff.slice_and_dice.remains<fight_remains&refreshable
@@ -417,7 +417,7 @@ local function Stealthed (ReturnSpellOnly, StealthSpell)
   end
 
   -- actions.stealthed+=/backstab,if=buff.shadow_dance.remains>=3&buff.shadow_blades.up&!used_for_danse&talent.danse_macabre&spell_targets.shuriken_storm<=3&!buff.the_rotten.up
-  if S.Backstab:IsCastable() then
+  if S.Backstab:IsCastable() then -- TODO: Since BS is used as the first ability in stealth under these condition, it should so show Dance|Backstab Macro - no clue if possible like it was with gloomblade tho
     if Player:BuffRemains(S.ShadowDanceBuff) >= 3 and Player:BuffUp(S.ShadowBlades) and not Used_For_Danse(S.Backstab)
        and S.DanseMacabre:IsAvailable() and MeleeEnemies10yCount <= 3 and not Player:BuffUp(S.TheRottenBuff) then
        if ReturnSpellOnly then
@@ -439,7 +439,7 @@ local function Stealthed (ReturnSpellOnly, StealthSpell)
        if ReturnSpellOnly then
            -- If calling from a Stealth macro, we don't need the PV suggestion since it's already a macro cast
            if StealthSpell then
-               return S.Gloomblade
+               return S.Gloomblade 
                else
                return { S.Gloomblade, S.Stealth }
            end
@@ -552,7 +552,7 @@ local function CDs ()
   -- Comment: Added "or (not S.ShadowDance:IsCastable() and Player:HasTier(30, 2) and S.ShadowDance:Charges() == 2))" so that it is used in opener, but not when Tier 30-2SetBuff is active, thereby correctly extending SoD)
   if S.SymbolsofDeath:IsCastable() then
     if SnDCondition and (not Player:BuffUp(S.TheRottenBuff) or not Player:HasTier(30, 2)) and
-      (Player:BuffRemains(S.SymbolsofDeath) <= 3 or (not S.ShadowDance:IsCastable() and Player:HasTier(30, 2) and S.ShadowDance:Charges() == 2)) and
+      (Player:BuffRemains(S.SymbolsofDeath) <= 3 and ((not S.ShadowDance:IsCastable()) or (S.ShadowDance:IsCastable() and Player:HasTier(30, 2) and S.ShadowDance:Charges() == 2))) and
       ((not S.Flagellation:IsAvailable() or S.Flagellation:CooldownRemains() > 10) or 
       (Player:BuffRemains(S.ShadowDanceBuff) >= 2 and S.InvigoratingShadowdust:IsAvailable()) or 
       (S.Flagellation:CooldownUp() and ComboPoints >= 5 and not S.InvigoratingShadowdust:IsAvailable())) then
@@ -600,13 +600,12 @@ local function CDs ()
     end
     -- actions.cds+=/thistle_tea,if=(cooldown.symbols_of_death.remains>=3|buff.symbols_of_death.up)&!buff.thistle_tea.up&(energy.deficit>=(100)&(combo_points.deficit>=2|spell_targets.shuriken_storm>=3)|(cooldown.thistle_tea.charges_fractional>=(2.75-0.15*talent.invigorating_shadowdust.rank&cooldown.vanish.up))&buff.shadow_dance.up&dot.rupture.ticking&spell_targets.shuriken_storm<3)|buff.shadow_dance.remains>=4&!buff.thistle_tea.up&spell_targets.shuriken_storm>=3|!buff.thistle_tea.up&fight_remains<=(6*cooldown.thistle_tea.charges)
     if S.ThistleTea:IsReady() then -- TODO: Check if this is correct
-       if (S.SymbolsofDeath:CooldownRemains() >= 3 or Player:BuffUp(S.SymbolsofDeath)) 
-         and not Player:BuffUp(S.ThistleTea)
-         and (Player:EnergyDeficitPredicted() >= 100 and (Player:ComboPointsDeficit() >= 2 or MeleeEnemies10yCount >= 3)
-         or (S.ThistleTea:ChargesFractional() >= (2.75 - 0.15 * S.InvigoratingShadowdust:TalentRank()) and S.Vanish:CooldownUp()) 
-         and Player:BuffUp(S.ShadowDanceBuff) and Target:DebuffUp(S.Rupture) and MeleeEnemies10yCount < 3)
-         or Player:BuffRemains(S.ShadowDanceBuff) >= 4 and not Player:BuffUp(S.ThistleTea) and MeleeEnemies10yCount >= 3
-         or not Player:BuffUp(S.ThistleTea) and HL.BossFilteredFightRemains("<=", 6 * S.ThistleTea:Charges()) then
+       if ((S.SymbolsofDeath:CooldownRemains() >= 3 or Player:BuffUp(S.SymbolsofDeath)) and not Player:BuffUp(S.ThistleTea) and 
+          ((Player:EnergyDeficitPredicted() >= 100 and (Player:ComboPointsDeficit() >= 2 or MeleeEnemies10yCount >= 3)) or 
+          (S.ThistleTea:ChargesFractional() >= (2.75 - 0.15 * S.InvigoratingShadowdust:TalentRank()) and S.Vanish:CooldownUp())) and 
+          Player:BuffUp(S.ShadowDanceBuff) and Target:DebuffUp(S.Rupture) and MeleeEnemies10yCount < 3) or 
+          (Player:BuffRemains(S.ShadowDanceBuff) >= 4 and not Player:BuffUp(S.ThistleTea) and MeleeEnemies10yCount >= 3) or 
+          (not Player:BuffUp(S.ThistleTea) and HL.BossFilteredFightRemains("<=", 6 * S.ThistleTea:Charges())) then
          if HR.Cast(S.ThistleTea, nil, Settings.Commons.TrinketDisplayStyle) then return "Thistle Tea"; end
        end
     end
@@ -692,7 +691,7 @@ end
 local function Stealth_CDs (EnergyThreshold)
   if HR.CDsON() then
     -- actions.stealth_cds+=/vanish,if=(combo_points.deficit>1|buff.shadow_blades.up&talent.invigorating_shadowdust)&!variable.shd_threshold&(cooldown.flagellation.remains>=60|!talent.flagellation|fight_remains<=(30*cooldown.vanish.charges))&(cooldown.symbols_of_death.remains>3|!set_bonus.tier30_2pc)&(cooldown.secret_technique.remains>=10|!talent.secret_technique|cooldown.vanish.charges>=2&talent.invigorating_shadowdust&(buff.the_rotten.up|!talent.the_rotten)&!raid_event.adds.up)
-    -- TODO: Get this to work
+    -- TODO: Check if correct
       if S.Vanish:IsCastable()
         and (ComboPointsDeficit > 1 or Player:BuffUp(S.ShadowBlades) and S.InvigoratingShadowdust:IsAvailable())
         and not ShD_Threshold()
