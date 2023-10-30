@@ -69,7 +69,8 @@ actions.finish+=/rupture,if=!dot.rupture.ticking&target.time_to_die-remains>6
 actions.finish+=/variable,name=premed_snd_condition,value=talent.premeditation.enabled&spell_targets.shuriken_storm<5
 actions.finish+=/slice_and_dice,if=!stealthed.all&!variable.premed_snd_condition&spell_targets.shuriken_storm<6&!buff.shadow_dance.up&buff.slice_and_dice.remains<fight_remains&refreshable
 actions.finish+=/variable,name=skip_rupture,value=buff.thistle_tea.up&spell_targets.shuriken_storm=1|buff.shadow_dance.up&(spell_targets.shuriken_storm=1|dot.rupture.ticking&spell_targets.shuriken_storm>=2)
-actions.finish+=/rupture,if=(!variable.skip_rupture|variable.priority_rotation)&target.time_to_die-remains>6&(refreshable&(dot.rupture.pmultiplier<=1|buff.finality_rupture.up)|remains<=2)
+actions.finish+=/rupture,if=(!variable.skip_rupture|variable.priority_rotation)&target.time_to_die-remains>6&refreshable
+actions.finish+=/rupture,if=buff.finality_rupture.up&buff.shadow_dance.up&spell_targets.shuriken_storm<=4
 actions.finish+=/cold_blood,if=variable.secret_condition&cooldown.secret_technique.ready
 actions.finish+=/secret_technique,if=variable.secret_condition&(!talent.cold_blood|cooldown.cold_blood.remains>buff.shadow_dance.remains-2|!talent.improved_shadow_dance)
 actions.finish+=/rupture,cycle_targets=1,if=!variable.skip_rupture&!variable.priority_rotation&spell_targets.shuriken_storm>=2&target.time_to_die>=(2*combo_points)&refreshable
@@ -90,7 +91,8 @@ actions.stealthed=shadowstrike,if=(buff.stealth.up)&(spell_targets.shuriken_stor
 actions.stealthed+=/call_action_list,name=finish,if=variable.effective_combo_points>=cp_max_spend
 actions.stealthed+=/call_action_list,name=finish,if=buff.shuriken_tornado.up&combo_points.deficit<=2
 actions.stealthed+=/call_action_list,name=finish,if=combo_points.deficit<=1+(talent.deeper_stratagem|talent.secret_stratagem)
-actions.stealthed+=/backstab,if=buff.shadow_dance.remains>=3&buff.shadow_blades.up&!used_for_danse&talent.danse_macabre&spell_targets.shuriken_storm<=3&!buff.the_rotten.up
-actions.stealthed+=/gloomblade,if=buff.shadow_dance.remains>=3&buff.shadow_blades.up&!used_for_danse&talent.danse_macabre&spell_targets.shuriken_storm<=4
-actions.stealthed+=/shuriken_storm,if=!buff.premeditation.up&spell_targets>=4-(!used_for_danse&talent.danse_macabre)
+actions.stealthed+=/backstab,if=!buff.premeditation.up&buff.shadow_dance.remains>=3&buff.shadow_blades.up&!used_for_danse&talent.danse_macabre&spell_targets.shuriken_storm<=3&!buff.the_rotten.up
+actions.stealthed+=/gloomblade,if=!buff.premeditation.up&buff.shadow_dance.remains>=3&buff.shadow_blades.up&!used_for_danse&talent.danse_macabre&spell_targets.shuriken_storm<=4
+actions.stealthed+=/shadowstrike,if=!used_for_danse&buff.shadow_blades.up
+actions.stealthed+=/shuriken_storm,if=!buff.premeditation.up&spell_targets>=4
 actions.stealthed+=/shadowstrike
