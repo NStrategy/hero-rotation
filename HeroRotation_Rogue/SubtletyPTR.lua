@@ -416,7 +416,7 @@ local function Stealthed (ReturnSpellOnly, StealthSpell)
   end
 
   -- actions.stealthed+=/backstab,if=!buff.premeditation.up&buff.shadow_dance.remains>=3&buff.shadow_blades.up&!used_for_danse&talent.danse_macabre&spell_targets.shuriken_storm<=3&!buff.the_rotten.up
-  if S.Backstab:IsCastable() then -- TODO: Since BS is used as the first ability in stealth under these condition, it should so show Dance|Backstab Macro - no clue if possible like it was with gloomblade tho
+  if S.Backstab:IsCastable() then
     if not Player:BuffUp(S.PremeditationBuff) and Player:BuffRemains(S.ShadowDanceBuff) >= 3 and Player:BuffUp(S.ShadowBlades) and not Used_For_Danse(S.Backstab)
        and S.DanseMacabre:IsAvailable() and MeleeEnemies10yCount <= 3 and not Player:BuffUp(S.TheRottenBuff) then
        if ReturnSpellOnly then
@@ -719,14 +719,14 @@ local function Stealth_CDs (EnergyThreshold)
     end
   end
   if TargetInMeleeRange and S.ShadowDance:IsCastable() and HR.CDsON() then
-    -- actions.stealth_cds+=/shadow_dance,if=variable.rotten&(!talent.the_first_dance|combo_points.deficit>=4|buff.shadow_blades.up)&(variable.shd_combo_points&variable.shd_threshold|(buff.shadow_blades.up|cooldown.symbols_of_death.up&!talent.sepsis|buff.symbols_of_death.remains>=6&!set_bonus.tier30_2pc|!buff.symbols_of_death.remains&set_bonus.tier30_2pc)&cooldown.secret_technique.remains<10+12*(!talent.invigorating_shadowdust|set_bonus.tier30_2pc))
+    -- actions.stealth_cds+=/shadow_dance,if=(dot.rupture.ticking|talent.invigorating_shadowdust)&variable.rotten&(!talent.the_first_dance|combo_points.deficit>=4|buff.shadow_blades.up)&(variable.shd_combo_points&variable.shd_threshold|(buff.shadow_blades.up|cooldown.symbols_of_death.up&!talent.sepsis|buff.symbols_of_death.remains>=4&!set_bonus.tier30_2pc|!buff.symbols_of_death.remains&set_bonus.tier30_2pc)&cooldown.secret_technique.remains<10+12*(!talent.invigorating_shadowdust|set_bonus.tier30_2pc))
     -- NOTE: |buff.flagellation.up is a dead operation in SimC due to a typo, since the buff we use in-game is buff.flagellation_buff.up, ignoring
-    if Rotten_Threshold() and 
+    if  (Target:DebuffUp(S.Rupture) or S.InvigoratingShadowdust:IsAvailable()) and Rotten_Threshold() and 
         (not S.TheFirstDance:IsAvailable() or ComboPointsDeficit >= 4 or Player:BuffUp(S.ShadowBlades)) and
         (ShD_Combo_Points() and ShD_Threshold() or 
         (Player:BuffUp(S.ShadowBlades) or 
         (S.SymbolsofDeath:CooldownUp() and not S.Sepsis:IsAvailable()) or 
-        (Player:BuffRemains(S.SymbolsofDeath) >= 6 and not Player:HasTier(30, 2)) or 
+        (Player:BuffRemains(S.SymbolsofDeath) >= 4 and not Player:HasTier(30, 2)) or 
         (not Player:BuffUp(S.SymbolsofDeath) and Player:HasTier(30, 2))) and
         S.SecretTechnique:CooldownRemains() < 10 + 12 * ((not S.InvigoratingShadowdust:IsAvailable() or Player:HasTier(30, 2)) and 1 or 0)) then
         ShouldReturn = StealthMacro(S.ShadowDance, EnergyThreshold)
