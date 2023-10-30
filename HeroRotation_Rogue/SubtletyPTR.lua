@@ -243,7 +243,7 @@ local function Finish (ReturnSpellOnly, StealthSpell)
   end
 
   local SkipRupture = Skip_Rupture(ShadowDanceBuff)
-  -- actions.finish+=/rupture,if=!dot.rupture.ticking&target.time_to_die-remains>6 (added SkipRupture and ShadowDanceBuff here for M+)
+  -- actions.finish+=/rupture,if=!dot.rupture.ticking&target.time_to_die-remains>6 (added SkipRupture and ShadowDanceBuff here for M+, maybe needs to be deleted)
   if S.Rupture:IsCastable() and not SkipRupture and not Player:BuffUp(S.ShadowDanceBuff) then
     if not Target:DebuffUp(S.Rupture)
        and Target:FilteredTimeToDie(">", 6, -Target:DebuffRemains(S.Rupture)) then
@@ -272,12 +272,12 @@ local function Finish (ReturnSpellOnly, StealthSpell)
     end
   end
 
-  -- actions.finish+=/rupture,if=(!variable.skip_rupture|variable.priority_rotation)&target.time_to_die-remains>6&(refreshable&(dot.rupture.pmultiplier<=1|buff.finality_rupture.up)|remains<=2) // (if not Player:BuffUp(S.ShadowDanceBuff) instead of Skip_Rupture as it does not work correctly.)
+  -- actions.finish+=/rupture,if=(!variable.skip_rupture|variable.priority_rotation)&target.time_to_die-remains>6&refreshable
   if (not Player:BuffUp(S.ShadowDanceBuff) and not SkipRupture or PriorityRotation) and S.Rupture:IsCastable() then
     if TargetInMeleeRange
       and (Target:FilteredTimeToDie(">", 6, -Target:DebuffRemains(S.Rupture)) or Target:TimeToDieIsNotValid())
       and Rogue.CanDoTUnit(Target, RuptureDMGThreshold)
-      and (Target:DebuffRefreshable(S.Rupture, RuptureThreshold) and (Player:BuffUp(S.FinalityRuptureBuff)) or Target:DebuffRemains(S.Rupture) < 2) then -- TODO: get (dot.rupture.pmultiplier<=1|buff.finality_rupture.up)|remains<=2) to work, no clue if correctly implement, at least no lua error anymore lol
+      and Target:DebuffRefreshable(S.Rupture, RuptureThreshold) then
       if ReturnSpellOnly then
         return S.Rupture
       else
@@ -286,10 +286,9 @@ local function Finish (ReturnSpellOnly, StealthSpell)
       end
     end
   end
-  -- actions.finish+=/rupture,if=!variable.skip_rupture&buff.finality_rupture.up&cooldown.shadow_dance.remains<12&cooldown.shadow_dance.charges_fractional<=1&spell_targets.shuriken_storm=1&(talent.dark_brew|talent.danse_macabre) (if not Player:BuffUp(S.ShadowDanceBuff) instead of Skip_Rupture as it does not work correctly.)
-  if not Player:BuffUp(S.ShadowDanceBuff) and not SkipRupture and S.Rupture:IsCastable() then
-    if MeleeEnemies10yCount == 1 and Player:BuffUp(S.FinalityRuptureBuff) and (S.DarkBrew:IsAvailable() or S.DanseMacabre:IsAvailable())
-      and S.ShadowDance:CooldownRemains() < 12 and S.ShadowDance:ChargesFractional() <= 1 then
+  -- actions.finish+=/rupture,if=buff.finality_rupture.up&buff.shadow_dance.up&spell_targets.shuriken_storm<=4
+  if Player:BuffUp(S.FinalityRuptureBuff) and Player:BuffUp(S.ShadowDanceBuff) and MeleeEnemies10yCount <= 4 and S.Rupture:IsCastable() then
+    if TargetInMeleeRange then
       if ReturnSpellOnly then
         return S.Rupture
       else
@@ -416,9 +415,9 @@ local function Stealthed (ReturnSpellOnly, StealthSpell)
     return Finish(ReturnSpellOnly, StealthSpell)
   end
 
-  -- actions.stealthed+=/backstab,if=buff.shadow_dance.remains>=3&buff.shadow_blades.up&!used_for_danse&talent.danse_macabre&spell_targets.shuriken_storm<=3&!buff.the_rotten.up
+  -- actions.stealthed+=/backstab,if=!buff.premeditation.up&buff.shadow_dance.remains>=3&buff.shadow_blades.up&!used_for_danse&talent.danse_macabre&spell_targets.shuriken_storm<=3&!buff.the_rotten.up
   if S.Backstab:IsCastable() then -- TODO: Since BS is used as the first ability in stealth under these condition, it should so show Dance|Backstab Macro - no clue if possible like it was with gloomblade tho
-    if Player:BuffRemains(S.ShadowDanceBuff) >= 3 and Player:BuffUp(S.ShadowBlades) and not Used_For_Danse(S.Backstab)
+    if not Player:BuffUp(S.PremeditationBuff) and Player:BuffRemains(S.ShadowDanceBuff) >= 3 and Player:BuffUp(S.ShadowBlades) and not Used_For_Danse(S.Backstab)
        and S.DanseMacabre:IsAvailable() and MeleeEnemies10yCount <= 3 and not Player:BuffUp(S.TheRottenBuff) then
        if ReturnSpellOnly then
            -- If calling from a Stealth macro, we don't need the PV suggestion since it's already a macro cast
@@ -432,9 +431,9 @@ local function Stealthed (ReturnSpellOnly, StealthSpell)
        end
     end
   end
-  -- actions.stealthed+=/gloomblade,if=buff.shadow_dance.remains>=3&buff.shadow_blades.up&!used_for_danse&talent.danse_macabre&spell_targets.shuriken_storm<=4
+  -- actions.stealthed+=/gloomblade,if=!buff.premeditation.up&buff.shadow_dance.remains>=3&buff.shadow_blades.up&!used_for_danse&talent.danse_macabre&spell_targets.shuriken_storm<=4
   if S.Gloomblade:IsCastable() then
-    if Player:BuffRemains(ShadowDanceBuff) >= 3 and Player:BuffUp(S.ShadowBlades) and not Used_For_Danse(S.Gloomblade)
+    if not Player:BuffUp(S.PremeditationBuff) and Player:BuffRemains(ShadowDanceBuff) >= 3 and Player:BuffUp(S.ShadowBlades) and not Used_For_Danse(S.Gloomblade)
        and S.DanseMacabre:IsAvailable() and MeleeEnemies10yCount <= 4 then
        if ReturnSpellOnly then
            -- If calling from a Stealth macro, we don't need the PV suggestion since it's already a macro cast
@@ -448,10 +447,18 @@ local function Stealthed (ReturnSpellOnly, StealthSpell)
        end
     end
   end
-  -- actions.stealthed+=/shuriken_storm,if=!buff.premeditation.up&spell_targets>=4-(!used_for_danse&talent.danse_macabre)
+  -- actions.stealthed+=/shadowstrike,if=!used_for_danse&buff.shadow_blades.up
+  if ShadowstrikeIsCastable and not Used_For_Danse(S.Shadowstrike) and Player:BuffUp(S.ShadowBlades) then
+    if ReturnSpellOnly then
+      return S.Shadowstrike
+    else
+      if HR.Cast(S.Shadowstrike) then return "Cast Shadow Strike (Danse)" end
+    end
+  end
+  -- actions.stealthed+=/shuriken_storm,if=!buff.premeditation.up&spell_targets>=4
   if HR.AoEON() and S.ShurikenStorm:IsCastable()
       and not PremeditationBuff
-      and MeleeEnemies10yCount >= (4 - BoolToInt(not Used_For_Danse(S.ShurikenStorm) and S.DanseMacabre:IsAvailable())) then
+      and MeleeEnemies10yCount >= 4 then
       if ReturnSpellOnly then
           return S.ShurikenStorm
       else
