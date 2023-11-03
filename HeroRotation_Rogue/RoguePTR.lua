@@ -129,6 +129,8 @@ Spell.Rogue.Assassination = MergeTableByKey(Spell.Rogue.Commons, {
   ArterialPrecision       = Spell(400783),
   AtrophicPoisonDebuff    = Spell(392388),
   BlindsideBuff           = Spell(121153),
+  CausticSpatter          = Spell(421975),
+  CausticSpatterDebuff    = Spell(421876),
   CrimsonTempest          = Spell(121411),
   CutToTheChase           = Spell(51667),
   DashingScoundrel        = Spell(381797),
@@ -148,6 +150,8 @@ Spell.Rogue.Assassination = MergeTableByKey(Spell.Rogue.Commons, {
   MasterAssassinBuff      = Spell(256735),
   PreyontheWeak           = Spell(131511),
   PreyontheWeakDebuff     = Spell(255909),
+  ScentofBlood            = Spell(381799),
+  ScentofBloodBuff        = Spell(381800),
   SerratedBoneSpike       = Spell(385424),
   SerratedBoneSpikeDebuff = Spell(394036),
   ShivDebuff              = Spell(319504),
@@ -264,6 +268,10 @@ if not Item.Rogue then Item.Rogue = {} end
 Item.Rogue.Assassination = {
   -- Trinkets
   AlgetharPuzzleBox       = Item(193701, {13, 14}),
+  MirrorOfFracturedTomorrows = Item(207581, {13, 14}),
+  AshesOfTheEmbersoul        = Item(207582, {13, 14}), --Placeholder
+  WitherBarksBranch          = Item(207583, {13, 14}), --Placeholder
+  BandolierOfTwistedBlades   = Item(207584, {13, 14})  --Placeholder
 }
 
 Item.Rogue.Outlaw = {
