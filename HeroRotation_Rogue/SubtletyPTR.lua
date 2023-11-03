@@ -198,9 +198,8 @@ local function ShD_Threshold ()
   return S.ShadowDance:ChargesFractional() >= 0.75 + BoolToInt(S.ShadowDanceTalent:IsAvailable())
 end
 local function ShD_Combo_Points ()
-  -- actions.stealth_cds+=/variable,name=shd_combo_points,value=combo_points<=1
   -- actions.stealth_cds+=/variable,name=shd_combo_points,value=combo_points.deficit>=3
-  return ComboPoints <= 1 or ComboPointsDeficit >= 3
+  return ComboPointsDeficit >= 3
 end
 local function SnD_Condition ()
   -- actions+=/variable,name=snd_condition,value=buff.slice_and_dice.up|spell_targets.shuriken_storm>=cp_max_spend
@@ -346,9 +345,8 @@ local function Finish (ReturnSpellOnly, StealthSpell)
       end
     end
   end
-  -- actions.finish+=/black_powder,if=!variable.priority_rotation&spell_targets>=3|!used_for_danse&buff.shadow_dance.up&spell_targets.shuriken_storm=2&talent.danse_macabre
-  if S.BlackPowder:IsCastable() and (not PriorityRotation and MeleeEnemies10yCount >= 3
-    or (MeleeEnemies10yCount == 2 and ShadowDanceBuff and S.DanseMacabre:IsAvailable() and not Used_For_Danse(S.BlackPowder))) then
+  -- actions.finish+=/black_powder,if=!variable.priority_rotation&spell_targets>=3
+  if S.BlackPowder:IsCastable() and not PriorityRotation and MeleeEnemies10yCount >= 3 then
     if ReturnSpellOnly then
       return S.BlackPowder
     else
@@ -403,7 +401,7 @@ local function Stealthed (ReturnSpellOnly, StealthSpell)
     ShadowstrikeIsCastable = ShadowstrikeIsCastable and TargetInMeleeRange
   end
 
-  -- actions.stealthed=shadowstrike,if=(buff.stealth.up)&(spell_targets.shuriken_storm<4|variable.priority_rotation)
+  -- actions.stealthed=shadowstrike,if=buff.stealth.up&(spell_targets.shuriken_storm<4|variable.priority_rotation)
   if ShadowstrikeIsCastable and StealthBuff and (MeleeEnemies10yCount < 4 or PriorityRotation) then
     if ReturnSpellOnly then
       return S.Shadowstrike
@@ -556,14 +554,6 @@ local function CDs ()
       end
     end
   end -- TODO: implement the trinkets
-  -- actions.cds+=/pool_resource,for_next=1,if=talent.shuriken_tornado.enabled&!talent.shadow_focus.enabled
-  if S.ShurikenTornado:IsCastable() then
-    if Player:Energy() < 60 then
-      if HR.Cast(S.ShurikenTornado, Settings.Subtlety.GCDasOffGCD.ShurikenTornado) then return "Cast Shuriken Tornado" end
-    elseif not S.ShadowFocus:IsAvailable() then
-      if HR.CastPooling(S.ShurikenTornado) then return "Pool for Shuriken Tornado" end
-    end
-  end
   -- actions.cds+=/symbols_of_death,if=variable.snd_condition&(!buff.the_rotten.up|!set_bonus.tier30_2pc)&buff.symbols_of_death.remains<=3&(!talent.flagellation|cooldown.flagellation.remains>10|buff.shadow_dance.remains>=2&talent.invigorating_shadowdust|cooldown.flagellation.up&combo_points>=5&!talent.invigorating_shadowdust)
   if S.SymbolsofDeath:IsCastable() then
     if SnDCondition and (not Player:BuffUp(S.TheRottenBuff) or not Player:HasTier(30, 2)) and
