@@ -181,8 +181,17 @@ end
 
 -- APL Action Lists (and Variables)
 local function Stealth_Threshold ()
-  -- actions+=/variable,name=stealth_threshold,value=25+talent.vigor.enabled*20+talent.master_of_shadows.enabled*20+talent.shadow_focus.enabled*25+talent.alacrity.enabled*20+25*(spell_targets.shuriken_storm>=4)
-  return 25 + num(S.Vigor:IsAvailable()) * 20 + num(S.MasterofShadows:IsAvailable()) * 20 + num(S.ShadowFocus:IsAvailable()) * 25 + num(S.Alacrity:IsAvailable()) * 20 + num(MeleeEnemies10yCount >= 4) * 25
+  -- actions+=/variable,name=stealth_threshold,value=20+talent.vigor.rank*25+talent.thistle_tea*20+talent.shadowcraft*20
+  return 20 + num(S.Vigor:IsAvailable()) * 25 + num(S.ThistleTea:IsAvailable()) * 20 + num(S.Shadowcraft:IsAvailable()) * 20
+end
+local function Stealth_Helper ()
+  -- actions+=/variable,name=stealth_helper,value=energy>=variable.stealth_threshold
+  -- actions+=/variable,name=stealth_helper,value=energy.deficit<=variable.stealth_threshold,if=!talent.vigor|talent.shadowcraft
+  if not S.Vigor:IsAvailable() or S.Shadowcraft:IsAvailable() then
+    return Player:EnergyDeficitPredicted() <= Stealth_Threshold()
+  else
+    return Player:Energy() >= Stealth_Threshold()
+  end
 end
 local function ShD_Threshold ()
   -- actions.stealth_cds=variable,name=shd_threshold,value=cooldown.shadow_dance.charges_fractional>=0.75+talent.shadow_dance
@@ -202,9 +211,9 @@ local function Skip_Rupture (ShadowDanceBuff)
   return Player:BuffUp(S.ThistleTea) and MeleeEnemies10yCount == 1
     or ShadowDanceBuff and (MeleeEnemies10yCount == 1 or Target:DebuffUp(S.Rupture) and MeleeEnemies10yCount >= 2) or Target:NPCID() == 202969 or Target:NPCID() == 203230 or Target:NPCID() == 202824 or Target:NPCID() == 202971 or Target:NPCID() == 201738 or Target:NPCID() == 202814
 end
-local function Rotten_Threshold ()
-  -- variable,name=rotten_threshold,value=!buff.the_rotten.up|!set_bonus.tier30_2pc (in the APL its called "name=rotten")
-  return not Player:BuffUp(S.TheRottenBuff) or not Player:HasTier(30, 2)
+local function Rotten_CB ()
+  -- actions.stealth_cds+=/variable,name=rotten_cb,value=(!buff.the_rotten.up|!set_bonus.tier30_2pc)&(!talent.cold_blood|cooldown.cold_blood.remains<4|cooldown.cold_blood.remains>10)
+  return (not Player:BuffUp(S.TheRottenBuff) or not Player:HasTier(30, 2)) and (not S.ColdBlood:IsAvailable() or S.ColdBlood:CooldownRemains() < 4 or S.ColdBlood:CooldownRemains() > 10)
 end
 local function Used_For_Danse(Spell)
   return Player:BuffUp(S.ShadowDanceBuff) and Spell:TimeSinceLastCast() < S.ShadowDance:TimeSinceLastCast()
@@ -678,8 +687,9 @@ local function CDs ()
             if HR.Cast(I.BeaconToTheBeyond, nil, Settings.Commons.TrinketDisplayStyle) then return "Beacon To The Beyond" end
         end
       end
-      -- actions.cds+=/use_items,if=!stealthed.all|fight_remains<10
-      if not Player:StealthUp(true, true) or HL.BossFilteredFightRemains("<", 10) then
+      -- actions.cds+=/use_items,if=!stealthed.all&(!trinket.mirror_of_fractured_tomorrows.cooldown.ready|!equipped.mirror_of_fractured_tomorrows)|fight_remains<10
+      if not Player:StealthUp(true, true) and (not I.MirrorOfFracturedTomorrows:IsReady() or not I.MirrorOfFracturedTomorrows:IsEquipped())
+        or HL.BossFilteredFightRemains("<", 10) then
         local TrinketToUse = Player:GetUseableItems(OnUseExcludes)
         if TrinketToUse then
             if HR.Cast(TrinketToUse, nil, Settings.Commons.TrinketDisplayStyle) then
@@ -719,9 +729,9 @@ local function Stealth_CDs (EnergyThreshold)
     end
   end
   if TargetInMeleeRange and S.ShadowDance:IsCastable() and HR.CDsON() then
-    -- actions.stealth_cds+=/shadow_dance,if=(dot.rupture.ticking|talent.invigorating_shadowdust)&variable.rotten&(!talent.the_first_dance|combo_points.deficit>=4|buff.shadow_blades.up)&(variable.shd_combo_points&variable.shd_threshold|(buff.shadow_blades.up|cooldown.symbols_of_death.up&!talent.sepsis|buff.symbols_of_death.remains>=4&!set_bonus.tier30_2pc|!buff.symbols_of_death.remains&set_bonus.tier30_2pc)&cooldown.secret_technique.remains<10+12*(!talent.invigorating_shadowdust|set_bonus.tier30_2pc))
+    -- actions.stealth_cds+=/shadow_dance,if=(dot.rupture.ticking|talent.invigorating_shadowdust)&variable.rotten_cb&(!talent.the_first_dance|combo_points.deficit>=4|buff.shadow_blades.up)&(variable.shd_combo_points&variable.shd_threshold|(buff.shadow_blades.up|cooldown.symbols_of_death.up&!talent.sepsis|buff.symbols_of_death.remains>=4&!set_bonus.tier30_2pc|!buff.symbols_of_death.remains&set_bonus.tier30_2pc)&cooldown.secret_technique.remains<10+12*(!talent.invigorating_shadowdust|set_bonus.tier30_2pc))
     -- NOTE: |buff.flagellation.up is a dead operation in SimC due to a typo, since the buff we use in-game is buff.flagellation_buff.up, ignoring
-    if  (Target:DebuffUp(S.Rupture) or S.InvigoratingShadowdust:IsAvailable()) and Rotten_Threshold() and 
+    if  (Target:DebuffUp(S.Rupture) or S.InvigoratingShadowdust:IsAvailable()) and Rotten_CB() and 
         (not S.TheFirstDance:IsAvailable() or ComboPointsDeficit >= 4 or Player:BuffUp(S.ShadowBlades)) and
         (ShD_Combo_Points() and ShD_Threshold() or 
         (Player:BuffUp(S.ShadowBlades) or 
@@ -937,8 +947,8 @@ local function APL ()
       return "Stealthed Pooling"
     end
 
-    -- actions+=/call_action_list,name=stealth_cds,if=energy.deficit<=variable.stealth_threshold
-    if Player:EnergyPredicted() >= StealthEnergyRequired then
+    -- actions+=/call_action_list,name=stealth_cds,if=variable.stealth_helper|talent.invigorating_shadowdust
+    if Stealth_Helper() or S.InvigoratingShadowdust:IsAvailable() then
       ShouldReturn = Stealth_CDs()
       if ShouldReturn then return "Stealth CDs: " .. ShouldReturn end
     end
