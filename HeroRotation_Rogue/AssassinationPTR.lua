@@ -458,6 +458,15 @@ local function CDs ()
     if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv (Kingsbane)" end
   end
 
+  -- actions.cds+=/shiv,if=talent.kingsbane&buff.envenom.up&!debuff.shiv.up&((dot.kingsbane.ticking&dot.kingsbane.remains<8)|cooldown.kingsbane.remains<=1|dot.kingsbane.ticking|dot.deathmark.ticking)&dot.garrote.ticking&dot.rupture.ticking&(!talent.crimson_tempest.enabled|variable.single_target|dot.crimson_tempest.ticking)|fight_remains<=charges*8
+  if S.Shiv:IsReady() and S.Kingsbane:IsAvailable() and Player:BuffUp(S.Envenom) and not Target:DebuffUp(S.ShivDebuff)
+    and ((Target:DebuffUp(S.Kingsbane) and Target:DebuffRemains(S.Kingsbane) < 8)
+    or S.Kingsbane:CooldownRemains() <= 1 or Target:DebuffUp(S.Kingsbane) or Target:DebuffUp(S.Deathmark))
+    and Target:DebuffUp(S.Garrote) and Target:DebuffUp(S.Rupture)
+    and (not S.CrimsonTempest:IsAvailable() or SingleTarget or Target:DebuffUp(S.CrimsonTempest))
+    or HL.BossFilteredFightRemains("<=", S.Shiv:Charges() * 8) then
+    if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv (Kingsbane 1 Second Remaining)" end
+  end
   -- actions.cds+=/shiv,if=talent.arterial_precision&!debuff.shiv.up&dot.garrote.ticking&dot.rupture.ticking&debuff.deathmark.up|fight_remains<=charges*8
   if S.Shiv:IsReady() and S.ArterialPrecision:IsAvailable() and not Target:DebuffUp(S.ShivDebuff) and Target:DebuffUp(S.Garrote) and Target:DebuffUp(S.Rupture)
     and (Target:DebuffUp(S.Deathmark) or HL.BossFilteredFightRemains("<=", S.Shiv:Charges() * 8)) then
@@ -479,9 +488,13 @@ local function CDs ()
     or HL.BossFilteredFightRemains("<=", S.Shiv:Charges() * 8)) then
     if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv (No-extra)" end
   end
+  -- actions.cds+=/shadow_dance,if=talent.kingsbane&cooldown.kingsbane.remains<=1&buff.envenom.up
+  if S.ShadowDance:IsReady() and S.Kingsbane:IsAvailable() and S.Kingsbane:CooldownRemains() <= 1 and Player:BuffUp(S.Envenom) then
+     if Cast(S.ShadowDance, Settings.Assassination.OffGCDasOffGCD.ShadowDance) then return "Cast Shadow Dance 1" end
+  end
   -- actions.cds+=/shadow_dance,if=talent.kingsbane&cooldown.kingsbane.remains<=2&buff.envenom.up
   if S.ShadowDance:IsReady() and S.Kingsbane:IsAvailable() and S.Kingsbane:CooldownRemains() <= 2 and Player:BuffUp(S.Envenom) then
-     if Cast(S.ShadowDance, Settings.Assassination.OffGCDasOffGCD.ShadowDance) then return "Cast Shadow Dance" end
+     if Cast(S.ShadowDance, Settings.Assassination.OffGCDasOffGCD.ShadowDance) then return "Cast Shadow Dance 2" end
   end
   -- actions.cds+=/kingsbane,if=(debuff.shiv.up|cooldown.shiv.remains<6)&buff.envenom.up&(cooldown.deathmark.remains>=50|dot.deathmark.ticking)|fight_remains<=15
   if S.Kingsbane:IsReady() and (Target:DebuffUp(S.ShivDebuff) or S.Shiv:CooldownRemains() < 6) and Player:BuffUp(S.Envenom)
@@ -551,14 +564,16 @@ local function Stealthed ()
   end
 
   if S.Garrote:IsCastable() and (ImprovedGarroteRemains() > 0) then
-    -- actions.stealthed+=/garrote,target_if=min:remains,if=stealthed.improved_garrote&(remains<(12-buff.sepsis_buff.remains)|pmultiplier<=1|(buff.indiscriminate_carnage.up&active_dot.garrote<spell_targets.fan_of_knives))&(!variable.single_target|combo_points.deficit>=3)&target.time_to_die-remains>2 TODO: Get this to work
+    -- actions.stealthed+=/garrote,target_if=min:remains,if=stealthed.improved_garrote&(remains<(12-buff.sepsis_buff.remains)|pmultiplier<=1|(buff.indiscriminate_carnage.up&active_dot.garrote<spell_targets.fan_of_knives))&(!variable.single_target|!dot.deathmark.ticking&combo_points.deficit>=3|dot.deathmark.ticking&combo_points.deficit>=4)&target.time_to_die-remains>2
     local function GarroteTargetIfFunc(TargetUnit)
       return TargetUnit:DebuffRemains(S.Garrote)
     end
     local function GarroteIfFunc(TargetUnit)
-        return (TargetUnit:DebuffRemains(S.Garrote) < (12 - Player:BuffRemains(S.SepsisBuff)) or TargetUnit:PMultiplier(S.Garrote) <= 1
+        return ((TargetUnit:DebuffRemains(S.Garrote) < (12 - Player:BuffRemains(S.SepsisBuff))) or (TargetUnit:PMultiplier(S.Garrote) <= 1)
         or (Player:BuffUp(S.IndiscriminateCarnage) and TargetUnit:DebuffRemains(S.Garrote) < MeleeEnemies10yCount))
-        and (not SingleTarget or ComboPointsDeficit >= 3) and TargetUnit:FilteredTimeToDie(">", 2, -TargetUnit:DebuffRemains(S.Garrote))
+        and (not SingleTarget or ((not TargetUnit:DebuffUp(S.Deathmark) and ComboPointsDeficit >= 3)
+        or (TargetUnit:DebuffUp(S.Deathmark) and Player:ComboPointsDeficit() >= 4)))
+        and TargetUnit:FilteredTimeToDie(">", 2, -TargetUnit:DebuffRemains(S.Garrote))
     end
     if HR.AoEON() then
       local TargetIfUnit = CheckTargetIfTarget("min", GarroteTargetIfFunc, GarroteIfFunc)
@@ -567,12 +582,16 @@ local function Stealthed ()
       end
     end
     if GarroteIfFunc(Target) then
-      -- actions.stealthed+=/garrote,target_if=min:remains,if=stealthed.improved_garrote&(remains<(12-buff.sepsis_buff.remains)|pmultiplier<=1|(buff.indiscriminate_carnage.up&active_dot.garrote<spell_targets.fan_of_knives))&(!variable.single_target|combo_points.deficit>=3)&target.time_to_die-remains>2 TODO: Get this to work
+      -- actions.stealthed+=/garrote,target_if=min:remains,if=stealthed.improved_garrote&(remains<(12-buff.sepsis_buff.remains)|pmultiplier<=1|(buff.indiscriminate_carnage.up&active_dot.garrote<spell_targets.fan_of_knives))&(!variable.single_target|!dot.deathmark.ticking&combo_points.deficit>=3|dot.deathmark.ticking&combo_points.deficit>=4)&target.time_to_die-remains>2
       if CastPooling(S.Garrote, nil, not TargetInMeleeRange) then return "Cast Garrote (Improved Garrote) 1" end
     end
     -- actions.stealthed+=/garrote,if=stealthed.improved_garrote&!buff.shadow_dance.up&(pmultiplier<=1|dot.deathmark.ticking&buff.master_assassin_aura.remains<3)&combo_points.deficit>=5
     if not Player:BuffUp(S.ShadowDance) and (Target:PMultiplier(S.Garrote) <= 1 or (Target:DebuffUp(S.Deathmark) and Player:BuffRemains(S.MasterAssassin) < 3)) and ComboPointsDeficit >= 5 then
       if CastPooling(S.Garrote, nil, not TargetInMeleeRange) then return "Cast Garrote (Improved Garrote) 2" end
+    end
+    -- garrote,if=stealthed.improved_garrote&(pmultiplier<=1|dot.deathmark.ticking)&combo_points.deficit>=5
+    if (Target:PMultiplier(S.Garrote) or Target:DebuffUp(S.Deathmark)) and ComboPointsDeficit >= 5 then
+      if CastPooling(S.Garrote, nil, not TargetInMeleeRange) then return "Cast Garrote (Improved Garrote) 3" end
     end
   end
   -- actions.stealthed+=/rupture,if=effective_combo_points>=4&(pmultiplier<=1)&(buff.shadow_dance.up|debuff.deathmark.up)
@@ -588,10 +607,30 @@ local function Dot ()
   local scent_effective_max_stacks = math.min(MeleeEnemies10yCount * S.ScentofBlood:TalentRank() * 2, 20)
   local scent_saturation = Player:BuffStack(S.ScentofBloodBuff) >= scent_effective_max_stacks
 
-  -- actions.dot+=/garrote,if=combo_points.deficit>=1&(pmultiplier<=1)&refreshable&target.time_to_die-remains>12
+  -- actions.dot+=/crimson_tempest,target_if=min:remains,if=spell_targets>=2&refreshable&effective_combo_points>=4&energy.regen_combined>25&!cooldown.deathmark.ready&target.time_to_die-remains>6
+  if HR.AoEON() and S.CrimsonTempest:IsReady() and MeleeEnemies10yCount >= 2 and ComboPoints >= 4
+     and EnergyRegenCombined > 25 and not S.Deathmark:CooldownUp() then
+     for _, CycleUnit in pairs(MeleeEnemies10y) do
+        if CycleUnit:DebuffRefreshable(S.CrimsonTempest) and CycleUnit:TimeToDie() - CycleUnit:DebuffRemains(S.CrimsonTempest) > 6 then
+          if Cast(S.CrimsonTempest) then return "Cast Crimson Tempest (AoE)" end
+        end
+     end
+  end
+  -- rupture,if=(effective_combo_points>=3+!variable.single_target|effective_combo_points*4+4+dot.rupture.remains>cooldown.shadow_dance.remains+4+6.1&effective_combo_points*4+4+dot.rupture.remains<=cooldown.shadow_dance.remains+4+6.1+4)&(pmultiplier<=1|dot.rupture.remains<5.1)&refreshable&dot.rupture.remains<cooldown.shadow_dance.remains+2&target.time_to_die-remains>(4+(talent.dashing_scoundrel*5)+(variable.regen_saturated*6))
+  if S.Rupture:IsReady() then
+     if (ComboPoints >= 3 + num(not SingleTarget) or ComboPoints * 4 + 4 + Target:DebuffRemains(S.Rupture) > S.ShadowDance:CooldownRemains() + 4 + 6.1
+      and ComboPoints * 4 + 4 + Target:DebuffRemains(S.Rupture) <= S.ShadowDance:CooldownRemains() + 4 + 6.1 + 4)
+      and (Target:PMultiplier(S.Rupture) <= 1 or Target:DebuffRemains(S.Rupture) < 5.1)
+      and IsDebuffRefreshable(Target, S.Rupture) and Target:DebuffRemains(S.Rupture) < S.ShadowDance:CooldownRemains() + 2
+      and Target:FilteredTimeToDie(">", 4 + BoolToInt(S.DashingScoundrel:IsAvailable()) * 5 + BoolToInt(EnergyRegenSaturated) * 6, -Target:DebuffRemains(S.Rupture)) or Target:TimeToDieIsNotValid() then
+      if Cast(S.Rupture, nil, nil, not TargetInMeleeRange) then return "Cast Rupture (Refresh)" end
+     end
+  end
+  -- actions.dot+=/garrote,if=combo_points.deficit>=1&(pmultiplier<=1)&refreshable&target.time_to_die-remains>12&cooldown.shadow_dance.remains+1>dot.garrote.remains
   if S.Garrote:IsCastable() and TargetInMeleeRange and ComboPointsDeficit >= 1
       and (Target:PMultiplier(S.Garrote) <= 1) and IsDebuffRefreshable(Target, S.Garrote)
-      and Target:FilteredTimeToDie(">", 12, -Target:DebuffRemains(S.Garrote)) then
+      and Target:FilteredTimeToDie(">", 12, -Target:DebuffRemains(S.Garrote))
+      and (S.ShadowDance:CooldownRemains() + 1 > Target:DebuffRemains(S.Garrote)) then
       if CastPooling(S.Garrote) then return "Cast Garrote 1" end
   end
   -- actions.dot+=/garrote,cycle_targets=1,if=combo_points.deficit>=1&(pmultiplier<=1)&refreshable&!variable.regen_saturated&spell_targets.fan_of_knives>=2&target.time_to_die-remains>12 TODO: Get this to work
@@ -611,33 +650,6 @@ local function Dot ()
     end
     if HR.AoEON() and not SkipCycleGarrote then
       SuggestCycleDoT(S.Garrote, Evaluate_Garrote_Target, 12, MeleeEnemies5y)
-    end
-  end
-  -- actions.dot+=/crimson_tempest,target_if=min:remains,if=spell_targets>=2&refreshable&effective_combo_points>=4&energy.regen_combined>25&!cooldown.deathmark.ready&target.time_to_die-remains>6
-  if HR.AoEON() and S.CrimsonTempest:IsReady() and MeleeEnemies10yCount >= 2 and ComboPoints >= 4
-     and EnergyRegenCombined > 25 and not S.Deathmark:CooldownUp() then
-     for _, CycleUnit in pairs(MeleeEnemies10y) do
-        if CycleUnit:DebuffRefreshable(S.CrimsonTempest) and CycleUnit:TimeToDie() - CycleUnit:DebuffRemains(S.CrimsonTempest) > 6 then
-          if Cast(S.CrimsonTempest) then return "Cast Crimson Tempest (AoE)" end
-        end
-     end
-  end
-  -- actions.dot+=/rupture,if=effective_combo_points>=4&(pmultiplier<=1)&refreshable&target.time_to_die-remains>(4+(talent.dashing_scoundrel*5)+(variable.regen_saturated*6))
-  -- actions.dot+=/rupture,cycle_targets=1,if=effective_combo_points>=4&(pmultiplier<=1)&refreshable&(!variable.regen_saturated|!variable.scent_saturation)&target.time_to_die-remains>(4+(talent.dashing_scoundrel*5)+(variable.regen_saturated*6))
-  if S.Rupture:IsReady() and ComboPoints >= 4 and (Target:PMultiplier(S.Rupture) <= 1) then
-    -- target.time_to_die-remains>(4+(talent.dashing_scoundrel*5)+(variable.regen_saturated*6))
-    RuptureDurationThreshold = 4 + BoolToInt(S.DashingScoundrel:IsAvailable()) * 5 + BoolToInt(EnergyRegenSaturated) * 6
-    local function Evaluate_Rupture_Target(TargetUnit)
-      RuptureTickTime = BleedTickTime
-      return IsDebuffRefreshable(Target, S.Rupture, RuptureThreshold)
-        and (not ScentSaturation or not EnergyRegenSaturated)
-        and (TargetUnit:FilteredTimeToDie(">", RuptureDurationThreshold, -TargetUnit:DebuffRemains(S.Rupture)) or TargetUnit:TimeToDieIsNotValid())
-    end
-    if Evaluate_Rupture_Target(Target) and Rogue.CanDoTUnit(Target, RuptureDMGThreshold) then
-      if Cast(S.Rupture, nil, nil, not TargetInMeleeRange) then return "Cast Rupture (Refresh)" end
-    end
-    if not SkipCycleRupture and HR.AoEON() then
-      SuggestCycleDoT(S.Rupture, Evaluate_Rupture_Target, RuptureDurationThreshold, MeleeEnemies5y)
     end
   end
 
