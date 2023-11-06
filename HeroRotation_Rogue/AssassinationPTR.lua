@@ -605,6 +605,7 @@ end
 local function Dot ()
   -- actions.dot=variable,name=scent_effective_max_stacks,value=(spell_targets.fan_of_knives*talent.scent_of_blood.rank*2)>?20
   local scent_effective_max_stacks = math.min(MeleeEnemies10yCount * S.ScentofBlood:TalentRank() * 2, 20)
+  -- actions.dot+=/variable,name=scent_saturation,value=buff.scent_of_blood.stack>=variable.scent_effective_max_stacks
   local scent_saturation = Player:BuffStack(S.ScentofBloodBuff) >= scent_effective_max_stacks
 
   -- actions.dot+=/crimson_tempest,target_if=min:remains,if=spell_targets>=2&refreshable&effective_combo_points>=4&energy.regen_combined>25&!cooldown.deathmark.ready&target.time_to_die-remains>6
