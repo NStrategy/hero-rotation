@@ -251,8 +251,8 @@ local function Finish (ReturnSpellOnly, StealthSpell)
   end
 
   local SkipRupture = Skip_Rupture(ShadowDanceBuff)
-  -- actions.finish+=/rupture,if=!dot.rupture.ticking&target.time_to_die-remains>6 (added SkipRupture and ShadowDanceBuff here for M+, maybe needs to be deleted)
-  if S.Rupture:IsCastable() and not SkipRupture and not Player:BuffUp(S.ShadowDanceBuff) then
+  -- actions.finish+=/rupture,if=!dot.rupture.ticking&target.time_to_die-remains>6 NOTE: Homebrew check for M+, if not at boss do not use Rupture in Dance, will do ID excludes if necessary
+  if S.Rupture:IsCastable() and not SkipRupture and not Player:BuffUp(S.ShadowDanceBuff) and MeleeEnemies10yCount >= 2  then
     if not Target:DebuffUp(S.Rupture)
        and Target:FilteredTimeToDie(">", 6, -Target:DebuffRemains(S.Rupture)) then
        if ReturnSpellOnly then
@@ -315,11 +315,11 @@ local function Finish (ReturnSpellOnly, StealthSpell)
       if HR.Cast(S.ColdBlood) then return "Cast Cold Blood (SecTec)" end
     end
   end
-  -- actions.finish+=/secret_technique,if=variable.secret_condition&(!talent.cold_blood|cooldown.cold_blood.remains>buff.shadow_dance.remains-2|!talent.improved_shadow_dance)
+  -- actions.finish+=/secret_technique,if=variable.secret_condition&(!talent.cold_blood|cooldown.cold_blood.remains>buff.shadow_dance.remains-3.1|!talent.improved_shadow_dance) NOTE: Homebrew 3.1 sec instead of 2
   -- Attention: Due to the SecTec/ColdBlood interaction, this adaption has additional checks not found in the APL string 
   if S.SecretTechnique:IsReady() and Secret_Condition() 
       and (not S.ColdBlood:IsAvailable() or (Settings.Commons.OffGCDasOffGCD.ColdBlood and S.ColdBlood:IsReady())
-      or Player:BuffUp(S.ColdBlood) or S.ColdBlood:CooldownRemains() > ShadowDanceBuffRemains - 2 or not S.ImprovedShadowDance:IsAvailable()) then
+      or Player:BuffUp(S.ColdBlood) or S.ColdBlood:CooldownRemains() > Player:BuffRemains(S.ShadowDanceBuff) - 3.1 or not S.ImprovedShadowDance:IsAvailable()) then
       if ReturnSpellOnly then return S.SecretTechnique end
       if HR.Cast(S.SecretTechnique) then return "Cast Secret Technique" end
   end
@@ -435,7 +435,7 @@ local function Stealthed (ReturnSpellOnly, StealthSpell)
                return { S.Backstab, S.Stealth }
            end
        else
-           if HR.CastQueue(S.Backstab, S.Stealth) then return "Cast Backstab (Stealth)" end
+           if HR.CastQueue(S.Backstab, S.Stealth) then return "Cast Backstab (Stealth)" end -- TODO: Make a variable/local for Backstab condtion so it shows it as a Shadowdance | Backstab macro if needed (no clue if that works, we will see)
        end
     end
   end
@@ -547,9 +547,8 @@ local function CDs ()
      end
     end
     -- actions.cds+=/flagellation,target_if=max:target.time_to_die,if=variable.snd_condition&combo_points>=5&target.time_to_die>10&(variable.trinket_conditions&cooldown.shadow_blades.remains<=3|fight_remains<=28|cooldown.shadow_blades.remains>=14&talent.invigorating_shadowdust&talent.shadow_dance)&(!talent.invigorating_shadowdust|talent.sepsis|!talent.shadow_dance|talent.invigorating_shadowdust.rank=2&spell_targets.shuriken_storm>=2|cooldown.symbols_of_death.remains<=3|buff.symbols_of_death.remains>3)
-    if HR.CDsON() and S.Flagellation:IsReady() and SnDCondition and not Player:StealthUp(false, false) and ComboPoints >= 5 and Target:FilteredTimeToDie(">", 10) and not Player:BuffUp(S.ShadowDanceBuff) then
-      if (Trinket_Conditions() and S.ShadowBlades:CooldownRemains() <= 3) 
-        or Target:FilteredTimeToDie("<=", 28)
+    if HR.CDsON() and S.Flagellation:IsReady() and SnDCondition and ComboPoints >= 5 and Target:FilteredTimeToDie(">", 10) then
+      if (Trinket_Conditions() and S.ShadowBlades:CooldownRemains() <= 3) or Target:FilteredTimeToDie("<=", 28)
         or (S.ShadowBlades:CooldownRemains() >= 14 and S.InvigoratingShadowdust:IsAvailable() and S.ShadowDanceTalent:IsAvailable())
         and (not S.InvigoratingShadowdust:IsAvailable() or S.Sepsis:IsAvailable() or not S.ShadowDanceTalent:IsAvailable()
         or (S.InvigoratingShadowdust:TalentRank() == 2 and MeleeEnemies10yCount >= 2) or S.SymbolsofDeath:CooldownRemains() <= 3 or Player:BuffRemains(S.SymbolsofDeath) > 3) then
