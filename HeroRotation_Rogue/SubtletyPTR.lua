@@ -410,7 +410,7 @@ local function Stealthed (ReturnSpellOnly, StealthSpell)
       if HR.Cast(S.Shadowstrike) then return "Cast Shadowstrike (Stealth)" end
     end
   end
-  -- actions.stealthed+=/call_action_list,name=finish,if=variable.effective_combo_points>=cp_max_spend
+  -- actions.stealthed+=/call_action_list,name=finish,if=effective_combo_points>=cp_max_spend
   if StealthEffectiveComboPoints >= Rogue.CPMaxSpend() then
     return Finish(ReturnSpellOnly, StealthSpell)
   end
@@ -571,15 +571,13 @@ local function CDs ()
   if HR.CDsON() then
     -- actions.cds+=/shadow_blades,if=variable.snd_condition&(combo_points<=1|set_bonus.tier31_4pc)&(buff.flagellation_buff.up|buff.flagellation_persist.up|!talent.flagellation)
     if S.ShadowBlades:IsCastable() then
-      if SnDCondition and ComboPoints <= 1 and -- here include "or Player:HasTier(31, 4)) as soon as HeroLib is updates, dont forget "("infront of ComboPoints"
+      if SnDCondition and ComboPoints <= 1 and -- TODO: here include "or Player:HasTier(31, 4)) as soon as HeroLib is updates, dont forget "("infront of ComboPoints"
         (Player:BuffUp(S.Flagellation) or Player:BuffUp(S.FlagellationPersistBuff) or not S.Flagellation:IsAvailable()) then
         if HR.Cast(S.ShadowBlades, Settings.Subtlety.OffGCDasOffGCD.ShadowBlades) then return "Cast Shadow Blades" end
       end
     end
-    -- actions.cds+=/echoing_reprimand,if=variable.snd_condition&combo_points.deficit>=3&(variable.priority_rotation|spell_targets.shuriken_storm<=4|talent.resounding_clarity)&(buff.shadow_dance.up|!talent.danse_macabre)
-    if S.EchoingReprimand:IsReady() and TargetInMeleeRange and ComboPointsDeficit >= 3
-      and (PriorityRotation or MeleeEnemies10yCount <= 4 or S.ResoundingClarity:IsAvailable())
-      and (Player:BuffUp(S.ShadowDanceBuff) or not S.DanseMacabre:IsAvailable()) then
+    -- actions.cds+=/echoing_reprimand,if=variable.snd_condition&combo_points.deficit>=3
+    if S.EchoingReprimand:IsReady() and SnDCondition and TargetInMeleeRange and ComboPointsDeficit >= 3 then
       if HR.Cast(S.EchoingReprimand, nil, Settings.Commons.CovenantDisplayStyle) then return "Cast Echoing Reprimand" end
     end
     -- actions.cds+=/shuriken_tornado,if=variable.snd_condition&buff.symbols_of_death.up&combo_points<=2&!buff.premeditation.up&(!talent.flagellation|cooldown.flagellation.remains>20)
@@ -618,23 +616,24 @@ local function CDs ()
        end
     end
 
-    -- TODO: Add Potion Suggestion (Check if cor)
+    -- TODO: Add Potion Suggestion
     -- actions.cds+=/potion,if=buff.bloodlust.react|fight_remains<30|buff.symbols_of_death.up&(buff.shadow_blades.up|cooldown.shadow_blades.remains<=10)
     -- Racials
-    if Player:BuffUp(S.SymbolsofDeath) then
-      -- actions.cds+=/blood_fury,if=buff.symbols_of_death.up
+    -- actions.cds+=/variable,name=racial_sync,value=buff.shadow_blades.up|!talent.shadow_blades&buff.symbols_of_death.up|fight_remains<20
+    if Player:BuffUp(S.ShadowBlades) or (not S.ShadowBlades:IsAvailable() and Player:BuffUp(S.SymbolsofDeath)) or HL.BossFilteredFightRemains("<", 20) then
+      -- actions.cds+=/blood_fury,if=variable.racial_sync
       if S.BloodFury:IsCastable() then
         if HR.Cast(S.BloodFury, Settings.Commons.OffGCDasOffGCD.Racials) then return "Cast Blood Fury" end
       end
-      -- actions.cds+=/berserking,if=buff.symbols_of_death.up
+      -- actions.cds+=/berserking,if=variable.racial_sync
       if S.Berserking:IsCastable() then
         if HR.Cast(S.Berserking, Settings.Commons.OffGCDasOffGCD.Racials) then return "Cast Berserking" end
       end
-      -- actions.cds+=/fireblood,if=buff.symbols_of_death.up
+      -- actions.cds+=/fireblood,if=variable.racial_sync
       if S.Fireblood:IsCastable() then
         if HR.Cast(S.Fireblood, Settings.Commons.OffGCDasOffGCD.Racials) then return "Cast Fireblood" end
       end
-      -- actions.cds+=/ancestral_call,if=buff.symbols_of_death.up
+      -- actions.cds+=/ancestral_call,if=variable.racial_sync
       if S.AncestralCall:IsCastable() then
         if HR.Cast(S.AncestralCall, Settings.Commons.OffGCDasOffGCD.Racials) then return "Cast Ancestral Call" end
       end
@@ -700,7 +699,6 @@ end
 local function Stealth_CDs (EnergyThreshold)
   if HR.CDsON() then
     -- actions.stealth_cds+=/vanish,if=(combo_points.deficit>1|buff.shadow_blades.up&talent.invigorating_shadowdust)&!variable.shd_threshold&(cooldown.flagellation.remains>=60|!talent.flagellation|fight_remains<=(30*cooldown.vanish.charges))&(cooldown.symbols_of_death.remains>3|!set_bonus.tier30_2pc)&(cooldown.secret_technique.remains>=10|!talent.secret_technique|cooldown.vanish.charges>=2&talent.invigorating_shadowdust&(buff.the_rotten.up|!talent.the_rotten)&!raid_event.adds.up)
-    -- TODO: Check if correct
       if S.Vanish:IsCastable()
         and (ComboPointsDeficit > 1 or Player:BuffUp(S.ShadowBlades) and S.InvigoratingShadowdust:IsAvailable())
         and not ShD_Threshold()
@@ -749,21 +747,11 @@ local function Build (EnergyThreshold)
     SetPoolingAbility(S.ShurikenStorm, EnergyThreshold)
   end
   if TargetInMeleeRange then
-    -- # Build immediately unless the next CP is Animacharged and we won't cap energy waiting for it.
-    -- actions.build+=/variable,name=anima_helper,value=!talent.echoing_reprimand.enabled|!(variable.is_next_cp_animacharged&(time_to_sht.3.plus<0.5|time_to_sht.4.plus<1)&energy<60)
-    if S.EchoingReprimand:IsAvailable() and Player:Energy() < 60
-      and (ComboPoints == 2 and Player:BuffUp(S.EchoingReprimand3)
-        or ComboPoints == 3 and Player:BuffUp(S.EchoingReprimand4)
-        or ComboPoints == 4 and Player:BuffUp(S.EchoingReprimand5))
-      and (Rogue.TimeToSht(3) < 0.5 or Rogue.TimeToSht(4) < 1.0 or Rogue.TimeToSht(5) < 1.0) then
-      HR.Cast(S.PoolEnergy)
-      return "ER Generator Pooling"
-    end
-    -- actions.build+=/gloomblade,if=variable.anima_helper
+    -- actions.build+=/gloomblade
     if S.Gloomblade:IsCastable() then
       if ThresholdMet and HR.Cast(S.Gloomblade) then return "Cast Gloomblade" end
       SetPoolingAbility(S.Gloomblade, EnergyThreshold)
-    -- actions.build+=/backstab,if=variable.anima_helper
+    -- actions.build+=/backstab
     elseif S.Backstab:IsCastable() then
       if ThresholdMet and HR.Cast(S.Backstab) then return "Cast Backstab" end
       SetPoolingAbility(S.Backstab, EnergyThreshold)
@@ -808,25 +796,6 @@ local function APL ()
   ComboPointsDeficit = Player:ComboPointsDeficit()
   PriorityRotation = UsePriorityRotation()
   StealthEnergyRequired = Player:EnergyMax() - Stealth_Threshold()
-
-  -- Adjust Animacharged CP Prediction for Shadow Techniques
-  -- If we are on a non-optimal Animacharged CP, ignore it if the time to ShT is less than GCD + 500ms, unless the ER buff will expire soon
-  -- Reduces the risk of queued finishers into ShT procs for non-optimal CP amounts
-  -- This is an adaptation of the following APL lines:
-  -- actions+=/variable,name=is_next_cp_animacharged,if=talent.echoing_reprimand.enabled,value=combo_points=1&buff.echoing_reprimand_2.up|combo_points=2&buff.echoing_reprimand_3.up|combo_points=3&buff.echoing_reprimand_4.up|combo_points=4&buff.echoing_reprimand_5.up
-  -- actions+=/variable,name=effective_combo_points,value=effective_combo_points
-  -- actions+=/variable,name=effective_combo_points,if=talent.echoing_reprimand.enabled&effective_combo_points>combo_points&combo_points.deficit>2&time_to_sht.4.plus<0.5&!variable.is_next_cp_animacharged,value=combo_points
-  if EffectiveComboPoints > ComboPoints and ComboPointsDeficit > 2 and Player:AffectingCombat() then
-    if ComboPoints == 2 and not Player:BuffUp(S.EchoingReprimand3)
-    or ComboPoints == 3 and not Player:BuffUp(S.EchoingReprimand4)
-    or ComboPoints == 4 and not Player:BuffUp(S.EchoingReprimand5) then
-      local TimeToSht = Rogue.TimeToSht(4)
-      if TimeToSht == 0 then TimeToSht = Rogue.TimeToSht(5) end
-      if TimeToSht < (mathmax(Player:EnergyTimeToX(35), Player:GCDRemains()) + 0.5) then
-        EffectiveComboPoints = ComboPoints
-      end
-    end
-  end
 
   -- Shuriken Tornado Combo Point Prediction
   if Player:BuffUp(S.ShurikenTornado, nil, true) and ComboPoints < Rogue.CPMaxSpend() then
@@ -946,11 +915,11 @@ local function APL ()
       if ShouldReturn then return "Stealth CDs: " .. ShouldReturn end
     end
 
-    -- actions+=/call_action_list,name=finish,if=variable.effective_combo_points>=cp_max_spend
+    -- actions+=/call_action_list,name=finish,if=effective_combo_points>=cp_max_spend
     -- # Finish at maximum or close to maximum combo point value
-    -- actions+=/call_action_list,name=finish,if=combo_points.deficit<=1|fight_remains<=1&variable.effective_combo_points>=3
+    -- actions+=/call_action_list,name=finish,if=combo_points.deficit<=1|fight_remains<=1&effective_combo_points>=3
     -- # Finish at 4+ against 4 targets (outside stealth)
-    -- actions+=/call_action_list,name=finish,if=spell_targets.shuriken_storm>=4&variable.effective_combo_points>=4
+    -- actions+=/call_action_list,name=finish,if=spell_targets.shuriken_storm>=4&effective_combo_points>=4
     if EffectiveComboPoints >= Rogue.CPMaxSpend()
       or (ComboPointsDeficit <= 1 or (HL.BossFilteredFightRemains("<", 1) and EffectiveComboPoints >= 3))
       or (MeleeEnemies10yCount >= 4 and EffectiveComboPoints >= 4) then
