@@ -6,11 +6,11 @@ To contact me, please send a message on Discord to: kekwxqcl
 For now, I will only give support for Assassination and Subtlety Rogue, as the Outlaw Re-Roll-Code is a bit over my head lol.
 
 Update to 10.2!
-Please remember to download either the whole folder or the specific Spec.lua files and the Rogue.lua file.
+Please remember to download either the whole folder or the specific Spec.lua files and the Rogue.lua file. Also, update HeroLib.
 Once the offical version of HR updates, I will keep all Rogue specs up to date/make homebrew adjustments as necessary.
 If you have any suggestions or if there are any issues, please reach out to me via comments or message me on Discord. 
 
-
+DISCLAIMER: Before you message me, saying that the rotation is wrong, look at the behaviour in the sim and understand it. As much as I would like to have this to be "Plug n' Play", it often isnt that easy, especially when talking about a reworked class. If you truly think something is wrong, point out precisely what is wrong: video, in-depth text guide, talents and so on. I cannot fix something as broad as "This isnt here, why?".
 
 ----------------Notes for Specs----------------
 
