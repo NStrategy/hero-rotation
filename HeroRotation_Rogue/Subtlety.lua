@@ -254,8 +254,8 @@ local function Finish (ReturnSpellOnly, StealthSpell)
   -- actions.finish+=/rupture,if=!dot.rupture.ticking&target.time_to_die-remains>6 NOTE: Homebrew check for M+, if at 1 or 2 targets, use Rupture in Dance, will do ID excludes if necessary
   if S.Rupture:IsCastable() then
       if not Target:DebuffUp(S.Rupture) and Target:FilteredTimeToDie(">", 6, -Target:DebuffRemains(S.Rupture)) then
-          -- If there's only one target, we always consider Rupture
-          -- If there are more targets, we only consider Rupture if not in Dance and not skipping Rupture
+          -- If there's only two targets, we always consider Rupture
+          -- If there are 3 or more targets, we only consider Rupture if not in Dance and not skipping Rupture
           if MeleeEnemies10yCount <= 2 or (MeleeEnemies10yCount >= 3 and not SkipRupture and not Player:BuffUp(S.ShadowDanceBuff)) then
               if ReturnSpellOnly then
                   return S.Rupture
@@ -318,9 +318,9 @@ local function Finish (ReturnSpellOnly, StealthSpell)
       if HR.Cast(S.ColdBlood) then return "Cast Cold Blood (SecTec)" end
     end
   end
-  -- actions.finish+=/secret_technique,if=variable.secret_condition&(!talent.cold_blood|cooldown.cold_blood.remains>buff.shadow_dance.remains-3.1|!talent.improved_shadow_dance) NOTE: Homebrew 3.1 sec instead of 2
+  -- actions.finish+=/secret_technique,if=variable.secret_condition&(!talent.cold_blood|cooldown.cold_blood.remains>buff.shadow_dance.remains-3.1|!talent.improved_shadow_dance) Homebrew: 3.1 instead of 2
   -- Attention: Due to the SecTec/ColdBlood interaction, this adaption has additional checks not found in the APL string 
-  if S.SecretTechnique:IsReady() and Secret_Condition() 
+  if S.SecretTechnique:IsReady() and Secret_Condition()
       and (not S.ColdBlood:IsAvailable() or (Settings.Commons.OffGCDasOffGCD.ColdBlood and S.ColdBlood:IsReady())
       or Player:BuffUp(S.ColdBlood) or S.ColdBlood:CooldownRemains() > ShadowDanceBuffRemains - 3.1 or not S.ImprovedShadowDance:IsAvailable()) then
       if ReturnSpellOnly then return S.SecretTechnique end
@@ -573,7 +573,7 @@ local function CDs ()
   if HR.CDsON() then
     -- actions.cds+=/shadow_blades,if=variable.snd_condition&(combo_points<=1|set_bonus.tier31_4pc)&(buff.flagellation_buff.up|buff.flagellation_persist.up|!talent.flagellation)
     if S.ShadowBlades:IsCastable() then
-      if SnDCondition and ComboPoints <= 1 and -- TODO: here include "or Player:HasTier(31, 4)) as soon as HeroLib is updates, dont forget "("infront of ComboPoints"
+      if SnDCondition and (ComboPoints <= 1) and -- TODO: here include "or Player:HasTier(31, 4)) as soon as HeroLib is updates, dont forget "("infront of ComboPoints"
         (Player:BuffUp(S.Flagellation) or Player:BuffUp(S.FlagellationPersistBuff) or not S.Flagellation:IsAvailable()) then
         if HR.Cast(S.ShadowBlades, Settings.Subtlety.OffGCDasOffGCD.ShadowBlades) then return "Cast Shadow Blades" end
       end
@@ -721,7 +721,9 @@ local function Stealth_CDs (EnergyThreshold)
       if ShouldReturn then return "Shadowmeld Macro " .. ShouldReturn end
     end
   end
-  if TargetInMeleeRange and S.ShadowDance:IsCastable() and HR.CDsON() then
+  if TargetInMeleeRange and S.ShadowDance:IsCastable() and S.ShadowDance:Charges() >= 1
+    and S.Vanish:TimeSinceLastDisplay() > 0.3 and S.Shadowmeld:TimeSinceLastDisplay() > 0.3
+    and (HR.CDsON() or (S.ShadowDance:ChargesFractional() >= Settings.Subtlety.ShDEcoCharge - (not S.ShadowDanceTalent:IsAvailable() and 0.75 or 0))) then
     -- actions.stealth_cds+=/shadow_dance,if=(dot.rupture.ticking|talent.invigorating_shadowdust)&variable.rotten_cb&(!talent.the_first_dance|combo_points.deficit>=4|buff.shadow_blades.up)&(variable.shd_combo_points&variable.shd_threshold|(buff.shadow_blades.up|cooldown.symbols_of_death.up&!talent.sepsis|buff.symbols_of_death.remains>=4&!set_bonus.tier30_2pc|!buff.symbols_of_death.remains&set_bonus.tier30_2pc)&cooldown.secret_technique.remains<10+12*(!talent.invigorating_shadowdust|set_bonus.tier30_2pc))
     -- NOTE: |buff.flagellation.up is a dead operation in SimC due to a typo, since the buff we use in-game is buff.flagellation_buff.up, ignoring
     if  (Target:DebuffUp(S.Rupture) or S.InvigoratingShadowdust:IsAvailable()) and Rotten_CB() and 
