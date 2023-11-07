@@ -251,17 +251,20 @@ local function Finish (ReturnSpellOnly, StealthSpell)
   end
 
   local SkipRupture = Skip_Rupture(ShadowDanceBuff)
-  -- actions.finish+=/rupture,if=!dot.rupture.ticking&target.time_to_die-remains>6 NOTE: Homebrew check for M+, if not at boss do not use Rupture in Dance, will do ID excludes if necessary
-  if S.Rupture:IsCastable() and not SkipRupture and not Player:BuffUp(S.ShadowDanceBuff) and MeleeEnemies10yCount >= 2  then
-    if not Target:DebuffUp(S.Rupture)
-       and Target:FilteredTimeToDie(">", 6, -Target:DebuffRemains(S.Rupture)) then
-       if ReturnSpellOnly then
-          return S.Rupture
-       else
-          if S.Rupture:IsReady() and HR.Cast(S.Rupture) then return "Cast Rupture 3" end
-          SetPoolingFinisher(S.Rupture)
-       end
-    end
+  -- actions.finish+=/rupture,if=!dot.rupture.ticking&target.time_to_die-remains>6 NOTE: Homebrew check for M+, if at 1 or 2 targets, use Rupture in Dance, will do ID excludes if necessary
+  if S.Rupture:IsCastable() then
+      if not Target:DebuffUp(S.Rupture) and Target:FilteredTimeToDie(">", 6, -Target:DebuffRemains(S.Rupture)) then
+          -- If there's only one target, we always consider Rupture
+          -- If there are more targets, we only consider Rupture if not in Dance and not skipping Rupture
+          if MeleeEnemies10yCount <= 2 or (MeleeEnemies10yCount >= 3 and not SkipRupture and not Player:BuffUp(S.ShadowDanceBuff)) then
+              if ReturnSpellOnly then
+                  return S.Rupture
+              else
+                  if S.Rupture:IsReady() and HR.Cast(S.Rupture) then return "Cast Rupture 3" end
+                  SetPoolingFinisher(S.Rupture)
+              end
+          end
+      end
   end
 
   if S.SliceandDice:IsCastable() and HL.FilteredFightRemains(MeleeEnemies10y, ">", Player:BuffRemains(S.SliceandDice)) then 
@@ -435,7 +438,7 @@ local function Stealthed (ReturnSpellOnly, StealthSpell)
                return { S.Backstab, S.Stealth }
            end
        else
-           if HR.CastQueue(S.Backstab, S.Stealth) then return "Cast Backstab (Stealth)" end -- TODO: Make a variable/local for Backstab condtion so it shows it as a Shadowdance | Backstab macro if needed (no clue if that works, we will see)
+           if HR.CastQueue(S.Backstab, S.Stealth) then return "Cast Backstab (Stealth)" end -- TODO: Make a variable for Backstab condtion so it shows it as a Shadowdance | Backstab macro if needed (no clue if that works, we will see)
        end
     end
   end
