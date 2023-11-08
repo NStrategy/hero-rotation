@@ -403,7 +403,7 @@ local function CDs ()
       if Cast(S.Sepsis) then return "Cast Sepsis" end
     end
 
-    -- actions.cds+=/use_item,name=algethar_puzzle_box,use_off_gcd=1,if=dot.rupture.ticking&cooldown.deathmark.remains<2|fight_remains<=22
+    -- actions.cds+=/use_item,name=algethar_puzzle_box,use_off_gcd=1,if=dot.rupture.ticking&cooldown.deathmark.remains<2|fight_remains<=22 Homebrew: deleted check since its not used anymore
     -- actions.cds+=/use_item,name=ashes_of_the_embersoul,use_off_gcd=1,if=(dot.kingsbane.ticking&dot.kingsbane.remains<=11)|fight_remains<=22
     -- actions.cds+=/use_item,name=witherbarks_branch,use_off_gcd=1,if=(dot.deathmark.ticking)|fight_remains<=22
     -- actions.cds+=/use_items,slots=trinket1,if=(variable.trinket_sync_slot=1&(debuff.deathmark.up|fight_remains<=20)|(variable.trinket_sync_slot=2&(!trinket.2.cooldown.ready|!debuff.deathmark.up&cooldown.deathmark.remains>20))|!variable.trinket_sync_slot)
@@ -418,11 +418,6 @@ local function CDs ()
       if I.WitherBarksBranch:IsEquippedAndReady() and
          (Target:DebuffUp(S.Deathmark) or HL.BossFilteredFightRemains("<=", 22)) then
          if HR.Cast(I.WitherbarksBranch, nil, Settings.Commons.TrinketDisplayStyle) then return "Witherbark's Branch"; end
-      end
-      -- Check for Algethar Puzzle Box
-      if I.AlgetharPuzzleBox:IsEquippedAndReady() and 
-         (Target:DebuffUp(S.Rupture) and S.Deathmark:CooldownRemains() < 2) or HL.BossFilteredFightRemains("<=", 22) then
-         if HR.Cast(I.AlgetharPuzzleBox, nil, Settings.Commons.TrinketDisplayStyle) then return "Algethar Puzzle Box"; end
       end
       if TrinketItem1:IsReady() and not Player:IsItemBlacklisted(TrinketItem1) and not ValueIsInArray(OnUseExcludeTrinkets, TrinketItem1:ID())
         and (TrinketSyncSlot == 1 and (S.Deathmark:AnyDebuffUp() or HL.BossFilteredFightRemains("<", 20))
@@ -703,9 +698,9 @@ local function Direct ()
       end
     end
   end
-  -- actions.direct+=/echoing_reprimand,if=variable.use_filler|fight_remains<20
-  if CDsON() and S.EchoingReprimand:IsReady() or HL.BossFilteredFightRemains("<=", 20) then
-    if Cast(S.EchoingReprimand, nil, Settings.Commons.CovenantDisplayStyle, not TargetInMeleeRange) then return "Cast Echoing Reprimand" end
+  -- actions.direct+=/echoing_reprimand,if=variable.use_filler|fight_remains<20 Homebrew Check for ER.
+  if CDsON() and S.EchoingReprimand:IsReady() and S.EchoingReprimand:IsAvailable() or HL.BossFilteredFightRemains("<=", 20) and S.EchoingReprimand:IsAvailable() then
+    if Cast(S.EchoingReprimand, nil, Settings.Commons.GCDasOffGCD.EchoingReprimand, not TargetInMeleeRange) then return "Cast Echoing Reprimand" end
   end
   if S.FanofKnives:IsCastable() then
     -- actions.direct+=/fan_of_knives,if=variable.use_filler&(!priority_rotation&spell_targets.fan_of_knives>=2+stealthed.rogue+talent.dragontempered_blades)
