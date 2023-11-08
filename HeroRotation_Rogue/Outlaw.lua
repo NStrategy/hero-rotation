@@ -1,5 +1,5 @@
 --- ============================ HEADER ============================
---- ======= LOCALIZE =======
+--- ======= LOCALIZE ======= -- do not use
 -- Addon
 local addonName, addonTable = ...
 -- HeroDBC
