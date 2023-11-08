@@ -176,6 +176,7 @@ Spell.Rogue.Outlaw = MergeTableByKey(Spell.Rogue.Commons, {
   AudacityBuff            = Spell(386270),
   BladeRush               = Spell(271877),
   CountTheOdds            = Spell(381982),
+  Crackshot               = Spell(423703),
   Dreadblades             = Spell(343142),
   FanTheHammer            = Spell(381846),
   GhostlyStrike           = Spell(196937),
@@ -193,6 +194,7 @@ Spell.Rogue.Outlaw = MergeTableByKey(Spell.Rogue.Commons, {
   SummarilyDispatched     = Spell(381990),
   SwiftSlasher            = Spell(381988),
   TakeEmBySurpriseBuff    = Spell(385907),
+  UnderhandedUpperHand    = Spell(424044),
   Weaponmaster            = Spell(200733),
   -- Utility
   Gouge                   = Spell(1776),
@@ -269,9 +271,9 @@ Item.Rogue.Assassination = {
   -- Trinkets
   AlgetharPuzzleBox       = Item(193701, {13, 14}),
   MirrorOfFracturedTomorrows = Item(207581, {13, 14}),
-  AshesOfTheEmbersoul        = Item(207582, {13, 14}), --Placeholder
+  AshesOfTheEmbersoul        = Item(207167, {13, 14}), 
   WitherBarksBranch          = Item(207583, {13, 14}), --Placeholder
-  BandolierOfTwistedBlades   = Item(207584, {13, 14})  --Placeholder
+  BandolierOfTwistedBlades   = Item(207165, {13, 14})  
 }
 
 Item.Rogue.Outlaw = {
@@ -287,9 +289,9 @@ Item.Rogue.Subtlety = {
   StormEatersBoon            = Item(194302, {13, 14}),
   BeaconToTheBeyond          = Item(203963, {13, 14}),
   MirrorOfFracturedTomorrows = Item(207581, {13, 14}),
-  AshesOfTheEmbersoul        = Item(207582, {13, 14}), --Placeholder
+  AshesOfTheEmbersoul        = Item(207167, {13, 14}), 
   WitherBarksBranch          = Item(207583, {13, 14}), --Placeholder
-  BandolierOfTwistedBlades   = Item(207584, {13, 14})  --Placeholder
+  BandolierOfTwistedBlades   = Item(207165, {13, 14})  
 }
 
 function Commons.StealthSpell()

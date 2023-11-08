@@ -558,7 +558,7 @@ local function CDs ()
         if HR.Cast(S.Flagellation, nil, Settings.Commons.CovenantDisplayStyle) then return "Cast Flagellation" end
       end
     end
-  end -- TODO: implement the trinkets
+  end 
   -- actions.cds+=/symbols_of_death,if=variable.snd_condition&(!buff.the_rotten.up|!set_bonus.tier30_2pc)&buff.symbols_of_death.remains<=3&(!talent.flagellation|cooldown.flagellation.remains>10|buff.shadow_dance.remains>=2&talent.invigorating_shadowdust|cooldown.flagellation.up&combo_points>=5&!talent.invigorating_shadowdust)
   if S.SymbolsofDeath:IsCastable() then
     if SnDCondition and (not Player:BuffUp(S.TheRottenBuff) or not Player:HasTier(30, 2)) and
@@ -573,7 +573,7 @@ local function CDs ()
   if HR.CDsON() then
     -- actions.cds+=/shadow_blades,if=variable.snd_condition&(combo_points<=1|set_bonus.tier31_4pc)&(buff.flagellation_buff.up|buff.flagellation_persist.up|!talent.flagellation)
     if S.ShadowBlades:IsCastable() then
-      if SnDCondition and (ComboPoints <= 1) and -- TODO: here include "or Player:HasTier(31, 4)) as soon as HeroLib is updates, dont forget "("infront of ComboPoints"
+      if SnDCondition and (ComboPoints <= 1 or Player:HasTier(31, 4)) and 
         (Player:BuffUp(S.Flagellation) or Player:BuffUp(S.FlagellationPersistBuff) or not S.Flagellation:IsAvailable()) then
         if HR.Cast(S.ShadowBlades, Settings.Subtlety.OffGCDasOffGCD.ShadowBlades) then return "Cast Shadow Blades" end
       end
@@ -883,13 +883,10 @@ local function APL ()
     ShouldReturn = CDs()
     if ShouldReturn then return "CDs: " .. ShouldReturn end
 
-    -- # Apply Slice and Dice at 4+ CP if it expires within the next 3 seconds or is not up (some extra condition for when no tier 30, dunno, will sim in due time)
-    -- actions+=/slice_and_dice,if=spell_targets.shuriken_storm<cp_max_spend&fight_remains>6&combo_points>=4&(buff.slice_and_dice.remains<3&set_bonus.tier30_2pc|buff.slice_and_dice.remains<gcd.max&!set_bonus.tier30_2pc)
-    if S.SliceandDice:IsCastable() and MeleeEnemies10yCount < Rogue.CPMaxSpend() and HL.FilteredFightRemains(MeleeEnemies10y, ">", 6) and ComboPoints >= 4 then
-        if (Player:HasTier(30, 2) and Player:BuffRemains(S.SliceandDice) < 3) or 
-            (not Player:HasTier(30, 2) and Player:BuffRemains(S.SliceandDice) < Player:GCD()) then
-            if S.SliceandDice:IsReady() and HR.Cast(S.SliceandDice) then return "Cast Slice and Dice (Low Duration)" end
-        end
+    -- actions+=/slice_and_dice,if=spell_targets.shuriken_storm<cp_max_spend&buff.slice_and_dice.remains<3&fight_remains>6&combo_points>=4 Homebrew: Check for no Dance, 3 seconds instead of PlayerHGCD
+    if S.SliceandDice:IsCastable() and MeleeEnemies10yCount < Rogue.CPMaxSpend() and HL.FilteredFightRemains(MeleeEnemies10y, ">", 6)
+       and Player:BuffRemains(S.SliceandDice) < 3 and ComboPoints >= 4 and not Player:BuffUp(S.ShadowDanceBuff) then
+       if S.SliceandDice:IsReady() and HR.Cast(S.SliceandDice) then return "Cast Slice and Dice (Low Duration)" end
     end
 
     -- # Run fully switches to the Stealthed Rotation (by doing so, it forces pooling if nothing is available).
