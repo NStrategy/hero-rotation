@@ -825,7 +825,6 @@ local function APL ()
   -- Feint
   ShouldReturn = Rogue.Feint()
   if ShouldReturn then return ShouldReturn end
-
   -- Poisons
   Rogue.Poisons()
 
@@ -869,10 +868,6 @@ local function APL ()
     return
   end
 
-  -- In Combat
-  -- MfD Sniping
-  Rogue.MfDSniping(S.MarkedforDeath)
-
   if Everyone.TargetIsValid() then
     -- actions+=/kick
     ShouldReturn = Everyone.Interrupt(5, S.Kick, Settings.Commons2.OffGCDasOffGCD.Kick, Interrupts)
@@ -883,9 +878,9 @@ local function APL ()
     ShouldReturn = CDs()
     if ShouldReturn then return "CDs: " .. ShouldReturn end
 
-    -- actions+=/slice_and_dice,if=spell_targets.shuriken_storm<cp_max_spend&buff.slice_and_dice.remains<3&fight_remains>6&combo_points>=4 Homebrew: Check for no Dance, 3 seconds instead of PlayerHGCD
+    -- actions+=/slice_and_dice,if=spell_targets.shuriken_storm<cp_max_spend&buff.slice_and_dice.remains<3&fight_remains>6&combo_points>=4 Homebrew: check for not in Dance (if played correctly, it shouldnt matter)
     if S.SliceandDice:IsCastable() and MeleeEnemies10yCount < Rogue.CPMaxSpend() and HL.FilteredFightRemains(MeleeEnemies10y, ">", 6)
-       and Player:BuffRemains(S.SliceandDice) < 3 and ComboPoints >= 4 and not Player:BuffUp(S.ShadowDanceBuff) then
+       and Player:BuffRemains(S.SliceandDice) < Player:GCD() and ComboPoints >= 4 and not Player:BuffUp(S.ShadowDanceBuff) then
        if S.SliceandDice:IsReady() and HR.Cast(S.SliceandDice) then return "Cast Slice and Dice (Low Duration)" end
     end
 
