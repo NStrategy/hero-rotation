@@ -208,7 +208,7 @@ end
 local function Skip_Rupture (ShadowDanceBuff)
   -- actions.finish+=/variable,name=skip_rupture,value=buff.thistle_tea.up&spell_targets.shuriken_storm=1|buff.shadow_dance.up&(spell_targets.shuriken_storm=1|dot.rupture.ticking&spell_targets.shuriken_storm>=2)
   return Player:BuffUp(S.ThistleTea) and MeleeEnemies10yCount == 1
-    or ShadowDanceBuff and (MeleeEnemies10yCount == 1 or Target:DebuffUp(S.Rupture) and MeleeEnemies10yCount >= 2) or Target:NPCID() == 202969 or Target:NPCID() == 203230 or Target:NPCID() == 202824 or Target:NPCID() == 202971 or Target:NPCID() == 201738 or Target:NPCID() == 202814
+    or ShadowDanceBuff and (MeleeEnemies10yCount == 1 or Target:DebuffUp(S.Rupture) and MeleeEnemies10yCount >= 2)
 end
 local function Skip_Rupture_NPC ()
   -- Homebrew exclude for certain NPCIDS
@@ -255,12 +255,10 @@ local function Finish (ReturnSpellOnly, StealthSpell)
   end
 
   local SkipRupture = Skip_Rupture(ShadowDanceBuff)
-  -- actions.finish+=/rupture,if=!dot.rupture.ticking&target.time_to_die-remains>6 NOTE: Homebrew check for M+, if at 1 or 2 targets, use Rupture in Dance, will do ID excludes if necessary
+  -- actions.finish+=/rupture,if=!dot.rupture.ticking&target.time_to_die-remains>6 NOTE: Homebrew check for M+, if at 1 or 2 targets, use Rupture unless the NPC is excluded. If at 3 or more targets, ignore Rupture when in Dance, given that at 3 targets you use BlackPowder.
   if S.Rupture:IsCastable() then
       if not Target:DebuffUp(S.Rupture) and Target:FilteredTimeToDie(">", 6, -Target:DebuffRemains(S.Rupture)) then
-          -- If there's only two targets, we always consider Rupture
-          -- If there are 3 or more targets, we only consider Rupture if not in Dance and not skipping Rupture
-          if MeleeEnemies10yCount <= 2 and not Skip_Rupture_NPC() or (MeleeEnemies10yCount >= 3 and not SkipRupture and not Player:BuffUp(S.ShadowDanceBuff)) then
+          if (MeleeEnemies10yCount <= 2 and not Skip_Rupture_NPC()) or (MeleeEnemies10yCount >= 3 and not SkipRupture and not Skip_Rupture_NPC() and not Player:BuffUp(S.ShadowDanceBuff)) then
               if ReturnSpellOnly then
                   return S.Rupture
               else
@@ -288,7 +286,7 @@ local function Finish (ReturnSpellOnly, StealthSpell)
   end
 
   -- actions.finish+=/rupture,if=(!variable.skip_rupture|variable.priority_rotation)&target.time_to_die-remains>6&refreshable
-  if (not Player:BuffUp(S.ShadowDanceBuff) and not SkipRupture or PriorityRotation) and S.Rupture:IsCastable() then
+  if ((not Player:BuffUp(S.ShadowDanceBuff) and not SkipRupture and not Skip_Rupture_NPC()) or PriorityRotation) and S.Rupture:IsCastable() then
     if TargetInMeleeRange
       and (Target:FilteredTimeToDie(">", 6, -Target:DebuffRemains(S.Rupture)) or Target:TimeToDieIsNotValid())
       and Rogue.CanDoTUnit(Target, RuptureDMGThreshold)
@@ -302,7 +300,7 @@ local function Finish (ReturnSpellOnly, StealthSpell)
     end
   end
   -- actions.finish+=/rupture,if=buff.finality_rupture.up&buff.shadow_dance.up&spell_targets.shuriken_storm<=4
-  if Player:BuffUp(S.FinalityRuptureBuff) and Player:BuffUp(S.ShadowDanceBuff) and MeleeEnemies10yCount <= 4 and S.Rupture:IsCastable() then
+  if Player:BuffUp(S.FinalityRuptureBuff) and Player:BuffUp(S.ShadowDanceBuff) and not Skip_Rupture_NPC() and MeleeEnemies10yCount <= 4 and S.Rupture:IsCastable() then
     if TargetInMeleeRange then
       if ReturnSpellOnly then
         return S.Rupture
@@ -331,7 +329,7 @@ local function Finish (ReturnSpellOnly, StealthSpell)
       if HR.Cast(S.SecretTechnique) then return "Cast Secret Technique" end
   end
 
-  if not Player:BuffUp(S.ShadowDanceBuff) and not SkipRupture and S.Rupture:IsCastable() then
+  if not Player:BuffUp(S.ShadowDanceBuff) and not SkipRupture and not Skip_Rupture_NPC() and S.Rupture:IsCastable() then
     -- actions.finish+=/rupture,cycle_targets=1,if=!variable.skip_rupture&!variable.priority_rotation&spell_targets.shuriken_storm>=2&target.time_to_die>=(2*combo_points)&refreshable (if not Player:BuffUp(S.ShadowDanceBuff) instead of Skip_Rupture as it does not work correctly.)
     if not ReturnSpellOnly and HR.AoEON() and not PriorityRotation and MeleeEnemies10yCount >= 2 then
       local function Evaluate_Rupture_Target(TargetUnit)
