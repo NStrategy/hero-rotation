@@ -321,19 +321,19 @@ end
 local function Racials ()
   -- actions.cds+=/blood_fury,if=debuff.vendetta.up
   if S.BloodFury:IsCastable() then
-    if Cast(S.BloodFury, Settings.Commons.OffGCDasOffGCD.Racials) then return "Cast Blood Fury" end
+    if Cast(S.BloodFury, Settings.Commons.GCDasOffGCD.Racials) then return "Cast Blood Fury" end
   end
   -- actions.cds+=/berserking,if=debuff.vendetta.up
   if S.Berserking:IsCastable() then
-    if Cast(S.Berserking, Settings.Commons.OffGCDasOffGCD.Racials) then return "Cast Berserking" end
+    if Cast(S.Berserking, Settings.Commons.GCDasOffGCD.Racials) then return "Cast Berserking" end
   end
   -- actions.cds+=/fireblood,if=debuff.vendetta.up
   if S.Fireblood:IsCastable() then
-    if Cast(S.Fireblood, Settings.Commons.OffGCDasOffGCD.Racials) then return "Cast Fireblood" end
+    if Cast(S.Fireblood, Settings.Commons.GCDasOffGCD.Racials) then return "Cast Fireblood" end
   end
   -- actions.cds+=/ancestral_call,if=debuff.vendetta.up
   if S.AncestralCall:IsCastable() then
-    if Cast(S.AncestralCall, Settings.Commons.OffGCDasOffGCD.Racials) then return "Cast Ancestral Call" end
+    if Cast(S.AncestralCall, Settings.Commons.GCDasOffGCD.Racials) then return "Cast Ancestral Call" end
   end
 
   return false
@@ -400,7 +400,7 @@ local function CDs ()
       and ((not S.ImprovedGarrote:IsAvailable() and Target:DebuffUp(S.Garrote)) 
       or (S.ImprovedGarrote:IsAvailable() and S.Garrote:CooldownUp() and Target:PMultiplier(S.Garrote) <= 1))
       and (Target:FilteredTimeToDie(">", 10) or Target:FilteredTimeToDie("<", 10)) then
-      if Cast(S.Sepsis) then return "Cast Sepsis" end
+      if Cast(S.Sepsis, nil, Settings.Commons.CovenantDisplayStyle) then return "Cast Sepsis" end
     end
 
     -- actions.cds+=/use_item,name=algethar_puzzle_box,use_off_gcd=1,if=dot.rupture.ticking&cooldown.deathmark.remains<2|fight_remains<=22 Homebrew: deleted check since its not used anymore
@@ -701,8 +701,8 @@ local function Direct ()
     end
   end
   -- actions.direct+=/echoing_reprimand,if=variable.use_filler|fight_remains<20 Homebrew Check for ER.
-  if CDsON() and S.EchoingReprimand:IsReady() and S.EchoingReprimand:IsAvailable() or HL.BossFilteredFightRemains("<=", 20) and S.EchoingReprimand:IsAvailable() then
-    if Cast(S.EchoingReprimand, nil, Settings.Commons.GCDasOffGCD.EchoingReprimand, not TargetInMeleeRange) then return "Cast Echoing Reprimand" end
+  if (CDsON() and S.EchoingReprimand:IsReady() and S.EchoingReprimand:IsAvailable()) or (HL.BossFilteredFightRemains("<=", 20) and S.EchoingReprimand:IsAvailable() and S.EchoingReprimand:IsReady()) then
+    if Cast(S.EchoingReprimand, nil, Settings.Commons.CovenantDisplayStyle, not TargetInMeleeRange) then return "Cast Echoing Reprimand" end
   end
   if S.FanofKnives:IsCastable() then
     -- actions.direct+=/fan_of_knives,if=variable.use_filler&(!priority_rotation&spell_targets.fan_of_knives>=2+stealthed.rogue+talent.dragontempered_blades)

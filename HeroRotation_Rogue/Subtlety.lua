@@ -258,7 +258,7 @@ local function Finish (ReturnSpellOnly, StealthSpell)
   -- actions.finish+=/rupture,if=!dot.rupture.ticking&target.time_to_die-remains>6 NOTE: Homebrew check for M+, if at 1 or 2 targets, use Rupture unless the NPC is excluded. If at 3 or more targets, ignore Rupture when in Dance, given that at 3 targets you use BlackPowder.
   if S.Rupture:IsCastable() then
       if not Target:DebuffUp(S.Rupture) and Target:FilteredTimeToDie(">", 6, -Target:DebuffRemains(S.Rupture)) then
-          if (MeleeEnemies10yCount <= 2 and not Skip_Rupture_NPC()) or (MeleeEnemies10yCount >= 3 and not SkipRupture and not Skip_Rupture_NPC() and not Player:BuffUp(S.ShadowDanceBuff)) then
+          if (MeleeEnemies10yCount <= 2 and not Skip_Rupture_NPC()) or (MeleeEnemies10yCount >= 3 and not Skip_Rupture_NPC() and not Player:BuffUp(S.ShadowDanceBuff)) then
               if ReturnSpellOnly then
                   return S.Rupture
               else
