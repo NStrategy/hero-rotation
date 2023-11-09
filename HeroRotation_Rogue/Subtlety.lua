@@ -210,6 +210,10 @@ local function Skip_Rupture (ShadowDanceBuff)
   return Player:BuffUp(S.ThistleTea) and MeleeEnemies10yCount == 1
     or ShadowDanceBuff and (MeleeEnemies10yCount == 1 or Target:DebuffUp(S.Rupture) and MeleeEnemies10yCount >= 2) or Target:NPCID() == 202969 or Target:NPCID() == 203230 or Target:NPCID() == 202824 or Target:NPCID() == 202971 or Target:NPCID() == 201738 or Target:NPCID() == 202814
 end
+local function Skip_Rupture_NPC ()
+  -- Homebrew exclude for certain NPCIDS
+  return Target:NPCID() == 202969 or Target:NPCID() == 203230 or Target:NPCID() == 202824 or Target:NPCID() == 202971 or Target:NPCID() == 201738 or Target:NPCID() == 202814
+end
 local function Rotten_CB ()
   -- actions.stealth_cds+=/variable,name=rotten_cb,value=(!buff.the_rotten.up|!set_bonus.tier30_2pc)&(!talent.cold_blood|cooldown.cold_blood.remains<4|cooldown.cold_blood.remains>10)
   return (not Player:BuffUp(S.TheRottenBuff) or not Player:HasTier(30, 2)) and (not S.ColdBlood:IsAvailable() or S.ColdBlood:CooldownRemains() < 4 or S.ColdBlood:CooldownRemains() > 10)
@@ -256,7 +260,7 @@ local function Finish (ReturnSpellOnly, StealthSpell)
       if not Target:DebuffUp(S.Rupture) and Target:FilteredTimeToDie(">", 6, -Target:DebuffRemains(S.Rupture)) then
           -- If there's only two targets, we always consider Rupture
           -- If there are 3 or more targets, we only consider Rupture if not in Dance and not skipping Rupture
-          if MeleeEnemies10yCount <= 2 and not SkipRupture or (MeleeEnemies10yCount >= 3 and not SkipRupture and not Player:BuffUp(S.ShadowDanceBuff)) then
+          if MeleeEnemies10yCount <= 2 and not Skip_Rupture_NPC() or (MeleeEnemies10yCount >= 3 and not SkipRupture and not Player:BuffUp(S.ShadowDanceBuff)) then
               if ReturnSpellOnly then
                   return S.Rupture
               else
