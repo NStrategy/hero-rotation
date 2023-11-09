@@ -256,7 +256,7 @@ local function Finish (ReturnSpellOnly, StealthSpell)
       if not Target:DebuffUp(S.Rupture) and Target:FilteredTimeToDie(">", 6, -Target:DebuffRemains(S.Rupture)) then
           -- If there's only two targets, we always consider Rupture
           -- If there are 3 or more targets, we only consider Rupture if not in Dance and not skipping Rupture
-          if MeleeEnemies10yCount <= 2 or (MeleeEnemies10yCount >= 3 and not SkipRupture and not Player:BuffUp(S.ShadowDanceBuff)) then
+          if MeleeEnemies10yCount <= 2 and not SkipRupture or (MeleeEnemies10yCount >= 3 and not SkipRupture and not Player:BuffUp(S.ShadowDanceBuff)) then
               if ReturnSpellOnly then
                   return S.Rupture
               else
