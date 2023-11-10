@@ -592,7 +592,7 @@ local function Stealthed ()
     end
   end
   -- actions.stealthed+=/rupture,if=effective_combo_points>=4&(pmultiplier<=1)&(buff.shadow_dance.up|debuff.deathmark.up)
-  if S.Rupture:IsReady() and ComboPoints >= 4 and (Target:PMultiplier(S.Garrote) <= 1) and (Player:BuffUp(S.ShadowDanceBuff) or Target:DebuffUp(S.Deathmark)) then
+  if S.Rupture:IsReady() and ComboPoints >= 4 and (Target:PMultiplier(S.Rupture) <= 1) and (Player:BuffUp(S.ShadowDanceBuff) or Target:DebuffUp(S.Deathmark)) then
      if Cast(S.Rupture) then return "Cast Rupture (Stealth)" end
   end
 end
