@@ -170,14 +170,6 @@ local function ComputeImprovedGarrotePMultiplier ()
 end
 S.Garrote:RegisterPMultiplier(ComputeImprovedGarrotePMultiplier)
 
-local function ComputeEnhancedRupturePMultiplier ()
-  if (Player:BuffRemains(S.MasterAssassinBuff) > 1 and Player:BuffRemains(S.MasterAssassinBuff) < 3) or Player:BuffRemains(S.MasterAssassinBuff) == 9999 or Player:BuffRemains(S.ShadowDanceBuff) >=1.5 then
-    return 1.5 -- Assuming 1.5 is the increased multiplier
-  end
-  return 1
-end
-S.Rupture:RegisterPMultiplier(ComputeEnhancedRupturePMultiplier)
-
 
 --- ======= HELPERS =======
 -- Check if the Priority Rotation variable should be set
@@ -595,13 +587,13 @@ local function Stealthed ()
     if not Player:BuffUp(S.ShadowDance) and (Target:PMultiplier(S.Garrote) <= 1 or (Target:DebuffUp(S.Deathmark) and Player:BuffRemains(S.MasterAssassin) < 3)) and ComboPointsDeficit >= 5 then
       if CastPooling(S.Garrote, nil, not TargetInMeleeRange) then return "Cast Garrote (Improved Garrote) 2" end
     end
-    -- garrote,if=stealthed.improved_garrote&(pmultiplier<=1|dot.deathmark.ticking)&combo_points.deficit>=5 Homebrew: Check for Subterfuge so it does not suggest Garrote too late, thereby dismissing Snapshot Garrote
-    if (Target:PMultiplier(S.Garrote) <=1 or Target:DebuffUp(S.Deathmark)) and ComboPointsDeficit >= 5 and Player:BuffRemains(S.Subterfuge) >=1 then
+    -- garrote,if=stealthed.improved_garrote&(pmultiplier<=1|dot.deathmark.ticking)&combo_points.deficit>=5 
+    if (Target:PMultiplier(S.Garrote) <= 1 or Target:DebuffUp(S.Deathmark)) and ComboPointsDeficit >= 5 then
       if CastPooling(S.Garrote, nil, not TargetInMeleeRange) then return "Cast Garrote (Improved Garrote) 3" end
     end
   end
-  -- actions.stealthed+=/rupture,if=effective_combo_points>=4&(pmultiplier<=1)&(buff.shadow_dance.up|debuff.deathmark.up) Homebrew: Check for Dance and DM so it does not suggest Rupture too late, thereby dismissing Snapshot Rupture
-  if S.Rupture:IsReady() and ComboPoints >= 4 and (Target:PMultiplier(S.Rupture) <= 1) and (Player:BuffUp(S.ShadowDanceBuff) or Target:DebuffUp(S.Deathmark)) then
+  -- actions.stealthed+=/rupture,if=effective_combo_points>=4&(pmultiplier<=1)&(buff.shadow_dance.up|debuff.deathmark.up) Homebrew: Check so it does not fuck up Rupture lol
+  if S.Rupture:IsReady() and ComboPoints >= 4 and (Target:PMultiplier(S.Rupture) <= 1) and ((Player:BuffRemains(S.ShadowDanceBuff) > 2 and S.Rupture:TimeSinceLastCast() > 3) or (Target:DebuffUp(S.Deathmark) and S.Vanish:TimeSinceLastCast() > 5)) then
      if Cast(S.Rupture) then return "Cast Rupture (Stealth)" end
   end
 end
