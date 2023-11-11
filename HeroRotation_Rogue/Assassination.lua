@@ -436,7 +436,7 @@ local function CDs ()
       -- actions.cds+=/variable,name=deathmark_kingsbane_condition,value=!talent.kingsbane|(cooldown.kingsbane.remains<=2&buff.envenom.up)
       -- actions.cds+=/variable,name=deathmark_condition,value=!stealthed.rogue&dot.rupture.ticking&buff.envenom.up&!debuff.deathmark.up&variable.deathmark_ma_condition&variable.deathmark_kingsbane_condition
       -- actions.cds+=/deathmark,if=variable.deathmark_condition|fight_remains<=20
-      if Target:DebuffUp(S.Rupture) and Player:BuffUp(S.Envenom) and not S.Deathmark:AnyDebuffUp()
+      if not Player:StealthUp(true, false) and Target:DebuffUp(S.Rupture) and Player:BuffUp(S.Envenom) and not S.Deathmark:AnyDebuffUp()
         and (not S.MasterAssassin:IsAvailable() or Target:DebuffUp(S.Garrote))
         and (not S.Kingsbane:IsAvailable() or (S.Kingsbane:CooldownRemains() <= 2 and Player:BuffUp(S.Envenom)))
         or HL.BossFilteredFightRemains("<=", 20) then
@@ -722,7 +722,7 @@ local function Direct ()
   end
   -- actions.direct+=/ambush,if=variable.use_filler&(buff.blindside.up|buff.sepsis_buff.remains<=1|stealthed.rogue)&(!dot.kingsbane.ticking|debuff.deathmark.down|buff.blindside.up)
   if S.Ambush:IsReady() and (Player:BuffUp(S.BlindsideBuff) or Player:BuffRemains(S.SepsisBuff) <= 1 or Player:StealthUp(true, false))
-     and (not Target:DebuffUp(S.Kingsbane) or not Target:DebuffUp(S.Deathmark) or Player:BuffUp(S.BlindsideBuff)) then
+     and (not Target:DebuffUp(S.Kingsbane) or Target:DebuffDown(S.Deathmark, true) or Player:BuffUp(S.BlindsideBuff)) then
      if CastPooling(S.Ambush, nil, not TargetInMeleeRange) then return "Cast Ambush" end
   end
   -- actions.direct+=/mutilate,target_if=!dot.deadly_poison_dot.ticking&!debuff.amplifying_poison.up,if=variable.use_filler&spell_targets.fan_of_knives=2
