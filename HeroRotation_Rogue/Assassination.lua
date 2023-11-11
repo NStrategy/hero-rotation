@@ -367,10 +367,10 @@ local function Vanish ()
        and Target:DebuffUp(S.Deathmark) and (Target:DebuffUp(S.ShivDebuff) or Target:DebuffRemains(S.Deathmark) < 4 or Target:DebuffUp(S.Sepsis)) and Target:DebuffRemains(S.Sepsis) < 3 then
        if Cast(S.Vanish, Settings.Commons.OffGCDasOffGCD.Vanish) then return "Cast Vanish (Master Assassin)" end
     end
-    -- actions.vanish+=/vanish,if=talent.master_assassin&talent.kingsbane&dot.kingsbane.remains<=3&dot.kingsbane.ticking&debuff.deathmark.remains<=3&dot.deathmark.ticking
+    -- actions.vanish+=/vanish,if=talent.master_assassin&talent.kingsbane&dot.kingsbane.remains<=3&dot.kingsbane.ticking&debuff.deathmark.remains<=3&dot.deathmark.ticking Homebrew: Changed to 3.5 to give more reaction time
     if S.MasterAssassin:IsAvailable() and S.Kingsbane:IsAvailable()
-       and Target:DebuffRemains(S.Kingsbane) <= 3 and Target:DebuffUp(S.Kingsbane)
-       and Target:DebuffRemains(S.Deathmark) <= 3 and Target:DebuffUp(S.Deathmark) then
+       and Target:DebuffRemains(S.Kingsbane) <= 3.5 and Target:DebuffUp(S.Kingsbane)
+       and Target:DebuffRemains(S.Deathmark) <= 3.5 and Target:DebuffUp(S.Deathmark) then
        if Cast(S.Vanish, Settings.Commons.OffGCDasOffGCD.Vanish) then return "Cast Vanish (Master Assassin with Kingsbane)" end
     end
   end
@@ -593,7 +593,7 @@ local function Stealthed ()
     end
   end
   -- actions.stealthed+=/rupture,if=effective_combo_points>=4&(pmultiplier<=1)&(buff.shadow_dance.up|debuff.deathmark.up) Homebrew: Check so it does not fuck up Rupture lol
-  if S.Rupture:IsReady() and ComboPoints >= 4 and (Target:PMultiplier(S.Rupture) <= 1) and ((Player:BuffRemains(S.ShadowDanceBuff) > 2 and S.Rupture:TimeSinceLastCast() > 3) or (Target:DebuffUp(S.Deathmark) and S.Vanish:TimeSinceLastCast() > 5)) then
+  if S.Rupture:IsReady() and ComboPoints >= 4 and (Target:PMultiplier(S.Rupture) <= 1) and ((Player:BuffUp(S.ShadowDanceBuff) and S.Rupture:TimeSinceLastCast() > 3) or (Target:DebuffUp(S.Deathmark) and S.Vanish:TimeSinceLastCast() > 5) and S.Rupture:TimeSinceLastCast() > 3) then
      if Cast(S.Rupture) then return "Cast Rupture (Stealth)" end
   end
 end
