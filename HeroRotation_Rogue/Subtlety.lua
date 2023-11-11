@@ -525,17 +525,6 @@ end
 
 -- # Cooldowns
 local function CDs ()
-  if Player:BuffUp(S.ShurikenTornado) then
-  -- actions.cds+=/shadow_dance,use_off_gcd=1,if=!buff.shadow_dance.up&buff.shuriken_tornado.up&buff.shuriken_tornado.remains<=3.5&spell_targets.shuriken_storm>=2
-  -- actions.cds+=/symbols_of_death,use_off_gcd=1,if=buff.shuriken_tornado.up&buff.shuriken_tornado.remains<=3.5&!set_bonus.tier30_2pc&spell_targets.shuriken_storm>=2
-    if S.SymbolsofDeath:IsCastable() and S.ShadowDance:IsCastable() and not Player:BuffUp(S.SymbolsofDeath) and not Player:BuffUp(S.ShadowDanceBuff) and MeleeEnemies10yCount >= 2 then
-      if HR.CastQueue(S.ShadowDance, S.BlackPowder) then return "Cast Shadow Dance (during Tornado 1)" end
-    elseif S.SymbolsofDeath:IsCastable() and not Player:BuffUp(S.SymbolsofDeath) and not Player:HasTier(30, 2) and MeleeEnemies10yCount >= 2  then
-      if HR.Cast(S.SymbolsofDeath, Settings.Subtlety.OffGCDasOffGCD.SymbolsofDeath) then return "Cast Symbols of Death (during Tornado)" end
-    elseif S.ShadowDance:IsCastable() and not Player:BuffUp(S.ShadowDanceBuff) then
-      if HR.Cast(S.ShadowDance) then return "Cast Shadow Dance (during Tornado 2)" end
-    end
-  end
 
   local SnDCondition = SnD_Condition()
 
@@ -584,18 +573,14 @@ local function CDs ()
     if S.EchoingReprimand:IsReady() and SnDCondition and TargetInMeleeRange and ComboPointsDeficit >= 3 then
       if HR.Cast(S.EchoingReprimand, nil, Settings.Commons.CovenantDisplayStyle) then return "Cast Echoing Reprimand" end
     end
-    -- actions.cds+=/shuriken_tornado,if=variable.snd_condition&buff.symbols_of_death.up&combo_points<=2&!buff.premeditation.up&(!talent.flagellation|cooldown.flagellation.remains>20)&spell_targets.shuriken_storm>=2
-    -- actions.cds+=/shuriken_tornado,if=cooldown.shadow_dance.ready&!stealthed.all&spell_targets.shuriken_storm>=3&!talent.flagellation.enabled&spell_targets.shuriken_storm>=2
-    -- actions.cds+=/shuriken_tornado,if=variable.snd_condition&!buff.shadow_dance.up&!buff.flagellation_buff.up&!buff.flagellation.up&!buff.shadow_blades.up&spell_targets.shuriken_storm=1
+    -- actions.cds+=/shuriken_tornado,if=variable.snd_condition&buff.symbols_of_death.up&combo_points<=2&!buff.premeditation.up&(!talent.flagellation|cooldown.flagellation.remains>20)&spell_targets.shuriken_storm>=3
+    -- actions.cds+=/shuriken_tornado,if=variable.snd_condition&!buff.shadow_dance.up&!buff.flagellation_buff.up&!buff.flagellation_persist.up&!buff.shadow_blades.up&spell_targets.shuriken_storm<=2&!raid_event.adds.up
     if S.ShurikenTornado:IsReady() then
       if SnDCondition and Player:BuffUp(S.SymbolsofDeath) and ComboPoints <= 2 and 
-        not Player:BuffUp(S.PremeditationBuff) and (not S.Flagellation:IsAvailable() or S.Flagellation:CooldownRemains() > 20) and MeleeEnemies10yCount >= 2 then
+        not Player:BuffUp(S.PremeditationBuff) and (not S.Flagellation:IsAvailable() or S.Flagellation:CooldownRemains() > 20) and MeleeEnemies10yCount >= 3 then
         if HR.Cast(S.ShurikenTornado, Settings.Subtlety.GCDasOffGCD.ShurikenTornado) then return "Cast Shuriken Tornado (SoD)" end
       end
-      if S.ShadowDance:Charges() >= 1 and not Player:StealthUp(true, true) and MeleeEnemies10yCount >= 3 and not S.Flagellation:IsAvailable() and MeleeEnemies10yCount >= 2 then
-        if HR.Cast(S.ShurikenTornado, Settings.Subtlety.GCDasOffGCD.ShurikenTornado) then return "Cast Shuriken Tornado (Dance)" end
-      end
-      if SnDCondition and not Player:BuffUp(S.ShadowDanceBuff) and not Player:BuffUp(S.Flagellation) and not Player:BuffUp(S.ShadowBlades) and MeleeEnemies10yCount == 1 then
+      if SnDCondition and not Player:BuffUp(S.ShadowDanceBuff) and not Player:BuffUp(S.Flagellation) and not Player:BuffUp(S.FlagellationPersistBuff) and not Player:BuffUp(S.ShadowBlades) and MeleeEnemies10yCount <= 2 then
         if HR.Cast(S.ShurikenTornado, Settings.Subtlety.GCDasOffGCD.ShurikenTornado) then return "Cast Shuriken Tornado (ST)" end
       end
     end
