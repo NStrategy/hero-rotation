@@ -610,7 +610,7 @@ local function Dot ()
   if HR.AoEON() and S.CrimsonTempest:IsReady() and MeleeEnemies10yCount >= 2 and ComboPoints >= 4
      and EnergyRegenCombined > 25 and not S.Deathmark:CooldownUp() then
      for _, CycleUnit in pairs(MeleeEnemies10y) do
-        if CycleUnit:DebuffRefreshable(S.CrimsonTempest) and CycleUnit:TimeToDie() - CycleUnit:DebuffRemains(S.CrimsonTempest) > 6 then
+        if CycleUnit:DebuffRefreshable(S.CrimsonTempest) and CycleUnit:FilteredTimeToDie(">", 6, -Target:DebuffRemains(S.CrimsonTempest)) then
           if Cast(S.CrimsonTempest) then return "Cast Crimson Tempest (AoE)" end
         end
      end
