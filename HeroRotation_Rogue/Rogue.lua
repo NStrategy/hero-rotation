@@ -271,9 +271,9 @@ Item.Rogue.Assassination = {
   -- Trinkets
   AlgetharPuzzleBox       = Item(193701, {13, 14}),
   MirrorOfFracturedTomorrows = Item(207581, {13, 14}),
-  AshesOfTheEmbersoul        = Item(207167, {13, 14}), 
+  AshesOfTheEmbersoul        = Item(207582, {13, 14}), --Placeholder
   WitherBarksBranch          = Item(207583, {13, 14}), --Placeholder
-  BandolierOfTwistedBlades   = Item(207165, {13, 14})  
+  BandolierOfTwistedBlades   = Item(207584, {13, 14})  --Placeholder
 }
 
 Item.Rogue.Outlaw = {
@@ -289,9 +289,9 @@ Item.Rogue.Subtlety = {
   StormEatersBoon            = Item(194302, {13, 14}),
   BeaconToTheBeyond          = Item(203963, {13, 14}),
   MirrorOfFracturedTomorrows = Item(207581, {13, 14}),
-  AshesOfTheEmbersoul        = Item(207167, {13, 14}), 
+  AshesOfTheEmbersoul        = Item(207582, {13, 14}), --Placeholder
   WitherBarksBranch          = Item(207583, {13, 14}), --Placeholder
-  BandolierOfTwistedBlades   = Item(207165, {13, 14})  
+  BandolierOfTwistedBlades   = Item(207584, {13, 14})  --Placeholder
 }
 
 function Commons.StealthSpell()
