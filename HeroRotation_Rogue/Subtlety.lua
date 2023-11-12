@@ -299,8 +299,8 @@ local function Finish (ReturnSpellOnly, StealthSpell)
       end
     end
   end
-  -- actions.finish+=/rupture,if=buff.finality_rupture.up&buff.shadow_dance.up&spell_targets.shuriken_storm<=4
-  if Player:BuffUp(S.FinalityRuptureBuff) and Player:BuffUp(S.ShadowDanceBuff) and not Skip_Rupture_NPC() and MeleeEnemies10yCount <= 4 and S.Rupture:IsCastable() then
+  -- actions.finish+=/rupture,if=buff.finality_rupture.up&buff.shadow_dance.up&spell_targets.shuriken_storm<=4&!action.rupture.used_for_danse
+  if Player:BuffUp(S.FinalityRuptureBuff) and Player:BuffUp(S.ShadowDanceBuff) and not Skip_Rupture_NPC() and MeleeEnemies10yCount <= 4 and not Used_For_Danse(S.Rupture) and S.Rupture:IsCastable() then
     if TargetInMeleeRange then
       if ReturnSpellOnly then
         return S.Rupture
