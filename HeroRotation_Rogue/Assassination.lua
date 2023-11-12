@@ -486,11 +486,11 @@ local function CDs ()
   end
   -- actions.cds+=/shadow_dance,if=talent.kingsbane&cooldown.kingsbane.remains<=1&buff.envenom.up
   if S.ShadowDance:IsReady() and S.Kingsbane:IsAvailable() and S.Kingsbane:CooldownRemains() <= 1 and Player:BuffUp(S.Envenom) then
-     if Cast(S.ShadowDance, Settings.Assassination.OffGCDasOffGCD.ShadowDance) then return "Cast Shadow Dance 1" end
+     if Cast(S.ShadowDance, Settings.Commons.OffGCDasOffGCD.ShadowDance) then return "Cast Shadow Dance 1" end
   end
   -- actions.cds+=/shadow_dance,if=talent.kingsbane&cooldown.kingsbane.remains<=2&buff.envenom.up
   if S.ShadowDance:IsReady() and S.Kingsbane:IsAvailable() and S.Kingsbane:CooldownRemains() <= 2 and Player:BuffUp(S.Envenom) then
-     if Cast(S.ShadowDance, Settings.Assassination.OffGCDasOffGCD.ShadowDance) then return "Cast Shadow Dance 2" end
+     if Cast(S.ShadowDance, Settings.Commons.OffGCDasOffGCD.ShadowDance) then return "Cast Shadow Dance 2" end
   end
   -- actions.cds+=/kingsbane,if=(debuff.shiv.up|cooldown.shiv.remains<6)&buff.envenom.up&(cooldown.deathmark.remains>=50|dot.deathmark.ticking)|fight_remains<=15
   if S.Kingsbane:IsReady() and 
