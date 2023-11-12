@@ -273,7 +273,7 @@ Item.Rogue.Assassination = {
   AlgetharPuzzleBox       = Item(193701, {13, 14}),
   MirrorOfFracturedTomorrows = Item(207581, {13, 14}),
   AshesOfTheEmbersoul        = Item(207167, {13, 14}), 
-  WitherBarksBranch          = Item(207583, {13, 14}), --Placeholder
+  WitherBarksBranch          = Item(109999, {13, 14}),
   BandolierOfTwistedBlades   = Item(207165, {13, 14})  
 }
 
@@ -292,7 +292,7 @@ Item.Rogue.Subtlety = {
   BeaconToTheBeyond          = Item(203963, {13, 14}),
   MirrorOfFracturedTomorrows = Item(207581, {13, 14}),
   AshesOfTheEmbersoul        = Item(207167, {13, 14}), 
-  WitherBarksBranch          = Item(207583, {13, 14}), --Placeholder
+  WitherBarksBranch          = Item(109999, {13, 14}),
   BandolierOfTwistedBlades   = Item(207165, {13, 14})  
 }
 
