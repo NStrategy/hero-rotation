@@ -40,8 +40,8 @@ local OnUseExcludes = {
   I.ManicGrieftorch:ID(),
   I.BeaconToTheBeyond:ID(),
   I.MirrorOfFracturedTomorrows:ID(),
-  I.AshesOfTheEmbersoul:ID(),
-  I.WitherBarksBranch:ID(),
+  I.AshesoftheEmbersoul:ID(),
+  I.WitherbarksBranch:ID(),
   I.BandolierOfTwistedBlades:ID(),
 }
 
@@ -101,7 +101,6 @@ S.Rupture:RegisterPMultiplier(
 local Settings = {
   General = HR.GUISettings.General,
   Commons = HR.GUISettings.APL.Rogue.Commons,
-  Commons2 = HR.GUISettings.APL.Rogue.Commons2,
   Subtlety = HR.GUISettings.APL.Rogue.Subtlety
 }
 
@@ -227,9 +226,9 @@ local function Secret_Condition()
 end
 local function Trinket_Conditions ()
   -- actions.cds=variable,name=trinket_conditions,value=(!equipped.witherbarks_branch&!equipped.ashes_of_the_embersoul|!equipped.witherbarks_branch&trinket.witherbarks_branch.cooldown.remains<=8|equipped.witherbarks_branch&trinket.witherbarks_branch.cooldown.remains<=8|equipped.bandolier_of_twisted_blades|talent.invigorating_shadowdust)
-  return (not I.WitherBarksBranch:IsEquippedAndReady() and not I.AshesOfTheEmbersoul:IsEquippedAndReady()) or 
-         (not I.WitherBarksBranch:IsEquippedAndReady() and I.WitherBarksBranch:CooldownRemains() <= 8) or 
-         (I.WitherBarksBranch:IsEquippedAndReady() and I.WitherBarksBranch:CooldownRemains() <= 8) or 
+  return (not I.WitherbarksBranch:IsEquippedAndReady() and not I.AshesoftheEmbersoul:IsEquippedAndReady()) or 
+         (not I.WitherbarksBranch:IsEquippedAndReady() and I.WitherbarksBranch:CooldownRemains() <= 8) or 
+         (I.WitherbarksBranch:IsEquippedAndReady() and I.WitherbarksBranch:CooldownRemains() <= 8) or 
          I.BandolierOfTwistedBlades:IsEquippedAndReady() or S.InvigoratingShadowdust:IsAvailable()
 end
 
@@ -546,7 +545,7 @@ local function CDs ()
         or (S.ShadowBlades:CooldownRemains() >= 14 and S.InvigoratingShadowdust:IsAvailable() and S.ShadowDanceTalent:IsAvailable())
         and (not S.InvigoratingShadowdust:IsAvailable() or S.Sepsis:IsAvailable() or not S.ShadowDanceTalent:IsAvailable()
         or (S.InvigoratingShadowdust:TalentRank() == 2 and MeleeEnemies10yCount >= 2) or S.SymbolsofDeath:CooldownRemains() <= 3 or Player:BuffRemains(S.SymbolsofDeath) > 3) then
-        if HR.Cast(S.Flagellation, nil, Settings.Commons.CovenantDisplayStyle) then return "Cast Flagellation" end
+        if HR.Cast(S.Flagellation, Settings.Subtlety.GCDasOffGCD) then return "Cast Flagellation" end
       end
     end
   end 
@@ -571,7 +570,7 @@ local function CDs ()
     end
     -- actions.cds+=/echoing_reprimand,if=variable.snd_condition&combo_points.deficit>=3
     if S.EchoingReprimand:IsReady() and SnDCondition and TargetInMeleeRange and ComboPointsDeficit >= 3 then
-      if HR.Cast(S.EchoingReprimand, nil, Settings.Commons.CovenantDisplayStyle) then return "Cast Echoing Reprimand" end
+      if HR.Cast(S.EchoingReprimand, Settings.Commons.GCDasOffGCD.EchoingReprimand) then return "Cast Echoing Reprimand" end
     end
     -- actions.cds+=/shuriken_tornado,if=variable.snd_condition&buff.symbols_of_death.up&combo_points<=2&!buff.premeditation.up&(!talent.flagellation|cooldown.flagellation.remains>20)&spell_targets.shuriken_storm>=3
     -- actions.cds+=/shuriken_tornado,if=variable.snd_condition&!buff.shadow_dance.up&!buff.flagellation_buff.up&!buff.flagellation_persist.up&!buff.shadow_blades.up&spell_targets.shuriken_storm<=2&!raid_event.adds.up
@@ -598,14 +597,14 @@ local function CDs ()
       end
     end
     -- actions.cds+=/thistle_tea,if=(cooldown.symbols_of_death.remains>=3|buff.symbols_of_death.up)&!buff.thistle_tea.up&(energy.deficit>=(100)&(combo_points.deficit>=2|spell_targets.shuriken_storm>=3)|(cooldown.thistle_tea.charges_fractional>=(2.75-0.15*talent.invigorating_shadowdust.rank&cooldown.vanish.up))&buff.shadow_dance.up&dot.rupture.ticking&spell_targets.shuriken_storm<3)|buff.shadow_dance.remains>=4&!buff.thistle_tea.up&spell_targets.shuriken_storm>=3|!buff.thistle_tea.up&fight_remains<=(6*cooldown.thistle_tea.charges)
-    if S.ThistleTea:IsReady() then -- TODO: Check if this is correct
+    if S.ThistleTea:IsReady() then 
        if ((S.SymbolsofDeath:CooldownRemains() >= 3 or Player:BuffUp(S.SymbolsofDeath)) and not Player:BuffUp(S.ThistleTea) and 
           ((Player:EnergyDeficitPredicted() >= 100 and (Player:ComboPointsDeficit() >= 2 or MeleeEnemies10yCount >= 3)) or 
           (S.ThistleTea:ChargesFractional() >= (2.75 - 0.15 * S.InvigoratingShadowdust:TalentRank()) and S.Vanish:CooldownUp())) and 
           Player:BuffUp(S.ShadowDanceBuff) and Target:DebuffUp(S.Rupture) and MeleeEnemies10yCount < 3) or 
           (Player:BuffRemains(S.ShadowDanceBuff) >= 4 and not Player:BuffUp(S.ThistleTea) and MeleeEnemies10yCount >= 3) or 
           (not Player:BuffUp(S.ThistleTea) and HL.BossFilteredFightRemains("<=", 6 * S.ThistleTea:Charges())) then
-         if HR.Cast(S.ThistleTea, nil, Settings.Commons.TrinketDisplayStyle) then return "Thistle Tea"; end
+          if HR.Cast(S.ThistleTea, Settings.Commons.OffGCDasOffGCD.ThistleTea) then return "Cast Thistle Tea" end
        end
     end
 
@@ -635,14 +634,14 @@ local function CDs ()
     -- Trinkets TODO: MirrorOfFracturedTomorrows, ashes_of_the_embersoul, witherbarks_branch, BandolierOfTwistedBlades itemcheck
     if Settings.Commons.UseTrinkets then
       -- actions.cds+=/use_item,name=ashes_of_the_embersoul,if=buff.flagellation_buff.up&talent.invigorating_shadowdust|buff.shadow_dance.up&!raid_event.adds.up&!equipped.witherbarks_branch 
-      if I.AshesOfTheEmbersoul:IsEquippedAndReady() then
+      if I.AshesoftheEmbersoul:IsEquippedAndReady() then
         if (Player:BuffUp(S.FlagellationBuff) and S.InvigoratingShadowdust:IsAvailable()) or
            (Player:BuffUp(S.ShadowDanceBuff) and not I.WitherbarksBranch:IsEquipped()) then
-           if HR.Cast(I.AshesOfTheEmbersoul, nil, Settings.Commons.TrinketDisplayStyle) then return "Ashes Of the Embersoul"; end
+           if HR.Cast(I.AshesoftheEmbersoul, nil, Settings.Commons.TrinketDisplayStyle) then return "Ashes Of the Embersoul"; end
         end
       end
       -- actions.cds+=/use_item,name=witherbarks_branch,if=buff.flagellation_buff.up&talent.invigorating_shadowdust|buff.shadow_blades.up|equipped.bandolier_of_twisted_blades&raid_event.adds.up
-      if I.WitherBarksBranch:IsEquippedAndReady() then
+      if I.WitherbarksBranch:IsEquippedAndReady() then
         if (Player:BuffUp(S.FlagellationBuff) and S.InvigoratingShadowdust:IsAvailable()) or
             Player:BuffUp(S.ShadowBlades) or I.BandolierOfTwistedBlades:IsEquipped() then
           if HR.Cast(I.WitherbarksBranch, nil, Settings.Commons.TrinketDisplayStyle) then return "Witherbark's Branch"; end
@@ -650,7 +649,7 @@ local function CDs ()
       end
       -- actions.cds+=/use_item,name=mirror_of_fractured_tomorrows,if=buff.shadow_dance.up&(target.time_to_die>=15|equipped.ashes_of_the_embersoul)
       if I.MirrorOfFracturedTomorrows:IsEquippedAndReady() then
-        if Player:BuffUp(S.ShadowDanceBuff) and (Target:FilteredTimeToDie(">=", 15) or I.AshesOfTheEmbersoul:IsEquipped()) then
+        if Player:BuffUp(S.ShadowDanceBuff) and (Target:FilteredTimeToDie(">=", 15) or I.AshesoftheEmbersoul:IsEquipped()) then
           if HR.Cast(I.MirrorOfFracturedTomorrows, nil, Settings.Commons.TrinketDisplayStyle) then return "Mirror Of Fractured Tomorrows"; end
         end
       end
@@ -813,9 +812,8 @@ local function APL ()
   -- Crimson Vial
   ShouldReturn = Rogue.CrimsonVial()
   if ShouldReturn then return ShouldReturn end
-  -- Feint
-  ShouldReturn = Rogue.Feint()
-  if ShouldReturn then return ShouldReturn end
+
+
   -- Poisons
   Rogue.Poisons()
 
@@ -834,12 +832,6 @@ local function APL ()
     -- Opener
     if Everyone.TargetIsValid() and (Target:IsSpellInRange(S.Shadowstrike) or TargetInMeleeRange) then
       -- Precombat CDs
-      if HR.CDsON() then
-        if S.MarkedforDeath:IsCastable() and Player:ComboPointsDeficit() >= Rogue.CPMaxSpend() then
-          if HR.Cast(S.MarkedforDeath, Settings.Commons.OffGCDasOffGCD.MarkedforDeath) then return "Cast Marked for Death (OOC)" end
-        end
-      end
-
       if Player:StealthUp(true, true) then
         PoolingAbility = Stealthed(true)
         if PoolingAbility then -- To avoid pooling icon spam
@@ -860,8 +852,8 @@ local function APL ()
   end
 
   if Everyone.TargetIsValid() then
-    -- actions+=/kick
-    ShouldReturn = Everyone.Interrupt(5, S.Kick, Settings.Commons2.OffGCDasOffGCD.Kick, Interrupts)
+    -- Interrupts
+    ShouldReturn = Everyone.Interrupt(5, S.Kick, true, Interrupts)
     if ShouldReturn then return ShouldReturn end
 
     -- # Check CDs at first

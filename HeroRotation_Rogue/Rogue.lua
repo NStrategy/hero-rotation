@@ -32,7 +32,6 @@ HR.Commons.Rogue = Commons
 local Settings = {
   General = HR.GUISettings.General,
   Commons = HR.GUISettings.APL.Rogue.Commons,
-  Commons2 = HR.GUISettings.APL.Rogue.Commons2,
   Assassination = HR.GUISettings.APL.Rogue.Assassination,
   Outlaw = HR.GUISettings.APL.Rogue.Outlaw,
   Subtlety = HR.GUISettings.APL.Rogue.Subtlety
@@ -108,6 +107,7 @@ Spell.Rogue.Commons = {
 Spell.Rogue.Assassination = MergeTableByKey(Spell.Rogue.Commons, {
   -- Abilities
   Ambush                  = Spell(8676),
+  AmbushOverride          = Spell(430023),
   AmplifyingPoison        = Spell(381664),
   AmplifyingPoisonDebuff  = Spell(383414),
   AmplifyingPoisonDebuffDeathmark = Spell(394328),
@@ -130,7 +130,7 @@ Spell.Rogue.Assassination = MergeTableByKey(Spell.Rogue.Commons, {
   AtrophicPoisonDebuff    = Spell(392388),
   BlindsideBuff           = Spell(121153),
   CausticSpatter          = Spell(421975),
-  CausticSpatterDebuff    = Spell(421876),
+  CausticSpatterDebuff    = Spell(421976),
   CrimsonTempest          = Spell(121411),
   CutToTheChase           = Spell(51667),
   DashingScoundrel        = Spell(381797),
@@ -138,20 +138,21 @@ Spell.Rogue.Assassination = MergeTableByKey(Spell.Rogue.Commons, {
   Doomblade               = Spell(381673),
   DragonTemperedBlades    = Spell(381801),
   Elusiveness             = Spell(79008),
-  Exsanguinate            = Spell(200806),
-  LightweightShiv         = Spell(394983),
   ImprovedGarrote         = Spell(381632),
   ImprovedGarroteBuff     = Spell(392401),
   ImprovedGarroteAura     = Spell(392403),
   IndiscriminateCarnage   = Spell(381802),
+  IndiscriminateCarnageAura = Spell(385754),
+  IndiscriminateCarnageBuff = Spell(385747),
   InternalBleeding        = Spell(154953),
   Kingsbane               = Spell(385627),
+  LightweightShiv         = Spell(394983),
   MasterAssassin          = Spell(255989),
   MasterAssassinBuff      = Spell(256735),
   PreyontheWeak           = Spell(131511),
   PreyontheWeakDebuff     = Spell(255909),
-  ScentofBlood            = Spell(381799),
-  ScentofBloodBuff        = Spell(381800),
+  ScentOfBlood            = Spell(381799),
+  ScentOfBloodBuff        = Spell(394080),
   SerratedBoneSpike       = Spell(385424),
   SerratedBoneSpikeDebuff = Spell(394036),
   ShivDebuff              = Spell(319504),
@@ -163,6 +164,7 @@ Spell.Rogue.Outlaw = MergeTableByKey(Spell.Rogue.Commons, {
   -- Abilities
   AdrenalineRush          = Spell(13750),
   Ambush                  = Spell(8676),
+  AmbushOverride          = Spell(430023),
   BetweentheEyes          = Spell(315341),
   BladeFlurry             = Spell(13877),
   Dispatch                = Spell(2098),
@@ -272,8 +274,8 @@ Item.Rogue.Assassination = {
   -- Trinkets
   AlgetharPuzzleBox       = Item(193701, {13, 14}),
   MirrorOfFracturedTomorrows = Item(207581, {13, 14}),
-  AshesOfTheEmbersoul        = Item(207167, {13, 14}), 
-  WitherBarksBranch          = Item(109999, {13, 14}),
+  AshesoftheEmbersoul        = Item(207167, {13, 14}), 
+  WitherbarksBranch          = Item(109999, {13, 14}),
   BandolierOfTwistedBlades   = Item(207165, {13, 14})  
 }
 
@@ -291,8 +293,8 @@ Item.Rogue.Subtlety = {
   StormEatersBoon            = Item(194302, {13, 14}),
   BeaconToTheBeyond          = Item(203963, {13, 14}),
   MirrorOfFracturedTomorrows = Item(207581, {13, 14}),
-  AshesOfTheEmbersoul        = Item(207167, {13, 14}), 
-  WitherBarksBranch          = Item(109999, {13, 14}),
+  AshesoftheEmbersoul        = Item(207167, {13, 14}), 
+  WitherbarksBranch          = Item(109999, {13, 14}),
   BandolierOfTwistedBlades   = Item(207165, {13, 14})  
 }
 
@@ -306,8 +308,8 @@ end
 
 -- Stealth
 function Commons.Stealth(Stealth, Setting)
-  if Settings.Commons2.StealthOOC and Stealth:IsCastable() and Player:StealthDown() then
-    if HR.Cast(Stealth, Settings.Commons2.OffGCDasOffGCD.Stealth) then return "Cast Stealth (OOC)" end
+  if Stealth:IsCastable() and Player:StealthDown() then
+    if HR.Cast(Stealth) then return "Cast Stealth (OOC)" end
   end
 
   return false
@@ -318,22 +320,11 @@ do
   local CrimsonVial = Spell(185311)
 
   function Commons.CrimsonVial()
-    if CrimsonVial:IsCastable() and Player:HealthPercentage() <= Settings.Commons2.CrimsonVialHP then
-      if HR.Cast(CrimsonVial, Settings.Commons2.GCDasOffGCD.CrimsonVial) then return "Cast Crimson Vial (Defensives)" end
+    if CrimsonVial:IsCastable() and Player:HealthPercentage() <= Settings.Commons.CrimsonVialHP then
+      if HR.Cast(CrimsonVial, Settings.Commons.GCDasOffGCD.CrimsonVial) then return "Cast Crimson Vial (Defensives)" end
     end
 
     return false
-  end
-end
-
--- Feint
-do
-  local Feint = Spell(1966)
-
-  function Commons.Feint()
-    if Feint:IsCastable() and Player:BuffDown(Feint) and Player:HealthPercentage() <= Settings.Commons2.FeintHP then
-      if HR.Cast(Feint, Settings.Commons2.GCDasOffGCD.Feint) then return "Cast Feint (Defensives)" end
-    end
   end
 end
 
@@ -352,13 +343,13 @@ do
 
   local function CastPoison(Poison)
     PoisonRemains = Player:BuffRemains(Poison)
-    if PoisonRemains < (Player:AffectingCombat() and Settings.Commons.PoisonRefreshCombat * 60 or Settings.Commons.PoisonRefresh * 60) then
+    if PoisonRemains < (Player:AffectingCombat() and 120 or 300) then
       HR.CastSuggested(Poison)
     end
   end
 
   function Commons.Poisons()
-    local PoisonRefreshTime = Player:AffectingCombat() and Settings.Commons.PoisonRefreshCombat * 60 or Settings.Commons.PoisonRefresh * 60
+    local PoisonRefreshTime = Player:AffectingCombat() and 120 or 300
     local PoisonRemains
     -- Lethal Poison
     UsingWoundPoison = Player:BuffUp(WoundPoison)
@@ -393,28 +384,6 @@ do
       end
     else
       CastPoison(CripplingPoison)
-    end
-  end
-end
-
--- Marked for Death Sniping
-function Commons.MfDSniping(MarkedforDeath)
-  if MarkedforDeath:IsCastable() then
-    local BestUnit, BestUnitTTD = nil, 60
-    local MOTTD = MouseOver:IsInRange(30) and MouseOver:TimeToDie() or 11111
-    for _, ThisUnit in pairs(Player:GetEnemiesInRange(30)) do
-      local TTD = ThisUnit:TimeToDie()
-      -- Note: Increased the SimC condition by 50% since we are slower.
-      if not ThisUnit:IsMfDBlacklisted() and TTD < Player:ComboPointsDeficit()*1.5 and TTD < BestUnitTTD then
-        if MOTTD - TTD > 1 then
-          BestUnit, BestUnitTTD = ThisUnit, TTD
-        else
-          BestUnit, BestUnitTTD = MouseOver, MOTTD
-        end
-      end
-    end
-    if BestUnit and BestUnit:GUID() ~= Target:GUID() then
-      HR.CastLeftNameplate(BestUnit, MarkedforDeath)
     end
   end
 end
