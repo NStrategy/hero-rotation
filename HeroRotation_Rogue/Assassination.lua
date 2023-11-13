@@ -411,9 +411,9 @@ local function Vanish ()
         if Cast(S.Vanish, Settings.Commons.OffGCDasOffGCD.Vanish) then return "Cast Vanish (Garrote Cleave)" end
       end
     end
-    -- actions.vanish+=/vanish,if=talent.master_assassin&talent.kingsbane&dot.kingsbane.remains<=3&dot.kingsbane.ticking&debuff.deathmark.remains<=3&dot.deathmark.ticking
-    if S.MasterAssassin:IsAvailable() and S.Kingsbane:IsAvailable() and Target:DebuffUp(S.Kingsbane) and Target:DebuffRemains(S.Kingsbane) <= 3
-      and Target:DebuffUp(S.Deathmark) and Target:DebuffRemains(S.Deathmark) <= 3 then
+    -- actions.vanish+=/vanish,if=talent.master_assassin&talent.kingsbane&dot.kingsbane.remains<=3&dot.kingsbane.ticking&debuff.deathmark.remains<=3&dot.deathmark.ticking Homebrew: 3.5 for more reaction time
+    if S.MasterAssassin:IsAvailable() and S.Kingsbane:IsAvailable() and Target:DebuffUp(S.Kingsbane) and Target:DebuffRemains(S.Kingsbane) <= 3.5
+      and Target:DebuffUp(S.Deathmark) and Target:DebuffRemains(S.Deathmark) <= 3.5 then
       if Cast(S.Vanish, Settings.Commons.OffGCDasOffGCD.Vanish) then return "Cast Vanish (Kingsbane)" end
     end
     -- actions.vanish+=/vanish,if=!talent.improved_garrote&talent.master_assassin&!dot.rupture.refreshable&dot.garrote.remains>3&debuff.deathmark.up&(debuff.shiv.up|debuff.deathmark.remains<4|dot.sepsis.ticking)&dot.sepsis.remains<3
@@ -609,19 +609,9 @@ local function Stealthed ()
       if Cast(S.Garrote, nil, nil, not TargetInMeleeRange) then return "Cast Garrote (Improved Garrote Low CP)" end
     end
   end
-  -- actions.stealthed+=/rupture,if=effective_combo_points>=4&(pmultiplier<=1)&(buff.shadow_dance.up|debuff.deathmark.up) Homebrew: If ST then follow correct Opener.
-  if S.Rupture:IsReady() and ComboPoints >= 4 and (Target:PMultiplier(S.Rupture) <= 1) then
-    if MeleeEnemies10yCount == 1 then
-      if ((Player:BuffUp(S.ShadowDanceBuff) and S.Rupture:TimeSinceLastCast() > 3) 
-        or (Target:DebuffUp(S.Deathmark) and S.Vanish:TimeSinceLastCast() > 5) 
-        and S.Rupture:TimeSinceLastCast() > 3) then
-        if Cast(S.Rupture, nil, nil, not TargetInMeleeRange) then return "Cast Rupture (Nightstalker ST)" end
-      end
-    else
-      if (Player:BuffUp(S.ShadowDanceBuff) or Target:DebuffUp(S.Deathmark)) then
-        if Cast(S.Rupture, nil, nil, not TargetInMeleeRange) then return "Cast Rupture (Nightstalker)" end
-      end
-    end
+  -- actions.stealthed+=/rupture,if=effective_combo_points>=4&(pmultiplier<=1)&(buff.shadow_dance.up|debuff.deathmark.up) 
+  if ComboPoints >= 4 and Target:PMultiplier(S.Rupture) <= 1 and (Player:BuffUp(S.ShadowDanceBuff) or Target:DebuffUp(S.Deathmark)) then
+    if Cast(S.Rupture, nil, nil, not TargetInMeleeRange) then return "Cast Rupture (Nightstalker)" end
   end
 end
 
@@ -657,15 +647,20 @@ local function Dot ()
     end
   end
   -- actions.dot+=/rupture,if=effective_combo_points>=4&(pmultiplier<=1)&refreshable&target.time_to_die-remains>(4+(talent.dashing_scoundrel*5)+(variable.regen_saturated*6))
-  -- actions.dot+=/rupture,cycle_targets=1,if=effective_combo_points>=4&(pmultiplier<=1)&refreshable&(!variable.regen_saturated|!variable.scent_saturation)&target.time_to_die-remains>(4+(talent.dashing_scoundrel*5)+(variable.regen_saturated*6))
-  if S.Rupture:IsReady() then
-     if (ComboPoints >= 3 + num(not SingleTarget) or ComboPoints * 4 + 4 + Target:DebuffRemains(S.Rupture) > S.ShadowDance:CooldownRemains() + 4 + 6.1
-      and ComboPoints * 4 + 4 + Target:DebuffRemains(S.Rupture) <= S.ShadowDance:CooldownRemains() + 4 + 6.1 + 4)
-      and (Target:PMultiplier(S.Rupture) <= 1 or Target:DebuffRemains(S.Rupture) < 5.1)
-      and IsDebuffRefreshable(Target, S.Rupture) and Target:DebuffRemains(S.Rupture) < S.ShadowDance:CooldownRemains() + 2
-      and Target:FilteredTimeToDie(">", 4 + BoolToInt(S.DashingScoundrel:IsAvailable()) * 5 + BoolToInt(EnergyRegenSaturated) * 6, -Target:DebuffRemains(S.Rupture)) or Target:TimeToDieIsNotValid() then
-      if Cast(S.Rupture, nil, nil, not TargetInMeleeRange) then return "Cast Rupture (Refresh)" end
-     end
+  -- actions.dot+=/rupture,cycle_targets=1,if=effective_combo_points>=4&(pmultiplier<=1)&refreshable&(!variable.regen_saturated|!variable.scent_saturation)&target.time_to_die-remains>(4+(talent.dashing_scoundrel*5)+(variable.regen_saturated*6)) Note: Check for Nightstalker Rupture is missing
+  if S.Rupture:IsReady() and ComboPoints >= 4 then
+    -- target.time_to_die-remains>(4+(talent.dashing_scoundrel*5)+(talent.doomblade*5)+(variable.regen_saturated*6))
+    RuptureDurationThreshold = 4 + BoolToInt(S.DashingScoundrel:IsAvailable()) * 5 + BoolToInt(S.Doomblade:IsAvailable()) * 5 + BoolToInt(EnergyRegenSaturated) * 6
+    local function Evaluate_Rupture_Target(TargetUnit)
+      return IsDebuffRefreshable(TargetUnit, S.Rupture, RuptureThreshold) and TargetUnit:PMultiplier(S.Rupture) <= 1
+        and (TargetUnit:FilteredTimeToDie(">", RuptureDurationThreshold, -TargetUnit:DebuffRemains(S.Rupture)) or TargetUnit:TimeToDieIsNotValid())
+    end
+    if Evaluate_Rupture_Target(Target) and Rogue.CanDoTUnit(Target, RuptureDMGThreshold) then
+      if Cast(S.Rupture, nil, nil, not TargetInMeleeRange) then return "Cast Rupture" end
+    end
+    if HR.AoEON() and (not EnergyRegenSaturated or not ScentSaturated) then
+      SuggestCycleDoT(S.Rupture, Evaluate_Rupture_Target, RuptureDurationThreshold, MeleeEnemies5y)
+    end
   end
   -- actions.dot+=/garrote,if=refreshable&combo_points.deficit>=1&(pmultiplier<=1|remains<=tick_time&spell_targets.fan_of_knives>=3)&(remains<=tick_time*2&spell_targets.fan_of_knives>=3)&(target.time_to_die-remains)>4&master_assassin_remains=0
   if S.Garrote:IsCastable() and ComboPointsDeficit >= 1 and MasterAssassinRemains() <= 0
