@@ -239,11 +239,10 @@ local function shadowDanceCondition ()
         S.SecretTechnique:CooldownRemains() < 10 + 12 * ((not S.InvigoratingShadowdust:IsAvailable() or Player:HasTier(30, 2)) and 1 or 0))
 end
 local function Trinket_Conditions ()
-  -- actions.cds=variable,name=trinket_conditions,value=(!equipped.witherbarks_branch&!equipped.ashes_of_the_embersoul|!equipped.witherbarks_branch&trinket.witherbarks_branch.cooldown.remains<=8|equipped.witherbarks_branch&trinket.witherbarks_branch.cooldown.remains<=8|equipped.bandolier_of_twisted_blades|talent.invigorating_shadowdust)
-  return (not I.WitherbarksBranch:IsEquippedAndReady() and not I.AshesoftheEmbersoul:IsEquippedAndReady()) or 
-         (not I.WitherbarksBranch:IsEquippedAndReady() and I.WitherbarksBranch:CooldownRemains() <= 8) or 
-         (I.WitherbarksBranch:IsEquippedAndReady() and I.WitherbarksBranch:CooldownRemains() <= 8) or 
-         I.BandolierOfTwistedBlades:IsEquippedAndReady() or S.InvigoratingShadowdust:IsAvailable()
+  -- actions.cds=variable,name=trinket_conditions,value=(!equipped.witherbarks_branch|equipped.witherbarks_branch&trinket.witherbarks_branch.cooldown.remains<=8|equipped.bandolier_of_twisted_blades|talent.invigorating_shadowdust)
+  return (not I.WitherbarksBranch:IsEquipped() or 
+         I.WitherbarksBranch:IsEquipped() and I.WitherbarksBranch:CooldownRemains() <= 8 or 
+         I.BandolierOfTwistedBlades:IsEquipped() or S.InvigoratingShadowdust:IsAvailable())
 end
 
 -- # Finishers
