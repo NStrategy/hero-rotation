@@ -66,7 +66,7 @@ local BleedTickTime, ExsanguinatedBleedTickTime = 2 * Player:SpellHaste(), 1 * P
 local ComboPoints, ComboPointsDeficit
 local RuptureThreshold, CrimsonTempestThreshold, RuptureDMGThreshold, GarroteDMGThreshold, RuptureDurationThreshold, RuptureTickTime, GarroteTickTime
 local PriorityRotation
-local NotPooling, SepsisSyncRemains, PoisonedBleeds, EnergyRegenCombined, EnergyTimeToMaxCombined, EnergyRegenSaturated, SingleTarget
+local NotPooling, SepsisSyncRemains, PoisonedBleeds, EnergyRegenCombined, EnergyTimeToMaxCombined, EnergyRegenSaturated, SingleTarget, ScentSaturated
 local TrinketSyncSlot = 0
 
 -- Covenant and Legendaries
@@ -225,6 +225,15 @@ local function SepsisSyncRemainsVar()
     return S.Deathmark:CooldownRemains()
   end
   return S.Sepsis:CooldownRemains()
+end
+
+-- actions.dot=variable,name=scent_effective_max_stacks,value=(spell_targets.fan_of_knives*talent.scent_of_blood.rank*2)>?20
+-- actions.dot+=/variable,name=scent_saturation,value=buff.scent_of_blood.stack>=variable.scent_effective_max_stacks
+local function ScentSaturatedVar()
+  if not S.ScentOfBlood:IsAvailable() then
+    return true
+  end
+  return Player:BuffStack(S.ScentOfBloodBuff) >= mathmin(20, S.ScentOfBlood:TalentRank() * 2 * MeleeEnemies10yCount)
 end
 
 -- Custom Override for Handling 4pc Pandemics
@@ -626,7 +635,8 @@ local function Dot ()
   if HR.AoEON() and S.CrimsonTempest:IsReady() and MeleeEnemies10yCount >= 2 and ComboPoints >= 4
     and EnergyRegenCombined > 25 and not S.Deathmark:IsReady() then
     for _, CycleUnit in pairs(MeleeEnemies10y) do
-      if Target:FilteredTimeToDie(">", 6, -Target:DebuffRemains(S.CrimsonTempest)) then
+      if IsDebuffRefreshable(CycleUnit, S.CrimsonTempest, CrimsonTempestThreshold) and
+        CycleUnit:FilteredTimeToDie(">", 6, -CycleUnit:DebuffRemains(S.CrimsonTempest)) then
         if Cast(S.CrimsonTempest) then return "Cast Crimson Tempest (AoE High Energy)" end
       end
     end
@@ -834,6 +844,7 @@ local function APL ()
     EnergyRegenSaturated = EnergyRegenCombined > 35
     NotPooling = NotPoolingVar()
     SepsisSyncRemains = SepsisSyncRemainsVar()
+    ScentSaturated = ScentSaturatedVar()
     -- actions+=/variable,name=single_target,value=spell_targets.fan_of_knives<2
     SingleTarget = MeleeEnemies10yCount < 2
 
