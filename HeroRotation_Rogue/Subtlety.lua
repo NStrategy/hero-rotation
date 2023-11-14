@@ -91,12 +91,6 @@ S.Eviscerate:RegisterDamageFormula(
   end
 )
 
-S.Rupture:RegisterPMultiplier(
-  function ()
-    return Player:BuffUp(S.FinalityRuptureBuff) and 1.3 or 1
-  end
-)
-
 -- GUI Settings
 local Settings = {
   General = HR.GUISettings.General,
