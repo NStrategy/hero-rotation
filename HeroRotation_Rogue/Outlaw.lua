@@ -361,9 +361,9 @@ local function CDs ()
   end
 
   -- # Use Roll the Bones if reroll conditions are met, or just before buffs expire based on T31 and upcoming stealth cooldowns
-  -- actions.cds+=/roll_the_bones,if=variable.rtb_reroll|rtb_buffs.max_remains<=set_bonus.tier31_4pc+(cooldown.shadow_dance.remains<=1|cooldown.vanish.remains<=1)*6
+  -- actions.cds+=/roll_the_bones,if=variable.rtb_reroll|rtb_buffs.max_remains<=1+(cooldown.shadow_dance.remains<=1|cooldown.vanish.remains<=1)*6 Homebrew: No check for Tierset anymore.
   if S.RolltheBones:IsReady() then
-    if RtB_Reroll() or Rogue.RtBRemains() <= num(Player:HasTier(31, 4)) + num(S.ShadowDance:CooldownRemains() <=1 or S.Vanish:CooldownRemains() <= 1) * 6 then
+    if RtB_Reroll() or Rogue.RtBRemains() <= num(S.ShadowDance:CooldownRemains() <=1 or S.Vanish:CooldownRemains() <= 1) * 6 then
       if HR.Cast(S.RolltheBones) then return "Cast Roll the Bones" end
     end
   end
