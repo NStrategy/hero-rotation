@@ -45,6 +45,17 @@ local OnUseExcludes = {
   I.BandolierOfTwistedBlades:ID(),
 }
 
+-- Trinkets
+local Equipment = Player:GetEquipment()
+local trinket1 = Equipment[13] and Item(Equipment[13]) or Item(0)
+local trinket2 = Equipment[14] and Item(Equipment[14]) or Item(0)
+
+HL:RegisterForEvent(function()
+  Equipment = Player:GetEquipment()
+  trinket1 = Equipment[13] and Item(Equipment[13]) or Item(0)
+  trinket2 = Equipment[14] and Item(Equipment[14]) or Item(0)
+end, "PLAYER_EQUIPMENT_CHANGED" )
+
 -- Rotation Var
 local MeleeRange, AoERange, TargetInMeleeRange, TargetInAoERange
 local Enemies30y, MeleeEnemies10y, MeleeEnemies10yCount, MeleeEnemies5y
@@ -236,7 +247,7 @@ local function Trinket_Conditions ()
   -- actions.cds=variable,name=trinket_conditions,value=(!equipped.witherbarks_branch|equipped.witherbarks_branch&trinket.witherbarks_branch.cooldown.remains<=8|equipped.bandolier_of_twisted_blades|talent.invigorating_shadowdust)
   return (not I.WitherbarksBranch:IsEquipped() or 
          I.WitherbarksBranch:IsEquipped() and I.WitherbarksBranch:CooldownRemains() <= 8 or 
-         I.BandolierOfTwistedBlades:IsEquipped() or S.InvigoratingShadowdust:IsAvailable())
+         I.BandolierOfTwistedBlades:IsEquippedAndReady() or S.InvigoratingShadowdust:IsAvailable())
 end
 
 -- # Finishers
@@ -646,16 +657,16 @@ local function CDs ()
     if Settings.Commons.UseTrinkets then
       -- actions.cds+=/use_item,name=ashes_of_the_embersoul,if=buff.flagellation_buff.up&talent.invigorating_shadowdust|buff.shadow_dance.up&!raid_event.adds.up&!equipped.witherbarks_branch 
       if I.AshesoftheEmbersoul:IsEquippedAndReady() then
-        if (Player:BuffUp(S.FlagellationBuff) and S.InvigoratingShadowdust:IsAvailable()) or
+        if (Player:BuffUp(S.Flagellation) and S.InvigoratingShadowdust:IsAvailable()) or
            (Player:BuffUp(S.ShadowDanceBuff) and not I.WitherbarksBranch:IsEquipped()) then
            if HR.Cast(I.AshesoftheEmbersoul, nil, Settings.Commons.TrinketDisplayStyle) then return "Ashes Of the Embersoul"; end
         end
       end
       -- actions.cds+=/use_item,name=witherbarks_branch,if=buff.flagellation_buff.up&talent.invigorating_shadowdust|buff.shadow_blades.up|equipped.bandolier_of_twisted_blades&raid_event.adds.up
       if I.WitherbarksBranch:IsEquippedAndReady() then
-        if (Player:BuffUp(S.FlagellationBuff) and S.InvigoratingShadowdust:IsAvailable()) or
+        if (Player:BuffUp(S.Flagellation) and S.InvigoratingShadowdust:IsAvailable()) or
             Player:BuffUp(S.ShadowBlades) or I.BandolierOfTwistedBlades:IsEquipped() then
-          if HR.Cast(I.WitherbarksBranch, nil, Settings.Commons.TrinketDisplayStyle) then return "Witherbark's Branch"; end
+            if HR.Cast(I.WitherbarksBranch, nil, Settings.Commons.TrinketDisplayStyle) then return "Witherbark's Branch"; end
         end
       end
       -- actions.cds+=/use_item,name=mirror_of_fractured_tomorrows,if=buff.shadow_dance.up&(target.time_to_die>=15|equipped.ashes_of_the_embersoul)
