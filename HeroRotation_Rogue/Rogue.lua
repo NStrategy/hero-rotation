@@ -61,6 +61,7 @@ Spell.Rogue.Commons = {
   CheapShot               = Spell(1833),
   Kick                    = Spell(1766),
   KidneyShot              = Spell(408),
+  PickPocket              = Spell(921),
   Sap                     = Spell(6770),
   Shiv                    = Spell(5938),
   SliceandDice            = Spell(315496),
@@ -156,6 +157,7 @@ Spell.Rogue.Assassination = MergeTableByKey(Spell.Rogue.Commons, {
   SerratedBoneSpike       = Spell(385424),
   SerratedBoneSpikeDebuff = Spell(394036),
   ShivDebuff              = Spell(319504),
+  ShroudedSuffocation     = Spell(385478),
   VenomRush               = Spell(152152),
   -- PvP
 })
@@ -276,7 +278,6 @@ Item.Rogue.Assassination = {
   MirrorOfFracturedTomorrows = Item(207581, {13, 14}),
   AshesoftheEmbersoul        = Item(207167, {13, 14}), 
   WitherbarksBranch          = Item(109999, {13, 14}),
-  BandolierOfTwistedBlades   = Item(207165, {13, 14})  
 }
 
 Item.Rogue.Outlaw = {
@@ -418,6 +419,7 @@ do
 
   AssassinationSpell.Rupture:RegisterPMultiplier( ComputeNighstalkerPMultiplier, { SubtletySpell.FinalityRuptureBuff, 1.3 } )
   AssassinationSpell.Garrote:RegisterPMultiplier( ComputeNighstalkerPMultiplier, ComputeImprovedGarrotePMultiplier )
+  AssassinationSpell.CrimsonTempest:RegisterPMultiplier( ComputeNighstalkerPMultiplier )
 end
 
 --- ======= SIMC CUSTOM FUNCTION / EXPRESSION =======
