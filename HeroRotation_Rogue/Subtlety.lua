@@ -436,8 +436,8 @@ local function Stealthed (ReturnSpellOnly, StealthSpell)
   if StealthEffectiveComboPoints >= Rogue.CPMaxSpend() then
     return Finish(ReturnSpellOnly, StealthSpell)
   end
-  -- actions.stealthed+=/call_action_list,name=finish,if=buff.shuriken_tornado.up&combo_points.deficit<=2&spell_targets.shuriken_storm>=2
-  if Player:BuffUp(S.ShurikenTornado) and StealthComboPointsDeficit <= 2 and MeleeEnemies10yCount >= 2 then
+  -- actions.stealthed+=/call_action_list,name=finish,if=buff.shuriken_tornado.up&combo_points.deficit<=2
+  if Player:BuffUp(S.ShurikenTornado) and StealthComboPointsDeficit <= 2 then
     return Finish(ReturnSpellOnly, StealthSpell)
   end
   -- actions.stealthed+=/call_action_list,name=finish,if=combo_points.deficit<=1+(talent.deeper_stratagem|talent.secret_stratagem)
