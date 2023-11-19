@@ -340,10 +340,18 @@ local function CDs ()
       if Settings.Outlaw.GCDasOffGCD.BladeFlurry then
         HR.CastSuggested(S.BladeFlurry)
       else
-        if HR.Cast(S.BladeFlurry) then return "Cast Blade Flurry" end
+        if HR.Cast(S.BladeFlurry) then return "Cast Blade Flurry (ST, 2+Targets,5+Targets" end
       end
+      -- Use Blade Flurry at 3-4 targets if missing combo points equal to the combo points it will grant
+    elseif EnemiesBFCount >= 3 and EnemiesBFCount <= 4 
+        and ComboPointsDeficit >= (EnemiesBFCount + num(Player:BuffUp(S.Broadside))) and not Finish_Condition() then
+        if Settings.Outlaw.GCDasOffGCD.BladeFlurry then
+            HR.CastSuggested(S.BladeFlurry)
+        else
+            if HR.Cast(S.BladeFlurry) then return "Cast Blade Flurry (3-4 Targets)" end
+        end
     end
-  end
+end
 
   -- # Use Roll the Bones if reroll conditions are met, or just before buffs expire based on T31 and upcoming stealth cooldowns
   -- actions.cds+=/roll_the_bones,if=variable.rtb_reroll|rtb_buffs.max_remains<=1+(cooldown.shadow_dance.remains<=1|cooldown.vanish.remains<=1)*6 Homebrew: No check for Tierset anymore.
