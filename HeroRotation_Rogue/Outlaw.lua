@@ -205,54 +205,30 @@ local function RtB_Reroll ()
       Cache.APLVar.RtB_Reroll = (not Player:BuffUp(S.TrueBearing)) and true or false
       -- SimC Default
     else
+      local has4pc = Player:HasTier(31, 4)
+      local isKir_RC = S.KeepItRolling:IsAvailable() and S.EchoingReprimand:IsAvailable()
+      local isHO = S.HiddenOpportunity:IsAvailable()
+
+      -- Reset the default value of RtB_Reroll
       Cache.APLVar.RtB_Reroll = false
-      RtB_Buffs()
-      -- # Default Roll the Bones reroll rule: reroll for any buffs that aren't Buried Treasure, excluding Grand Melee in single target
-      -- actions+=/variable,name=rtb_reroll,value=rtb_buffs.will_lose=
-      -- (rtb_buffs.will_lose.buried_treasure+rtb_buffs.will_lose.grand_melee&spell_targets.blade_flurry<2&raid_event.adds.in>10)
-      if RtB_Buffs() <= 2 and Player:BuffUp(S.BuriedTreasure) and Player:BuffDown(S.GrandMelee) and EnemiesBFCount < 2 then
-        Cache.APLVar.RtB_Reroll = true
-      end
 
-      -- # Crackshot builds without T31 should reroll for True Bearing (or Broadside without Hidden Opportunity) if we won't lose over 1 buff
-      -- actions+=/variable,name=rtb_reroll,if=talent.crackshot&talent.hidden_opportunity&!set_bonus.tier31_4pc,value=
-      -- (!rtb_buffs.will_lose.true_bearing&talent.hidden_opportunity|!rtb_buffs.will_lose.broadside&!talent.hidden_opportunity)&rtb_buffs.will_lose<=1
-      if S.Crackshot:IsAvailable() and S.HiddenOpportunity:IsAvailable() and not Player:HasTier(31, 4)
-        and (not Player:BuffUp(S.TrueBearing) and S.HiddenOpportunity:IsAvailable() or not Player:BuffUp(S.Broadside) and not S.HiddenOpportunity:IsAvailable()) and RtB_Buffs() <= 1 then
+      -- With 4pc
+      if has4pc then
+        if RtB_Buffs() <= 1 or (RtB_Buffs() == 2 and Player:BuffUp(S.LoadedDiceBuff)) then
         Cache.APLVar.RtB_Reroll = true
-      end
-
-      -- # Crackshot builds with T31 should reroll if we won't lose over 1 buff (2 with Loaded Dice), and if Broadside is not active for builds without Hidden Opportunity
-      -- actions+=/variable,name=rtb_reroll,if=talent.crackshot&set_bonus.tier31_4pc,value=
-      -- (rtb_buffs.will_lose<=1+buff.loaded_dice.up)&(talent.hidden_opportunity|!buff.broadside.up)
-      if S.Crackshot:IsAvailable() and Player:HasTier(31, 4)
-        and (RtB_Buffs() <= 1 + num(Player:BuffUp(S.LoadedDiceBuff))) and (S.HiddenOpportunity:IsAvailable() or Player:BuffDown(S.Broadside)) then
-        Cache.APLVar.RtB_Reroll = true
-      end
-
-      -- # Hidden Opportunity builds without Crackshot should reroll for Skull and Crossbones or any 2 buffs excluding Grand Melee in single target
-      -- actions+=/variable,name=rtb_reroll,if=!talent.crackshot&talent.hidden_opportunity,value=!rtb_buffs.will_lose.skull_and_crossbones
-      -- &(rtb_buffs.will_lose<2+rtb_buffs.will_lose.grand_melee&spell_targets.blade_flurry<2&raid_event.adds.in>10)
-      if not S.Crackshot:IsAvailable() and S.HiddenOpportunity:IsAvailable() and not Player:BuffUp(S.SkullandCrossbones)
-        and (RtB_Buffs() < 2 + num(Player:BuffUp(S.GrandMelee)) and EnemiesBFCount < 2) then
-        Cache.APLVar.RtB_Reroll = true
-      end
-
-      -- # Additional reroll rules if all active buffs will not be rolled away and we don't already have 5+ buffs
-      -- actions+/variable,name=rtb_reroll,value=variable.rtb_reroll|rtb_buffs.normal=0&rtb_buffs.longer>=1&rtb_buffs<5&rtb_buffs.max_remains<=39
-      if Cache.APLVar.RtB_Reroll or Cache.APLVar.RtB_Buffs.Normal == 0 and Cache.APLVar.RtB_Buffs.Longer >= 1 and RtB_Buffs() < 5 and Rogue.RtBRemains() <= 39 then
-        Cache.APLVar.RtB_Reroll = true
-      end
-
-      -- # Avoid rerolls when we will not have time remaining on the fight or add wave to recoup the opportunity cost of the global
-      -- actions+=/variable,name=rtb_reroll,op=reset,if=!(raid_event.adds.remains>12|raid_event.adds.up
-      -- &(raid_event.adds.in-raid_event.adds.remains)<6|target.time_to_die>12)|fight_remains<12
-      if Target:FilteredTimeToDie("<", 12) or HL.BossFilteredFightRemains("<", 12) then
-        Cache.APLVar.RtB_Reroll = false
+        elseif isKir_RC and not isHO and RtB_Buffs() == 2 and Player:BuffUp(S.Broadside) then
+          Cache.APLVar.RtB_Reroll = false
+        end
+      -- Without 4pc
+      else
+        if RtB_Buffs() == 0 or (RtB_Buffs() == 1 and not Player:BuffUp(S.TrueBearing)) then
+          Cache.APLVar.RtB_Reroll = true
+        elseif isKir_RC and not isHO and RtB_Buffs() == 1 and not Player:BuffUp(S.Broadside) then
+          Cache.APLVar.RtB_Reroll = true
+        end
       end
     end
   end
-
   return Cache.APLVar.RtB_Reroll
 end
 
@@ -366,7 +342,7 @@ local function CDs ()
   -- actions.cds+=/roll_the_bones,if=variable.rtb_reroll|rtb_buffs.max_remains<=1+(cooldown.shadow_dance.remains<=1|cooldown.vanish.remains<=1)*6 Homebrew: No check for Tierset anymore.
   if S.RolltheBones:IsReady() then
     if RtB_Reroll() or Rogue.RtBRemains() <= num(S.ShadowDance:CooldownRemains() <=1 or S.Vanish:CooldownRemains() <= 1) * 6 then
-      if HR.Cast(S.RolltheBones) then return "Cast Roll the Bones" end
+      if HR.Cast(S.RolltheBones, Settings.Outlaw.GCDasOffGCD.RolltheBones) then return "Cast Roll the Bones" end
     end
   end
 
@@ -602,7 +578,7 @@ end
 --- ======= MAIN =======
 local function APL ()
   -- Local Update
-  BladeFlurryRange = S.AcrobaticStrikes:IsAvailable() and 9 or 6
+  BladeFlurryRange = S.AcrobaticStrikes:IsAvailable() and 10 or 6
   BetweenTheEyesDMGThreshold = S.Dispatch:Damage() * 1.25
   ComboPoints = Player:ComboPoints()
   EffectiveComboPoints = Rogue.EffectiveComboPoints(ComboPoints)
@@ -616,8 +592,7 @@ local function APL ()
   -- Unit Update
   if AoEON() then
     Enemies30y = Player:GetEnemiesInRange(30) -- Serrated Bone Spike cycle
-    local RangeSpell = (S.AcrobaticStrikes:IsAvailable()) and S.PickPocket or S.SinisterStrike
-    EnemiesBF = Player:GetEnemiesInRange(BladeFlurryRange, RangeSpell)
+    EnemiesBF = Player:GetEnemiesInRange(BladeFlurryRange)
     EnemiesBFCount = #EnemiesBF
   else
     EnemiesBFCount = 1
@@ -695,6 +670,11 @@ local function APL ()
     -- Interrupts
     ShouldReturn = Everyone.Interrupt(5, S.Kick, true, Interrupts)
     if ShouldReturn then return ShouldReturn end
+
+    -- Blind
+    if S.Blind:IsCastable() and Target:NPCID() == 204560 or Target:NPCID() == 174773 then
+       if S.Blind:IsReady() and HR.Cast(S.Blind, Settings.Commons.GCDasOffGCD.Blind) then return "Blind to CC Affix" end
+    end
 
     -- actions+=/call_action_list,name=cds
     ShouldReturn = CDs()
