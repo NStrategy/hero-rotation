@@ -143,11 +143,14 @@ local function UsePriorityRotation()
     -- Zul Mythic
     if Player:InstanceDifficulty() == 16 and Target:NPCID() == 138967 then
       return true
-    -- Council of Blood
-    elseif Target:NPCID() == 166969 or Target:NPCID() == 166971 or Target:NPCID() == 166970 then
+    -- Heartsbane Triad
+    elseif Target:NPCID() == 131823 or Target:NPCID() == 131824 or Target:NPCID() == 131825 then
       return true
-    -- Anduin (Remnant of a Fallen King/Monstrous Soul)
-    elseif Target:NPCID() == 183463 or Target:NPCID() == 183671 then
+    -- Ancient Protectors
+    elseif Target:NPCID() == 83894 or Target:NPCID() == 83893 or Target:NPCID() == 83892 then
+      return true
+    -- Yalnu (Flourishing Ancient)
+    elseif Target:NPCID() == 84400 then
       return true
     end
   end
@@ -214,10 +217,29 @@ local function Skip_Rupture (ShadowDanceBuff)
   return Player:BuffUp(S.ThistleTea) and MeleeEnemies10yCount == 1
     or ShadowDanceBuff and (MeleeEnemies10yCount == 1 or Target:DebuffUp(S.Rupture) and MeleeEnemies10yCount >= 2)
 end
-local function Skip_Rupture_NPC ()
-  -- Homebrew exclude for certain NPCIDS
-  return Target:NPCID() == 202969 or Target:NPCID() == 203230 or Target:NPCID() == 202824 or Target:NPCID() == 202971 or Target:NPCID() == 201738 or Target:NPCID() == 202814
+local function Skip_Rupture_NPC () -- Homebrew exclude for certain NPCs
+   -- Rise
+  return Target:NPCID() == 206351 or Target:NPCID() == 206352 or Target:NPCID() == 203763 or Target:NPCID() == 203799 or Target:NPCID() == 203857 or Target:NPCID() == 203688 or Target:NPCID() == 205265
+   -- Fall 
+      or Target:NPCID() == 204536 or Target:NPCID() == 204918
+   -- WM
+      or Target:NPCID() == 135052 or Target:NPCID() == 134024 or Target:NPCID() == 136330 or Target:NPCID() == 133361 or Target:NPCID() == 131669
+   -- BRH
+      or Target:NPCID() == 99664 or Target:NPCID() == 98677 or Target:NPCID() == 102781 or Target:NPCID() == 102781
+   -- AD
+      or Target:NPCID() == 128435 or Target:NPCID() == 127315 or Target:NPCID() == 259205 or Target:NPCID() == 125828
+   -- EB
+      or Target:NPCID() == 81638 or Target:NPCID() == 81638
+   -- DHT
+      or Target:NPCID() == 109908 or Target:NPCID() == 107288 or Target:NPCID() == 100529 or Target:NPCID() == 101074
+   -- ToT
+      or Target:NPCID() == 429037 or Target:NPCID() == 39960 or Target:NPCID() == 213607 or Target:NPCID() == 213219 or Target:NPCID() == 40923
+   -- Affixes
+      or Target:NPCID() == 204560 or Target:NPCID() == 174773
+   -- Raid
+      or Target:NPCID() == 210231 or Target:NPCID() == 207341 or Target:NPCID() == 208459 or Target:NPCID() == 208461 or Target:NPCID() == 214441 or Target:NPCID() == 211306
 end
+-- Maybe do an exlude cd function for Blades and Flag on certain npcs, like for the first adds in Manor. Dunno if that would brick rotation
 local function Rotten_CB ()
   -- actions.stealth_cds+=/variable,name=rotten_cb,value=(!buff.the_rotten.up|!set_bonus.tier30_2pc)&(!talent.cold_blood|cooldown.cold_blood.remains<4|cooldown.cold_blood.remains>10)
   return (not Player:BuffUp(S.TheRottenBuff) or not Player:HasTier(30, 2)) and (not S.ColdBlood:IsAvailable() or S.ColdBlood:CooldownRemains() < 4 or S.ColdBlood:CooldownRemains() > 10)
@@ -229,8 +251,8 @@ local function Secret_Condition()
   -- actions.finish=variable,name=secret_condition,value=(action.gloomblade.used_for_danse|action.shadowstrike.used_for_danse|action.backstab.used_for_danse|action.shuriken_storm.used_for_danse)&(action.eviscerate.used_for_danse|action.black_powder.used_for_danse|action.rupture.used_for_danse)|!talent.danse_macabre
   return (Used_For_Danse(S.Gloomblade) or Used_For_Danse(S.Shadowstrike) or Used_For_Danse(S.Backstab) or Used_For_Danse(S.ShurikenStorm)) and (Used_For_Danse(S.Eviscerate) or Used_For_Danse(S.BlackPowder) or Used_For_Danse(S.Rupture)) or not S.DanseMacabre:IsAvailable()
 end
-local function shadowDanceCondition ()
-  -- custom function till no 30,2 Tier anymore:
+local function shadowDanceCondition () -- NOTE: DELETE THIS IF YOU DO NOT HAVE TIER 30-2SET ANYMORE AND SEARCH FOR "and not shadowDanceCondition()" AND DELETE IT AS WELL SO IT ONLY SAYS "if S.SymbolsofDeath:IsCastable() then"
+  -- Homebrew function till no 30,2 Tier anymore:
   return TargetInMeleeRange and S.ShadowDance:IsCastable() and S.ShadowDance:Charges() >= 1
   and S.Vanish:TimeSinceLastDisplay() > 0.3 and S.Shadowmeld:TimeSinceLastDisplay() > 0.3
   and (HR.CDsON() or (S.ShadowDance:ChargesFractional() >= Settings.Subtlety.ShDEcoCharge - (not S.ShadowDanceTalent:IsAvailable() and 0.75 or 0)))
@@ -238,9 +260,9 @@ local function shadowDanceCondition ()
         (not S.TheFirstDance:IsAvailable() or ComboPointsDeficit >= 4 or Player:BuffUp(S.ShadowBlades)) and
         (ShD_Combo_Points() and ShD_Threshold() or 
         (Player:BuffUp(S.ShadowBlades) or 
-        (S.SymbolsofDeath:CooldownUp() and not S.Sepsis:IsAvailable()) or 
-        (Player:BuffRemains(S.SymbolsofDeath) >= 4 and not Player:HasTier(30, 2)) or 
-        (not Player:BuffUp(S.SymbolsofDeath) and Player:HasTier(30, 2))) and
+        S.SymbolsofDeath:CooldownUp() and not S.Sepsis:IsAvailable() or 
+        Player:BuffRemains(S.SymbolsofDeath) >= 4 and not Player:HasTier(30, 2) or 
+        not Player:BuffUp(S.SymbolsofDeath) and Player:HasTier(30, 2)) and
         S.SecretTechnique:CooldownRemains() < 10 + 12 * ((not S.InvigoratingShadowdust:IsAvailable() or Player:HasTier(30, 2)) and 1 or 0))
 end
 local function Trinket_Conditions ()
@@ -272,10 +294,10 @@ local function Finish (ReturnSpellOnly, StealthSpell)
   end
 
   local SkipRupture = Skip_Rupture(ShadowDanceBuff)
-  -- actions.finish+=/rupture,if=!dot.rupture.ticking&target.time_to_die-remains>6 NOTE: Homebrew check for M+, if at 1 or 2 targets, use Rupture unless the NPC is excluded. If at 3 or more targets, ignore Rupture when in Dance, given that at 3 targets you use BlackPowder.
+  -- actions.finish+=/rupture,if=!dot.rupture.ticking&target.time_to_die-remains>6 NOTE: Homebrew check for M+, if at 1 or 2 targets, use Rupture unless the NPC is excluded. If at 3 or more targets, ignore Rupture when in Dance unless priority target, given that at 3 targets you use BlackPowder/AOE.
   if S.Rupture:IsCastable() then
       if not Target:DebuffUp(S.Rupture) and Target:FilteredTimeToDie(">", 6, -Target:DebuffRemains(S.Rupture)) then
-          if (MeleeEnemies10yCount <= 2 and not Skip_Rupture_NPC()) or (MeleeEnemies10yCount >= 3 and not Skip_Rupture_NPC() and not Player:BuffUp(S.ShadowDanceBuff)) then
+          if (MeleeEnemies10yCount <= 2 and (not Skip_Rupture_NPC() or PriorityRotation)) or (MeleeEnemies10yCount >= 3 and (not Skip_Rupture_NPC() or PriorityRotation) and (not Player:BuffUp(S.ShadowDanceBuff) or PriorityRotation)) then
               if ReturnSpellOnly then
                   return S.Rupture
               else
@@ -563,14 +585,14 @@ local function CDs ()
         or (S.ShadowBlades:CooldownRemains() >= 14 and S.InvigoratingShadowdust:IsAvailable() and S.ShadowDanceTalent:IsAvailable())
         and (not S.InvigoratingShadowdust:IsAvailable() or S.Sepsis:IsAvailable() or not S.ShadowDanceTalent:IsAvailable()
         or (S.InvigoratingShadowdust:TalentRank() == 2 and MeleeEnemies10yCount >= 2) or S.SymbolsofDeath:CooldownRemains() <= 3 or Player:BuffRemains(S.SymbolsofDeath) > 3) then
-        if HR.Cast(S.Flagellation, Settings.Subtlety.GCDasOffGCD) then return "Cast Flagellation" end
+        if HR.Cast(S.Flagellation, Settings.Subtlety.OffGCDasOffGCD.Flagellation) then return "Cast Flagellation" end
       end
     end
   end 
   -- actions.cds+=/symbols_of_death,if=variable.snd_condition&(!buff.the_rotten.up|!set_bonus.tier30_2pc)&buff.symbols_of_death.remains<=3&(!talent.flagellation|cooldown.flagellation.remains>10|buff.shadow_dance.remains>=2&talent.invigorating_shadowdust|cooldown.flagellation.up&combo_points>=5&!talent.invigorating_shadowdust) Homebrew: Set to 4 seconds instead of 3 cause of input delay. Once rotten is gone, will revert it.
   if S.SymbolsofDeath:IsCastable() and not shadowDanceCondition() then
     if SnDCondition and (not Player:BuffUp(S.TheRottenBuff) or not Player:HasTier(30, 2)) and
-      Player:BuffRemains(S.SymbolsofDeath) <= 3.5 and
+      Player:BuffRemains(S.SymbolsofDeath) <= 4 and
       ((not S.Flagellation:IsAvailable() or S.Flagellation:CooldownRemains() > 10) or 
       (Player:BuffRemains(S.ShadowDanceBuff) >= 2 and S.InvigoratingShadowdust:IsAvailable()) or 
       (S.Flagellation:CooldownUp() and ComboPoints >= 5 and not S.InvigoratingShadowdust:IsAvailable())) then
@@ -742,9 +764,9 @@ local function Stealth_CDs (EnergyThreshold)
         (not S.TheFirstDance:IsAvailable() or ComboPointsDeficit >= 4 or Player:BuffUp(S.ShadowBlades)) and
         (ShD_Combo_Points() and ShD_Threshold() or 
         (Player:BuffUp(S.ShadowBlades) or 
-        (S.SymbolsofDeath:CooldownUp() and not S.Sepsis:IsAvailable()) or 
-        (Player:BuffRemains(S.SymbolsofDeath) >= 4 and not Player:HasTier(30, 2)) or 
-        (not Player:BuffUp(S.SymbolsofDeath) and Player:HasTier(30, 2))) and
+        S.SymbolsofDeath:CooldownUp() and not S.Sepsis:IsAvailable() or 
+        Player:BuffRemains(S.SymbolsofDeath) >= 4 and not Player:HasTier(30, 2) or 
+        not Player:BuffUp(S.SymbolsofDeath) and Player:HasTier(30, 2)) and
         S.SecretTechnique:CooldownRemains() < 10 + 12 * ((not S.InvigoratingShadowdust:IsAvailable() or Player:HasTier(30, 2)) and 1 or 0)) then
         ShouldReturn = StealthMacro(S.ShadowDance, EnergyThreshold)
         if ShouldReturn then return "ShadowDance Macro " .. ShouldReturn end
@@ -790,17 +812,15 @@ local function APL ()
   PoolingEnergy = 0
 
   -- Unit Update
-  MeleeRange = S.AcrobaticStrikes:IsAvailable() and 8 or 5
-  AoERange = S.AcrobaticStrikes:IsAvailable() and 13 or 10
-  -- TargetInMeleeRange = Target:IsInMeleeRange(MeleeRange)
-  -- TargetInAoERange = Target:IsInMeleeRange(AoERange)
-  TargetInMeleeRange = Target:IsSpellInRange(S.Backstab)
-  TargetInAoERange = Target:IsSpellInRange(S.PickPocket)
+  -- MeleeRange = S.AcrobaticStrikes:IsAvailable() and 8 or 5
+  -- AoERange = S.AcrobaticStrikes:IsAvailable() and 10 or 13
+  TargetInMeleeRange = Target:IsInMeleeRange(5)
+  TargetInAoERange = Target:IsInMeleeRange(10)
   if AoEON() then
     Enemies30y = Player:GetEnemiesInRange(30) -- Serrated Bone Spike
-    MeleeEnemies10y = Player:GetEnemiesInMeleeRange(AoERange, S.PickPocket) -- Shuriken Storm & Black Powder
+    MeleeEnemies10y = Player:GetEnemiesInMeleeRange(10) -- Shuriken Storm & Black Powder
     MeleeEnemies10yCount = #MeleeEnemies10y
-    MeleeEnemies5y = Player:GetEnemiesInMeleeRange(MeleeRange, S.Backstab) -- Melee cycle
+    MeleeEnemies5y = Player:GetEnemiesInMeleeRange(5) -- Melee cycle
   else
     Enemies30y = {}
     MeleeEnemies10y = {}
@@ -880,6 +900,12 @@ local function APL ()
     ShouldReturn = Everyone.Interrupt(5, S.Kick, true, Interrupts)
     if ShouldReturn then return ShouldReturn end
 
+    -- Blind
+    if S.Blind:IsCastable() and Target:NPCID() == 204560 or Target:NPCID() == 174773 then
+       if S.Blind:IsReady() and HR.Cast(S.Blind, Settings.Commons.GCDasOffGCD.Blind) then return "Blind to CC Affix" end
+    end
+
+    -- Maybe do a KidneyShot check for important adds. Archer in Hold for example.
     -- # Check CDs at first
     -- actions=call_action_list,name=cds
     ShouldReturn = CDs()

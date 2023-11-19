@@ -183,6 +183,15 @@ local function UsePriorityRotation()
     -- Zul Mythic
     if Player:InstanceDifficulty() == 16 and Target:NPCID() == 138967 then
       return true
+    -- Heartsbane Triad
+    elseif Target:NPCID() == 131823 or Target:NPCID() == 131824 or Target:NPCID() == 131825 then
+      return true
+    -- Ancient Protectors
+    elseif Target:NPCID() == 83894 or Target:NPCID() == 83893 or Target:NPCID() == 83892 then
+      return true
+    -- Yalnu (Flourishing Ancient)
+    elseif Target:NPCID() == 84400 then
+      return true
     end
   end
 
@@ -784,17 +793,15 @@ end
 --- ======= MAIN =======
 local function APL ()
   -- Enemies Update
-  MeleeRange = S.AcrobaticStrikes:IsAvailable() and 8 or 5
-  AoERange = S.AcrobaticStrikes:IsAvailable() and 10 or 13
-  -- TargetInMeleeRange = Target:IsInMeleeRange(MeleeRange)
-  -- TargetInAoERange = Target:IsInMeleeRange(AoERange)
-  TargetInMeleeRange = Target:IsSpellInRange(S.Garrote)
-  TargetInAoERange = Target:IsSpellInRange(S.PickPocket)
+  -- MeleeRange = S.AcrobaticStrikes:IsAvailable() and 8 or 5
+  -- AoERange = S.AcrobaticStrikes:IsAvailable() and 10 or 13
+  TargetInMeleeRange = Target:IsInMeleeRange(5)
+  TargetInAoERange = Target:IsInMeleeRange(10)
   if AoEON() then
     Enemies30y = Player:GetEnemiesInRange(30) -- Poisoned Knife & Serrated Bone Spike
-    MeleeEnemies10y = Player:GetEnemiesInMeleeRange(AoERange, S.PickPocket) -- Fan of Knives & Crimson Tempest
+    MeleeEnemies10y = Player:GetEnemiesInMeleeRange(10) -- Fan of Knives & Crimson Tempest
     MeleeEnemies10yCount = #MeleeEnemies10y
-    MeleeEnemies5y = Player:GetEnemiesInMeleeRange(MeleeRange, S.Garrote) -- Melee cycle
+    MeleeEnemies5y = Player:GetEnemiesInMeleeRange(5) -- Melee cycle
   else
     Enemies30y = {}
     MeleeEnemies10y = {}

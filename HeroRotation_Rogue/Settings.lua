@@ -27,13 +27,14 @@ HR.GUISettings.APL.Rogue = {
     ShowPooling = true,
 
     GCDasOffGCD = {
+      Blind = true,
       EchoingReprimand = true,
       CrimsonVial = true,
       Feint = true,
     },
     OffGCDasOffGCD = {
       Racials = true,
-      Vanish = true,
+      Vanish = false,
       ShadowDance = true,
       ThistleTea = true,
       ColdBlood = true,
@@ -69,6 +70,7 @@ HR.GUISettings.APL.Rogue = {
       BladeFlurry = false,
       BladeRush = false,
       KeepItRolling = false,
+      RolltheBones = false,
       Sepsis = false,
     },
     OffGCDasOffGCD = {
