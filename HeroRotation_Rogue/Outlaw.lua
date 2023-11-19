@@ -206,30 +206,37 @@ local function RtB_Reroll ()
       -- SimC Default
     else
       local has4pc = Player:HasTier(31, 4)
-      local isKir_RC = S.KeepItRolling:IsAvailable() and S.EchoingReprimand:IsAvailable()
+      local rtbBuffs = RtB_Buffs()
       local isHO = S.HiddenOpportunity:IsAvailable()
 
       -- Reset the default value of RtB_Reroll
       Cache.APLVar.RtB_Reroll = false
-
+      -- Following Rogue Discord FAQ: Use Roll the Bones if: You have 0-1 buffs OR if you have 2 buffs and Loaded Dice is active.
+      -- however builds without HO don't reroll 2 buffs if Broadside is one of them. If you don't have to reroll, you should still roll again when your buffs have under ~2 seconds remaining, instead of letting them expire, so that the 4pc always activates
       -- With 4pc
       if has4pc then
-        if RtB_Buffs() <= 1 or (RtB_Buffs() == 2 and Player:BuffUp(S.LoadedDiceBuff)) then
-        Cache.APLVar.RtB_Reroll = true
-        elseif isKir_RC and not isHO and RtB_Buffs() == 2 and Player:BuffUp(S.Broadside) then
+        if rtbBuffs <= 1 or (rtbBuffs == 2 and Player:BuffUp(S.LoadedDiceBuff)) then
+          Cache.APLVar.RtB_Reroll = true
+        elseif not isHO and rtbBuffs == 2 and Player:BuffUp(S.Broadside) then
           Cache.APLVar.RtB_Reroll = false
         end
-      -- Without 4pc
-      else
-        if RtB_Buffs() == 0 or (RtB_Buffs() == 1 and not Player:BuffUp(S.TrueBearing)) then
+        if not Cache.APLVar.RtB_Reroll and Rogue.RtBRemains() <= 2 then
           Cache.APLVar.RtB_Reroll = true
-        elseif isKir_RC and not isHO and RtB_Buffs() == 1 and not Player:BuffUp(S.Broadside) then
+        end
+      end
+        -- Following Rogue Discord FAQ: Use Roll the Bones if: You have 0 buffs OR if you have 1 buff and it is not True Bearing
+        -- however builds without HO roll for Broadside instead of True Bearing
+        -- Without 4pc
+      if not has4pc then
+        if rtbBuffs == 0 or (rtbBuffs == 1 and not Player:BuffUp(S.TrueBearing)) then
+          Cache.APLVar.RtB_Reroll = true
+        elseif not isHO and rtbBuffs == 1 and not Player:BuffUp(S.Broadside) then
           Cache.APLVar.RtB_Reroll = true
         end
       end
     end
-  end
   return Cache.APLVar.RtB_Reroll
+  end
 end
 
 -- # Use finishers if at -1 from max combo points, or -2 in Stealth with Crackshot
@@ -324,11 +331,11 @@ local function CDs ()
     if HR.Cast(S.AdrenalineRush, Settings.Outlaw.OffGCDasOffGCD.AdrenalineRush) then return "Cast Adrenaline Rush" end
   end
 
-  -- # Maintain Blade Flurry on 2+ targets, and on single target with Underhanded, or on cooldown at 5+ targets with Deft Maneuvers
+  -- # Maintain Blade Flurry on 2+ targets, and on single target with Underhanded, or on cooldown at 5+ targets with Deft Maneuvers // Following Rogue Discord FAQ - Only maintain BF in single target when Adrenaline Rush is active.
   -- actions.cds+=/blade_flurry,if=(spell_targets>=2-talent.underhanded_upper_hand&!stealthed.rogue)
   -- &buff.blade_flurry.remains<gcd|talent.deft_maneuvers&spell_targets>=5&!variable.finish_condition
   if S.BladeFlurry:IsReady() then
-    if (EnemiesBFCount >= 2 - num(S.UnderhandedUpperhand:IsAvailable()) and not Player:StealthUp(true, false))
+    if (EnemiesBFCount >= 2 or (S.UnderhandedUpperhand:IsAvailable() and Player:BuffUp(S.AdrenalineRush) and EnemiesBFCount == 1) and not Player:StealthUp(true, false))
       and Player:BuffRemains(S.BladeFlurry) < Player:GCDRemains() or S.DeftManeuvers:IsAvailable() and EnemiesBFCount >= 5 and not Finish_Condition() then
       if Settings.Outlaw.GCDasOffGCD.BladeFlurry then
         HR.CastSuggested(S.BladeFlurry)
@@ -379,9 +386,9 @@ local function CDs ()
     if ShouldReturn then return ShouldReturn end
   end
 
-  -- actions.cds+=/thistle_tea,if=!buff.thistle_tea.up&(energy.base_deficit>=100|fight_remains<charges*6)
+  -- actions.cds+=/thistle_tea,if=!buff.thistle_tea.up&(energy.base_deficit>=100|fight_remains<charges*6) Following Rogue Discord FAQ
   if CDsON() and S.ThistleTea:IsCastable() and not Player:BuffUp(S.ThistleTea)
-    and (EnergyDeficit >= 100 or HL.BossFilteredFightRemains("<", S.ThistleTea:Charges()*6)) then
+    and (EnergyTrue <= 50 or HL.BossFilteredFightRemains("<", S.ThistleTea:Charges()*6)) then
     if HR.Cast(S.ThistleTea, Settings.Commons.OffGCDasOffGCD.ThistleTea) then return "Cast Thistle Tea" end
   end
 
@@ -588,6 +595,7 @@ local function APL ()
   EnergyRegen = Player:EnergyRegen()
   EnergyTimeToMax = EnergyTimeToMaxStable(EnergyMaxOffset) -- energy.base_time_to_max
   EnergyDeficit = Player:EnergyDeficitPredicted(nil, EnergyMaxOffset) -- energy.base_deficit
+  EnergyTrue = Player:Energy()
 
   -- Unit Update
   if AoEON() then
