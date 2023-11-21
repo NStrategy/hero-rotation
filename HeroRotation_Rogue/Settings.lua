@@ -51,6 +51,7 @@ HR.GUISettings.APL.Rogue = {
     GCDasOffGCD = {
       Exsanguinate = false,
       Kingsbane = false,
+      ShadowDance = false,
       Shiv = false,
     },
     OffGCDasOffGCD = {

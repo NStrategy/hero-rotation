@@ -377,12 +377,12 @@ local function Vanish ()
       if Settings.Commons.ShowPooling and Player:EnergyPredicted() < 45 then
         if Cast(S.PoolEnergy) then return "Pool for Shadow Dance (Garrote)" end
       end
-      if Cast(S.ShadowDance, Settings.Commons.OffGCDasOffGCD.ShadowDance) then return "Cast Shadow Dance (Garrote)" end
+      if Cast(S.ShadowDance, Settings.Assassination.GCDasOffGCD.ShadowDance) then return "Cast Shadow Dance (Garrote)" end
     end
     if not S.ImprovedGarrote:IsAvailable() and S.MasterAssassin:IsAvailable() and not IsDebuffRefreshable(Target, S.Rupture)
       and Target:DebuffRemains(S.Garrote) > 3 and (Target:DebuffUp(S.Deathmark) or S.Deathmark:CooldownRemains() > 60)
       and (Target:DebuffUp(S.ShivDebuff) or Target:DebuffRemains(S.Deathmark) < 4 or Target:DebuffUp(S.Sepsis)) and Target:DebuffRemains(S.Sepsis) < 3 then
-      if Cast(S.ShadowDance, Settings.Commons.OffGCDasOffGCD.ShadowDance) then return "Cast Shadow Dance (Master Assassin)" end
+      if Cast(S.ShadowDance, Settings.Assassination.GCDasOffGCD.ShadowDance) then return "Cast Shadow Dance (Master Assassin)" end
     end
   end
   if S.Vanish:IsCastable() and not Player:IsTanking(Target) then
@@ -528,7 +528,7 @@ local function CDs ()
   -- actions.cds+=/shadow_dance,if=talent.kingsbane&buff.envenom.up&(cooldown.deathmark.remains>=50|variable.deathmark_condition)
   if S.ShadowDance:IsCastable() and S.Kingsbane:IsAvailable() and Player:BuffUp(S.Envenom)
     and (S.Deathmark:CooldownRemains() >= 50 or DeathmarkCondition) then
-    if Cast(S.ShadowDance, Settings.Commons.OffGCDasOffGCD.ShadowDance) then return "Cast Shadow Dance (Kingsbane Sync)" end
+    if Cast(S.ShadowDance, Settings.Assassination.GCDasOffGCD.ShadowDance) then return "Cast Shadow Dance (Kingsbane Sync)" end
   end
   -- actions.cds+=/kingsbane,if=(debuff.shiv.up|cooldown.shiv.remains<6)&buff.envenom.up&(cooldown.deathmark.remains>=50|dot.deathmark.ticking)|fight_remains<=15
   if S.Kingsbane:IsReady() and (Target:DebuffUp(S.ShivDebuff) or S.Shiv:CooldownRemains() < 6) and Player:BuffUp(S.Envenom)
@@ -594,9 +594,9 @@ local function Stealthed ()
       if Cast(S.Envenom, nil, nil, not TargetInMeleeRange) then return "Cast Envenom (Master Assassin)" end
     end
   end
-  -- actions.stealthed+=/crimson_tempest,target_if=min:remains,if=spell_targets>=3&refreshable&effective_combo_points>=4&!cooldown.deathmark.ready&target.time_to_die-remains>6
+  -- actions.stealthed+=/crimson_tempest,target_if=min:remains,if=spell_targets>=3+set_bonus.tier31_4pc&refreshable&effective_combo_points>=4&!cooldown.deathmark.ready&target.time_to_die-remains>6
   if HR.AoEON() and S.CrimsonTempest:IsReady() and S.Nightstalker:IsAvailable()
-    and MeleeEnemies10yCount >= 3 and ComboPoints >= 4 and not S.Deathmark:IsReady() then
+    and MeleeEnemies10yCount >= 3 + (Player:HasTier(31, 4) and 1 or 0) and ComboPoints >= 4 and not S.Deathmark:IsReady() then
     for _, CycleUnit in pairs(MeleeEnemies10y) do
       if IsDebuffRefreshable(CycleUnit, S.CrimsonTempest, CrimsonTempestThreshold)
         and CycleUnit:FilteredTimeToDie(">", 6, -CycleUnit:DebuffRemains(S.CrimsonTempest)) then
@@ -643,8 +643,8 @@ end
 
 -- # Damage over time abilities
 local function Dot ()
-  -- actions.dot+=/crimson_tempest,target_if=min:remains,if=spell_targets>=2&refreshable&effective_combo_points>=4&energy.regen_combined>25&!cooldown.deathmark.ready&target.time_to_die-remains>6
-  if HR.AoEON() and S.CrimsonTempest:IsReady() and MeleeEnemies10yCount >= 2 and ComboPoints >= 4
+  -- actions.dot+=/crimson_tempest,target_if=min:remains,if=spell_targets>=3+set_bonus.tier31_4pc&refreshable&pmultiplier<=1&effective_combo_points>=4&energy.regen_combined>25&!cooldown.deathmark.ready&target.time_to_die-remains>6
+  if HR.AoEON() and S.CrimsonTempest:IsReady() and MeleeEnemies10yCount >= 3 + (Player:HasTier(31, 4) and 1 or 0) and ComboPoints >= 4
     and EnergyRegenCombined > 25 and not S.Deathmark:IsReady() then
     for _, CycleUnit in pairs(MeleeEnemies10y) do
       if IsDebuffRefreshable(CycleUnit, S.CrimsonTempest, CrimsonTempestThreshold)
