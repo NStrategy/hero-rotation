@@ -302,7 +302,7 @@ end
   if S.RolltheBones:IsReady() then
     local outside_crackshot_window = not Player:StealthUp(true, true) or not S.Crackshot:IsAvailable()
     if outside_crackshot_window and (RtB_Reroll() or Rogue.RtBRemains() <= num(Player:HasTier(31, 4)) + num(S.ShadowDance:CooldownRemains() <=1 or S.Vanish:CooldownRemains() <= 1) * 6) then
-      if HR.Cast(S.RolltheBones) then return "Cast Roll the Bones" end
+      if HR.Cast(S.RolltheBones, Settings.Outlaw.GCDasOffGCD.RolltheBones) then return "Cast Roll the Bones" end
     end
   end
 
