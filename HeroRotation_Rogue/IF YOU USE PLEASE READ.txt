@@ -20,7 +20,7 @@ Working.
 Homebrew:
 Usage of Thistle Tea aligns with the Rogue Discord FAQ.
 Usage of RtB aligns with the Rogue Discord FAQ.
-
+Changed BF condition to reflect the comment more precisely (at least from what I saw in the sims)
 
 Subtlety.lua:
 Working.
