@@ -237,7 +237,7 @@ local function Skip_Rupture_NPC () -- Homebrew exclude for certain NPCs
    -- Affixes
       or Target:NPCID() == 204560 or Target:NPCID() == 174773
    -- Raid
-      or Target:NPCID() == 210231 or Target:NPCID() == 207341 or Target:NPCID() == 208459 or Target:NPCID() == 208461 or Target:NPCID() == 214441 or Target:NPCID() == 211306
+      or Target:NPCID() == 210231 or Target:NPCID() == 207341 or Target:NPCID() == 208459 or Target:NPCID() == 208461 or Target:NPCID() == 214441 or Target:NPCID() == 211306 or Target:NPCID() == 214608
 end
 -- Maybe do an exlude cd function for Blades and Flag on certain npcs, like for the first adds in Manor. Dunno if that would brick rotation
 local function Rotten_CB ()
@@ -260,9 +260,9 @@ local function shadowDanceCondition () -- NOTE: DELETE THIS IF YOU DO NOT HAVE T
         (not S.TheFirstDance:IsAvailable() or ComboPointsDeficit >= 4 or Player:BuffUp(S.ShadowBlades)) and
         (ShD_Combo_Points() and ShD_Threshold() or 
         (Player:BuffUp(S.ShadowBlades) or 
-        S.SymbolsofDeath:CooldownUp() and not S.Sepsis:IsAvailable() or 
-        Player:BuffRemains(S.SymbolsofDeath) >= 4 and not Player:HasTier(30, 2) or 
-        not Player:BuffUp(S.SymbolsofDeath) and Player:HasTier(30, 2)) and
+        (S.SymbolsofDeath:CooldownUp() and not S.Sepsis:IsAvailable()) or 
+        (Player:BuffRemains(S.SymbolsofDeath) >= 4 and not Player:HasTier(30, 2)) or 
+        (not Player:BuffUp(S.SymbolsofDeath) and Player:HasTier(30, 2))) and
         S.SecretTechnique:CooldownRemains() < 10 + 12 * ((not S.InvigoratingShadowdust:IsAvailable() or Player:HasTier(30, 2)) and 1 or 0))
 end
 local function Trinket_Conditions ()
@@ -592,7 +592,7 @@ local function CDs ()
   -- actions.cds+=/symbols_of_death,if=variable.snd_condition&(!buff.the_rotten.up|!set_bonus.tier30_2pc)&buff.symbols_of_death.remains<=3&(!talent.flagellation|cooldown.flagellation.remains>10|buff.shadow_dance.remains>=2&talent.invigorating_shadowdust|cooldown.flagellation.up&combo_points>=5&!talent.invigorating_shadowdust) Homebrew: Set to 4 seconds instead of 3 cause of input delay. Once rotten is gone, will revert it.
   if S.SymbolsofDeath:IsCastable() and not shadowDanceCondition() then
     if SnDCondition and (not Player:BuffUp(S.TheRottenBuff) or not Player:HasTier(30, 2)) and
-      Player:BuffRemains(S.SymbolsofDeath) <= 4 and
+      Player:BuffRemains(S.SymbolsofDeath) <= 3 and
       ((not S.Flagellation:IsAvailable() or S.Flagellation:CooldownRemains() > 10) or 
       (Player:BuffRemains(S.ShadowDanceBuff) >= 2 and S.InvigoratingShadowdust:IsAvailable()) or 
       (S.Flagellation:CooldownUp() and ComboPoints >= 5 and not S.InvigoratingShadowdust:IsAvailable())) then
@@ -675,12 +675,11 @@ local function CDs ()
       end
     end
 
-    -- Trinkets TODO: MirrorOfFracturedTomorrows, ashes_of_the_embersoul, witherbarks_branch, BandolierOfTwistedBlades itemcheck
+
     if Settings.Commons.UseTrinkets then
-      -- actions.cds+=/use_item,name=ashes_of_the_embersoul,if=buff.flagellation_buff.up&talent.invigorating_shadowdust|buff.shadow_dance.up&!raid_event.adds.up&!equipped.witherbarks_branch 
+      -- actions.cds+=/use_item,name=ashes_of_the_embersoul,if=buff.flagellation_buff.up&(buff.danse_macabre.stack>=3|!talent.danse_macabre|raid_event.adds.up|equipped.witherbarks_branch) 
       if I.AshesoftheEmbersoul:IsEquippedAndReady() then
-        if (Player:BuffUp(S.Flagellation) and S.InvigoratingShadowdust:IsAvailable()) or
-           (Player:BuffUp(S.ShadowDanceBuff) and not I.WitherbarksBranch:IsEquipped()) then
+        if Player:BuffUp(S.Flagellation) and (Player:BuffStack(S.DanseMacabreBuff) >= 3 or not S.DanseMacabre:IsAvailable() or I.WitherbarksBranch:IsEquipped()) then
            if HR.Cast(I.AshesoftheEmbersoul, nil, Settings.Commons.TrinketDisplayStyle) then return "Ashes Of the Embersoul"; end
         end
       end
@@ -764,9 +763,9 @@ local function Stealth_CDs (EnergyThreshold)
         (not S.TheFirstDance:IsAvailable() or ComboPointsDeficit >= 4 or Player:BuffUp(S.ShadowBlades)) and
         (ShD_Combo_Points() and ShD_Threshold() or 
         (Player:BuffUp(S.ShadowBlades) or 
-        S.SymbolsofDeath:CooldownUp() and not S.Sepsis:IsAvailable() or 
-        Player:BuffRemains(S.SymbolsofDeath) >= 4 and not Player:HasTier(30, 2) or 
-        not Player:BuffUp(S.SymbolsofDeath) and Player:HasTier(30, 2)) and
+        (S.SymbolsofDeath:CooldownUp() and not S.Sepsis:IsAvailable()) or 
+        (Player:BuffRemains(S.SymbolsofDeath) >= 4 and not Player:HasTier(30, 2)) or 
+        (not Player:BuffUp(S.SymbolsofDeath) and Player:HasTier(30, 2))) and
         S.SecretTechnique:CooldownRemains() < 10 + 12 * ((not S.InvigoratingShadowdust:IsAvailable() or Player:HasTier(30, 2)) and 1 or 0)) then
         ShouldReturn = StealthMacro(S.ShadowDance, EnergyThreshold)
         if ShouldReturn then return "ShadowDance Macro " .. ShouldReturn end
@@ -911,7 +910,7 @@ local function APL ()
     ShouldReturn = CDs()
     if ShouldReturn then return "CDs: " .. ShouldReturn end
 
-    -- actions+=/slice_and_dice,if=spell_targets.shuriken_storm<cp_max_spend&buff.slice_and_dice.remains<3&fight_remains>6&combo_points>=4 Homebrew: check for not in Dance (if played correctly, it shouldnt matter)
+    -- actions+=/slice_and_dice,if=spell_targets.shuriken_storm<cp_max_spend&buff.slice_and_dice.remains<gcd.max&fight_remains>6&combo_points>=4
     if S.SliceandDice:IsCastable() and MeleeEnemies10yCount < Rogue.CPMaxSpend() and HL.FilteredFightRemains(MeleeEnemies10y, ">", 6)
        and Player:BuffRemains(S.SliceandDice) < Player:GCD() and ComboPoints >= 4 and not Player:BuffUp(S.ShadowDanceBuff) then
        if S.SliceandDice:IsReady() and HR.Cast(S.SliceandDice) then return "Cast Slice and Dice (Low Duration)" end
