@@ -589,7 +589,7 @@ local function CDs ()
   end 
   -- actions.cds+=/symbols_of_death,if=variable.snd_condition&(!buff.the_rotten.up|!set_bonus.tier30_2pc)&buff.symbols_of_death.remains<=3&(!talent.flagellation|cooldown.flagellation.remains>10|buff.shadow_dance.remains>=2&talent.invigorating_shadowdust|cooldown.flagellation.up&combo_points>=5&!talent.invigorating_shadowdust) Homebrew: Set to 4 seconds instead of 3 cause of input delay. Once rotten is gone, will revert it.
   if S.SymbolsofDeath:IsCastable() and not shadowDanceCondition() then
-    if SnDCondition and (not Player:BuffUp(S.TheRottenBuff) or not Player:HasTier(30, 2)) and
+    if (SnDCondition or (not SnDCondition and Player:BuffUp(S.ShadowDanceBuff))) and (Player:BuffUp(S.TheRottenBuff) or not Player:HasTier(30, 2)) and
       Player:BuffRemains(S.SymbolsofDeath) <= 3 and
       (not S.Flagellation:IsAvailable() or S.Flagellation:CooldownRemains() > 10 or 
       Player:BuffRemains(S.ShadowDanceBuff) >= 2 and S.InvigoratingShadowdust:IsAvailable() or 
@@ -752,7 +752,7 @@ local function Stealth_CDs (EnergyThreshold)
       if ShouldReturn then return "Shadowmeld Macro " .. ShouldReturn end
     end
   end
-  if TargetInMeleeRange and S.ShadowDance:IsReady() and HR.CDsON() then
+  if TargetInMeleeRange and S.ShadowDance:IsCastable() and HR.CDsON() then
     -- actions.stealth_cds+=/shadow_dance,if=(dot.rupture.ticking|talent.invigorating_shadowdust)&variable.rotten_cb&(!talent.the_first_dance|combo_points.deficit>=4|buff.shadow_blades.up)&(variable.shd_combo_points&variable.shd_threshold|(buff.shadow_blades.up|cooldown.symbols_of_death.up&!talent.sepsis|buff.symbols_of_death.remains>=4&!set_bonus.tier30_2pc|!buff.symbols_of_death.remains&set_bonus.tier30_2pc)&cooldown.secret_technique.remains<10+12*(!talent.invigorating_shadowdust|set_bonus.tier30_2pc))
     -- NOTE: |buff.flagellation.up is a dead operation in SimC due to a typo, since the buff we use in-game is buff.flagellation_buff.up, ignoring
     if  (Target:DebuffUp(S.Rupture) or S.InvigoratingShadowdust:IsAvailable()) and Rotten_CB() and 
@@ -908,7 +908,7 @@ local function APL ()
 
     -- actions+=/slice_and_dice,if=spell_targets.shuriken_storm<cp_max_spend&buff.slice_and_dice.remains<gcd.max&fight_remains>6&combo_points>=4
     if S.SliceandDice:IsCastable() and MeleeEnemies10yCount < Rogue.CPMaxSpend() and HL.FilteredFightRemains(MeleeEnemies10y, ">", 6)
-       and Player:BuffRemains(S.SliceandDice) < 2 and ComboPoints >= 4 then
+       and Player:BuffRemains(S.SliceandDice) < Player:GCD() and ComboPoints >= 4 and not Player:BuffUp(S.ShadowDanceBuff) then
        if S.SliceandDice:IsReady() and HR.Cast(S.SliceandDice) then return "Cast Slice and Dice (Low Duration)" end
     end
 
