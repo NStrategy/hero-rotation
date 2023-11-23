@@ -253,17 +253,15 @@ local function Secret_Condition()
 end
 local function shadowDanceCondition () -- NOTE: DELETE THIS IF YOU DO NOT HAVE TIER 30-2SET ANYMORE AND SEARCH FOR "and not shadowDanceCondition()" AND DELETE IT AS WELL SO IT ONLY SAYS "if S.SymbolsofDeath:IsCastable() then"
   -- Homebrew function till no 30,2 Tier anymore:
-  return TargetInMeleeRange and S.ShadowDance:IsCastable() and S.ShadowDance:Charges() >= 1
-  and S.Vanish:TimeSinceLastDisplay() > 0.3 and S.Shadowmeld:TimeSinceLastDisplay() > 0.3
-  and (HR.CDsON() or (S.ShadowDance:ChargesFractional() >= Settings.Subtlety.ShDEcoCharge - (not S.ShadowDanceTalent:IsAvailable() and 0.75 or 0)))
+  return TargetInMeleeRange and S.ShadowDance:IsCastable() and HR.CDsON()
   and (Target:DebuffUp(S.Rupture) or S.InvigoratingShadowdust:IsAvailable()) and Rotten_CB() and 
         (not S.TheFirstDance:IsAvailable() or ComboPointsDeficit >= 4 or Player:BuffUp(S.ShadowBlades)) and
         (ShD_Combo_Points() and ShD_Threshold() or 
         (Player:BuffUp(S.ShadowBlades) or 
-        (S.SymbolsofDeath:CooldownUp() and not S.Sepsis:IsAvailable()) or 
-        (Player:BuffRemains(S.SymbolsofDeath) >= 4 and not Player:HasTier(30, 2)) or 
-        (not Player:BuffUp(S.SymbolsofDeath) and Player:HasTier(30, 2))) and
-        S.SecretTechnique:CooldownRemains() < 10 + 12 * ((not S.InvigoratingShadowdust:IsAvailable() or Player:HasTier(30, 2)) and 1 or 0))
+        S.SymbolsofDeath:CooldownUp() and not S.Sepsis:IsAvailable() or 
+        Player:BuffRemains(S.SymbolsofDeath) >= 4 and not Player:HasTier(30, 2) or 
+        not Player:BuffUp(S.SymbolsofDeath) and Player:HasTier(30, 2)) and
+        S.SecretTechnique:CooldownRemains() < 10 + 12 * BoolToInt(not S.InvigoratingShadowdust:IsAvailable() or Player:HasTier(30, 2)))
 end
 local function Trinket_Conditions ()
   -- actions.cds=variable,name=trinket_conditions,value=(!equipped.witherbarks_branch|equipped.witherbarks_branch&trinket.witherbarks_branch.cooldown.remains<=8|equipped.bandolier_of_twisted_blades|talent.invigorating_shadowdust)
@@ -593,9 +591,9 @@ local function CDs ()
   if S.SymbolsofDeath:IsCastable() and not shadowDanceCondition() then
     if SnDCondition and (not Player:BuffUp(S.TheRottenBuff) or not Player:HasTier(30, 2)) and
       Player:BuffRemains(S.SymbolsofDeath) <= 3 and
-      ((not S.Flagellation:IsAvailable() or S.Flagellation:CooldownRemains() > 10) or 
-      (Player:BuffRemains(S.ShadowDanceBuff) >= 2 and S.InvigoratingShadowdust:IsAvailable()) or 
-      (S.Flagellation:CooldownUp() and ComboPoints >= 5 and not S.InvigoratingShadowdust:IsAvailable())) then
+      (not S.Flagellation:IsAvailable() or S.Flagellation:CooldownRemains() > 10 or 
+      Player:BuffRemains(S.ShadowDanceBuff) >= 2 and S.InvigoratingShadowdust:IsAvailable() or 
+      S.Flagellation:CooldownUp() and ComboPoints >= 5 and not S.InvigoratingShadowdust:IsAvailable()) then
       if HR.Cast(S.SymbolsofDeath, Settings.Subtlety.OffGCDasOffGCD.SymbolsofDeath) then return "Cast Symbols of Death" end
     end
   end
@@ -754,19 +752,17 @@ local function Stealth_CDs (EnergyThreshold)
       if ShouldReturn then return "Shadowmeld Macro " .. ShouldReturn end
     end
   end
-  if TargetInMeleeRange and S.ShadowDance:IsCastable() and S.ShadowDance:Charges() >= 1
-    and S.Vanish:TimeSinceLastDisplay() > 0.3 and S.Shadowmeld:TimeSinceLastDisplay() > 0.3
-    and (HR.CDsON() or (S.ShadowDance:ChargesFractional() >= Settings.Subtlety.ShDEcoCharge - (not S.ShadowDanceTalent:IsAvailable() and 0.75 or 0))) then
+  if TargetInMeleeRange and S.ShadowDance:IsReady() and HR.CDsON() then
     -- actions.stealth_cds+=/shadow_dance,if=(dot.rupture.ticking|talent.invigorating_shadowdust)&variable.rotten_cb&(!talent.the_first_dance|combo_points.deficit>=4|buff.shadow_blades.up)&(variable.shd_combo_points&variable.shd_threshold|(buff.shadow_blades.up|cooldown.symbols_of_death.up&!talent.sepsis|buff.symbols_of_death.remains>=4&!set_bonus.tier30_2pc|!buff.symbols_of_death.remains&set_bonus.tier30_2pc)&cooldown.secret_technique.remains<10+12*(!talent.invigorating_shadowdust|set_bonus.tier30_2pc))
     -- NOTE: |buff.flagellation.up is a dead operation in SimC due to a typo, since the buff we use in-game is buff.flagellation_buff.up, ignoring
     if  (Target:DebuffUp(S.Rupture) or S.InvigoratingShadowdust:IsAvailable()) and Rotten_CB() and 
         (not S.TheFirstDance:IsAvailable() or ComboPointsDeficit >= 4 or Player:BuffUp(S.ShadowBlades)) and
         (ShD_Combo_Points() and ShD_Threshold() or 
         (Player:BuffUp(S.ShadowBlades) or 
-        (S.SymbolsofDeath:CooldownUp() and not S.Sepsis:IsAvailable()) or 
-        (Player:BuffRemains(S.SymbolsofDeath) >= 4 and not Player:HasTier(30, 2)) or 
-        (not Player:BuffUp(S.SymbolsofDeath) and Player:HasTier(30, 2))) and
-        S.SecretTechnique:CooldownRemains() < 10 + 12 * ((not S.InvigoratingShadowdust:IsAvailable() or Player:HasTier(30, 2)) and 1 or 0)) then
+        S.SymbolsofDeath:CooldownUp() and not S.Sepsis:IsAvailable() or 
+        Player:BuffRemains(S.SymbolsofDeath) >= 4 and not Player:HasTier(30, 2) or 
+        not Player:BuffUp(S.SymbolsofDeath) and Player:HasTier(30, 2)) and
+        S.SecretTechnique:CooldownRemains() < 10 + 12 * BoolToInt(not S.InvigoratingShadowdust:IsAvailable() or Player:HasTier(30, 2))) then
         ShouldReturn = StealthMacro(S.ShadowDance, EnergyThreshold)
         if ShouldReturn then return "ShadowDance Macro " .. ShouldReturn end
     end
@@ -912,7 +908,7 @@ local function APL ()
 
     -- actions+=/slice_and_dice,if=spell_targets.shuriken_storm<cp_max_spend&buff.slice_and_dice.remains<gcd.max&fight_remains>6&combo_points>=4
     if S.SliceandDice:IsCastable() and MeleeEnemies10yCount < Rogue.CPMaxSpend() and HL.FilteredFightRemains(MeleeEnemies10y, ">", 6)
-       and Player:BuffRemains(S.SliceandDice) < Player:GCD() and ComboPoints >= 4 and not Player:BuffUp(S.ShadowDanceBuff) then
+       and Player:BuffRemains(S.SliceandDice) < 2 and ComboPoints >= 4 then
        if S.SliceandDice:IsReady() and HR.Cast(S.SliceandDice) then return "Cast Slice and Dice (Low Duration)" end
     end
 
