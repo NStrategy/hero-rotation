@@ -589,7 +589,7 @@ local function CDs ()
   end 
   -- actions.cds+=/symbols_of_death,if=variable.snd_condition&(!buff.the_rotten.up|!set_bonus.tier30_2pc)&buff.symbols_of_death.remains<=3&(!talent.flagellation|cooldown.flagellation.remains>10|buff.shadow_dance.remains>=2&talent.invigorating_shadowdust|cooldown.flagellation.up&combo_points>=5&!talent.invigorating_shadowdust) Homebrew: Set to 4 seconds instead of 3 cause of input delay. Once rotten is gone, will revert it.
   if S.SymbolsofDeath:IsCastable() and not shadowDanceCondition() then
-    if (SnDCondition or (not SnDCondition and Player:BuffUp(S.ShadowDanceBuff))) and (Player:BuffUp(S.TheRottenBuff) or not Player:HasTier(30, 2)) and
+    if (SnDCondition or (not SnDCondition and Player:BuffUp(S.ShadowDanceBuff))) and (not Player:BuffUp(S.TheRottenBuff) or not Player:HasTier(30, 2)) and
       Player:BuffRemains(S.SymbolsofDeath) <= 3 and
       (not S.Flagellation:IsAvailable() or S.Flagellation:CooldownRemains() > 10 or 
       Player:BuffRemains(S.ShadowDanceBuff) >= 2 and S.InvigoratingShadowdust:IsAvailable() or 
