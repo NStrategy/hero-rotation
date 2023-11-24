@@ -251,18 +251,6 @@ local function Secret_Condition()
   -- actions.finish=variable,name=secret_condition,value=(action.gloomblade.used_for_danse|action.shadowstrike.used_for_danse|action.backstab.used_for_danse|action.shuriken_storm.used_for_danse)&(action.eviscerate.used_for_danse|action.black_powder.used_for_danse|action.rupture.used_for_danse)|!talent.danse_macabre
   return (Used_For_Danse(S.Gloomblade) or Used_For_Danse(S.Shadowstrike) or Used_For_Danse(S.Backstab) or Used_For_Danse(S.ShurikenStorm)) and (Used_For_Danse(S.Eviscerate) or Used_For_Danse(S.BlackPowder) or Used_For_Danse(S.Rupture)) or not S.DanseMacabre:IsAvailable()
 end
-local function shadowDanceCondition () -- NOTE: DELETE THIS IF YOU DO NOT HAVE TIER 30-2SET ANYMORE AND SEARCH FOR "and not shadowDanceCondition()" AND DELETE IT AS WELL SO IT ONLY SAYS "if S.SymbolsofDeath:IsCastable() then"
-  -- Homebrew function till no 30,2 Tier anymore:
-  return TargetInMeleeRange and S.ShadowDance:IsCastable() and HR.CDsON()
-  and (Target:DebuffUp(S.Rupture) or S.InvigoratingShadowdust:IsAvailable()) and Rotten_CB() and 
-        (not S.TheFirstDance:IsAvailable() or ComboPointsDeficit >= 4 or Player:BuffUp(S.ShadowBlades)) and
-        (ShD_Combo_Points() and ShD_Threshold() or 
-        (Player:BuffUp(S.ShadowBlades) or 
-        S.SymbolsofDeath:CooldownUp() and not S.Sepsis:IsAvailable() or 
-        Player:BuffRemains(S.SymbolsofDeath) >= 4 and not Player:HasTier(30, 2) or 
-        not Player:BuffUp(S.SymbolsofDeath) and Player:HasTier(30, 2)) and
-        S.SecretTechnique:CooldownRemains() < 10 + 12 * BoolToInt(not S.InvigoratingShadowdust:IsAvailable() or Player:HasTier(30, 2)))
-end
 local function Trinket_Conditions ()
   -- actions.cds=variable,name=trinket_conditions,value=(!equipped.witherbarks_branch|equipped.witherbarks_branch&trinket.witherbarks_branch.cooldown.remains<=8|equipped.bandolier_of_twisted_blades|talent.invigorating_shadowdust)
   return (not I.WitherbarksBranch:IsEquipped() or 
@@ -316,7 +304,6 @@ local function Finish (ReturnSpellOnly, StealthSpell)
             return S.SliceandDice
         else
             if S.SliceandDice:IsReady() and HR.Cast(S.SliceandDice) then return "Cast Slice and Dice (Premeditation)" end
-            SetPoolingFinisher(S.SliceandDice)
         end
       end
     end
@@ -588,7 +575,7 @@ local function CDs ()
     end
   end 
   -- actions.cds+=/symbols_of_death,if=variable.snd_condition&(!buff.the_rotten.up|!set_bonus.tier30_2pc)&buff.symbols_of_death.remains<=3&(!talent.flagellation|cooldown.flagellation.remains>10|buff.shadow_dance.remains>=2&talent.invigorating_shadowdust|cooldown.flagellation.up&combo_points>=5&!talent.invigorating_shadowdust) Homebrew: Set to 4 seconds instead of 3 cause of input delay. Once rotten is gone, will revert it.
-  if S.SymbolsofDeath:IsCastable() and not shadowDanceCondition() then
+  if S.SymbolsofDeath:IsCastable() then
     if (SnDCondition or (not SnDCondition and Player:BuffUp(S.ShadowDanceBuff))) and (not Player:BuffUp(S.TheRottenBuff) or not Player:HasTier(30, 2)) and
       Player:BuffRemains(S.SymbolsofDeath) <= 3 and
       (not S.Flagellation:IsAvailable() or S.Flagellation:CooldownRemains() > 10 or 
