@@ -13,17 +13,19 @@ If you have any suggestions or if there are any issues, please reach out to me v
 Assassination.lua:
 Working.
 Homebrew:
-Nothing atm.
+Updated CT conditions to the newest APL
+Exluded NPC ids to prevent cycle suggestion for Garrote, Rupture and Bonespike on targets that die quickly
 
 Outlaw.lua:
 Working.
 Homebrew:
 Usage of Thistle Tea aligns with the Rogue Discord FAQ.
 Usage of RtB aligns with the Rogue Discord FAQ.
-Changed BF condition to reflect the comment more precisely (at least from what I saw in the sims)
+Changed BF condition to reflect the comment of the APL string more precisely (at least from what I saw in the sims)
 
 Subtlety.lua:
 Working.
 Homebrew:
-Some timing changes so SoD would display correctly.
+Secret use from 2 to 3.1
+Excluded multiple NPC ids to prevent Rupture suggestions on targets that die quickly
 
