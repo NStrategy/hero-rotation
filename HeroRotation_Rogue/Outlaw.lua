@@ -168,7 +168,7 @@ local function RtB_Reroll ()
         elseif not isHO and rtbBuffs == 2 and Player:BuffUp(S.Broadside) then
           Cache.APLVar.RtB_Reroll = false
         end
-        if not Cache.APLVar.RtB_Reroll and Rogue.RtBRemains() <= 2 then
+        if not Cache.APLVar.RtB_Reroll and Rogue.RtBRemains() <= 3 then
           Cache.APLVar.RtB_Reroll = true
         end
       end
