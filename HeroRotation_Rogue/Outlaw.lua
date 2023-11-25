@@ -168,7 +168,7 @@ local function RtB_Reroll ()
         elseif not isHO and rtbBuffs == 2 and Player:BuffUp(S.Broadside) then
           Cache.APLVar.RtB_Reroll = false
         end
-        if not Cache.APLVar.RtB_Reroll and Rogue.RtBRemains() <= 3 then
+        if not Cache.APLVar.RtB_Reroll and Rogue.RtBRemains() <= 4 then
           Cache.APLVar.RtB_Reroll = true
         end
       end
@@ -420,9 +420,10 @@ local function Stealth()
 	end
 
 	-- actions.stealth+=/between_the_eyes,if=variable.finish_condition&talent.crackshot
-	if S.BetweentheEyes:IsCastable() and Target:IsSpellInRange(S.BetweentheEyes) and Finish_Condition() and S.Crackshot:IsAvailable() then
-		if HR.CastPooling(S.BetweentheEyes) then return "Cast Between the Eyes" end
-	end
+	if S.BetweentheEyes:IsCastable() and Target:IsSpellInRange(S.BetweentheEyes) and (Player:BuffUp(S.SubterfugeBuff) or Player:BuffUp(S.ShadowDanceBuff) or Player:BuffUp(S.VanishBuff))
+    and Finish_Condition() and S.Crackshot:IsAvailable() then
+    if HR.CastPooling(S.BetweentheEyes) then return "Cast Between the Eyes" end
+   end
 
 	-- actions.stealth+=/dispatch,if=variable.finish_condition
 	if S.Dispatch:IsCastable() and Target:IsSpellInRange(S.Dispatch) and Finish_Condition() then
