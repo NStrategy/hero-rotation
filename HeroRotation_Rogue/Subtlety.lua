@@ -779,12 +779,12 @@ local function APL ()
   PoolingEnergy = 0
 
   -- Unit Update
-  -- MeleeRange = S.AcrobaticStrikes:IsAvailable() and 8 or 5
-  -- AoERange = S.AcrobaticStrikes:IsAvailable() and 10 or 13
-  TargetInMeleeRange = Target:IsInMeleeRange(5)
-  TargetInAoERange = Target:IsInMeleeRange(10)
+  MeleeRange = S.AcrobaticStrikes:IsAvailable() and 8 or 5
+  AoERange = S.AcrobaticStrikes:IsAvailable() and 10 or 13
+  TargetInMeleeRange = Target:IsInMeleeRange(MeleeRange)
+  TargetInAoERange = Target:IsInMeleeRange(AoERange)
   if AoEON() then
-    Enemies30y = Player:GetEnemiesInRange(30) -- Serrated Bone Spike
+    Enemies30y = Player:GetEnemiesInRange(30) -- Distract
     MeleeEnemies10y = Player:GetEnemiesInMeleeRange(10) -- Shuriken Storm & Black Powder
     MeleeEnemies10yCount = #MeleeEnemies10y
     MeleeEnemies5y = Player:GetEnemiesInMeleeRange(5) -- Melee cycle
