@@ -202,7 +202,7 @@ end
 -- Determine if we are allowed to use Vanish offensively in the current situation
 local function Vanish_DPS_Condition ()
   -- You can vanish if we've set the UseDPSVanish setting, and we're either not tanking or we're solo but the DPS vanish while solo flag is set).
-  return Settings.Commons.UseDPSVanish and (not Player:IsTanking(Target) or Settings.Commons.UseSoloVanish)
+  return Settings.Commons.UseDPSVanish or Settings.Commons.UseSoloVanish
 end
 
 local function Vanish_Opportunity_Condition ()
