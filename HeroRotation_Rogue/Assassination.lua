@@ -198,6 +198,11 @@ local function UsePriorityRotation()
   return false
 end
 
+-- Homebrew Check for Dot-Cycle exclude (only Raid)
+local function Skip_Cycle_NPC () 
+  return Target:NPCID() == 210231 or Target:NPCID() == 207341 or Target:NPCID() == 211306 or Target:NPCID() == 214608
+end
+
 -- actions+=/variable,name=not_pooling,value=(dot.deathmark.ticking|dot.kingsbane.ticking|buff.shadow_dance.up|debuff.shiv.up|cooldown.thistle_tea.full_recharge_time<20)|(buff.envenom.up&buff.envenom.remains<=2)|energy.pct>=80|fight_remains<=90,if=set_bonus.tier31_4pc
 -- actions+=/variable,name=not_pooling,value=(dot.deathmark.ticking|dot.kingsbane.ticking|buff.shadow_dance.up|debuff.shiv.up|cooldown.thistle_tea.full_recharge_time<20)|energy.pct>=80,if=!set_bonus.tier31_4pc
 local function NotPoolingVar()
@@ -665,7 +670,7 @@ local function Dot ()
       -- actions.dot+=/pool_resource,for_next=1
       if CastPooling(S.Garrote, nil, not TargetInMeleeRange) then return "Pool for Garrote (ST)" end
     end
-    if HR.AoEON() and not EnergyRegenSaturated and MeleeEnemies10yCount >= 2 then
+    if HR.AoEON() and not EnergyRegenSaturated and MeleeEnemies10yCount >= 2 and not Skip_Cycle_NPC()  then
       SuggestCycleDoT(S.Garrote, Evaluate_Garrote_Target, 12, MeleeEnemies5y)
     end
   end
@@ -681,7 +686,7 @@ local function Dot ()
     if Evaluate_Rupture_Target(Target) and Rogue.CanDoTUnit(Target, RuptureDMGThreshold) then
       if Cast(S.Rupture, nil, nil, not TargetInMeleeRange) then return "Cast Rupture" end
     end
-    if HR.AoEON() and (not EnergyRegenSaturated or not ScentSaturated) then
+    if HR.AoEON() and (not EnergyRegenSaturated or not ScentSaturated) and not Skip_Cycle_NPC() then
       SuggestCycleDoT(S.Rupture, Evaluate_Rupture_Target, RuptureDurationThreshold, MeleeEnemies5y)
     end
   end
@@ -730,7 +735,7 @@ local function Direct ()
     else
       -- actions.direct+=/serrated_bone_spike,target_if=min:target.time_to_die+(dot.serrated_bone_spike_dot.ticking*600),if=variable.use_filler&!dot.serrated_bone_spike_dot.ticking
       if HR.AoEON() then
-        if Everyone.CastTargetIf(S.SerratedBoneSpike, Enemies30y, "min", EvaluateSBSTargetIfConditionCondition, EvaluateSBSCondition) then
+        if Everyone.CastTargetIf(S.SerratedBoneSpike, Enemies30y, "min", EvaluateSBSTargetIfConditionCondition, EvaluateSBSCondition) and not Skip_Cycle_NPC() then
           return "Cast Serrated Bone (AoE)"
         end
       end
@@ -793,10 +798,10 @@ end
 --- ======= MAIN =======
 local function APL ()
   -- Enemies Update
-  -- MeleeRange = S.AcrobaticStrikes:IsAvailable() and 8 or 5
-  -- AoERange = S.AcrobaticStrikes:IsAvailable() and 10 or 13
-  TargetInMeleeRange = Target:IsInMeleeRange(5)
-  TargetInAoERange = Target:IsInMeleeRange(10)
+  MeleeRange = S.AcrobaticStrikes:IsAvailable() and 8 or 5
+  AoERange = S.AcrobaticStrikes:IsAvailable() and 10 or 13
+  TargetInMeleeRange = Target:IsInMeleeRange(MeleeRange)
+  TargetInAoERange = Target:IsInMeleeRange(AoERange)
   if AoEON() then
     Enemies30y = Player:GetEnemiesInRange(30) -- Poisoned Knife & Serrated Bone Spike
     MeleeEnemies10y = Player:GetEnemiesInMeleeRange(10) -- Fan of Knives & Crimson Tempest
