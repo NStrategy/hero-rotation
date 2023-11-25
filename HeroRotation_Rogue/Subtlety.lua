@@ -300,11 +300,8 @@ local function Finish (ReturnSpellOnly, StealthSpell)
       -- actions.finish+=/slice_and_dice,if=!stealthed.all&!variable.premed_snd_condition&spell_targets.shuriken_storm<6&!buff.shadow_dance.up&buff.slice_and_dice.remains<fight_remains&refreshable
       if not Player:StealthUp(true, true) and MeleeEnemies10yCount < 6 and not Player:BuffUp(S.ShadowDanceBuff) -- Just a test, ShadowDanceBuff should be the same
         and Player:BuffRemains(S.SliceandDice) < (1 + FinishComboPoints * 1.8) then
-        if ReturnSpellOnly then
-            return S.SliceandDice
-        else
             if S.SliceandDice:IsReady() and HR.Cast(S.SliceandDice) then return "Cast Slice and Dice (Premeditation)" end
-        end
+            SetPoolingFinisher(S.SliceandDice)
       end
     end
   end
@@ -523,7 +520,7 @@ local function StealthMacro (StealthSpell, EnergyThreshold)
   -- Handle StealthMacro GUI options
   -- If false, just suggest them as off-GCD and bail out of the macro functionality
   if StealthSpell:ID() == S.Vanish:ID() and (not Settings.Subtlety.StealthMacro.Vanish or not MacroAbility) then
-    if HR.Cast(S.Vanish, Settings.Commons.OffGCDasOffGCD.Vanish) then return "Cast Vanish" end
+    if HR.Cast(S.Vanish, Settings.Subtlety.OffGCDasOffGCD.Vanish) then return "Cast Vanish" end
     return false
   elseif StealthSpell:ID() == S.Shadowmeld:ID() and (not Settings.Subtlety.StealthMacro.Shadowmeld or not MacroAbility) then
     if HR.Cast(S.Shadowmeld, Settings.Commons.OffGCDasOffGCD.Racials) then return "Cast Shadowmeld" end

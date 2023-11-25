@@ -95,6 +95,7 @@ HR.GUISettings.APL.Rogue = {
       ShadowDance = true,
       ShadowBlades = true,
       Flagellation = true,
+      Vanish = false,
     },
     StealthMacro = {
       Vanish = true,
