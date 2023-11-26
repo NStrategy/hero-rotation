@@ -15,6 +15,7 @@ Working.
 Homebrew:
 Updated CT conditions to the newest APL
 Exluded NPC ids to prevent cycle suggestion for Garrote, Rupture and Bonespike on targets that die quickly
+Added certain Priority Targets
 
 Outlaw.lua:
 Working.
@@ -22,10 +23,19 @@ Homebrew:
 Usage of Thistle Tea aligns with the Rogue Discord FAQ.
 Usage of RtB aligns with the Rogue Discord FAQ.
 Changed BF condition to reflect the comment of the APL string more precisely (at least from what I saw in the sims)
+Added condition to fill missing Combo Points with BF while 3 or 4 targets are in BF range. If at 3 cp, and 3 enemies are present, and you dont have Broadside, it would suggest BF. If you had Broadside, it would not suggest it as you would overcap (aligns with the Rogue Discord FAQ.)
+Added functional KiR condition (aligns with the Rogue Discord FAQ.)
 
 Subtlety.lua:
 Working.
 Homebrew:
 Secret use from 2 to 3.1
 Excluded multiple NPC ids to prevent Rupture suggestions on targets that die quickly
+Deleted Premed Condition as it isnt used in the sim
+Preventing Slice and Dice in Shadowdance
+Added certain Priority Targets
 
+Settings.lua:
+Added Flag as OffGCD for Sub
+Added RtB as OffGCD for Outlaw
+Added Dance as OffGCD for Assa
