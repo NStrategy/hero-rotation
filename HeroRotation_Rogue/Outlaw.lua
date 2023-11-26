@@ -183,7 +183,7 @@ local function RtB_Reroll ()
         end
       end
       -- Extra Reroll check for KiR
-      -- actions+/variable,name=rtb_reroll,value=variable.rtb_reroll|rtb_buffs.normal=0&rtb_buffs.longer>=1&rtb_buffs<5&rtb_buffs.max_remains<=39
+      -- After you press KIR, those KIR buffs don't get rerolled by the next Roll the Bones. So use RTB once after you press KIR to try and get even more buffs. Only do this after your KIR buffs have ticked below 39s and you do not already have 5+ buffs.
       if S.KeepItRolling:IsAvailable() and not S.KeepItRolling:IsReady() then
         if S.KeepItRolling:TimeSinceLastCast() < S.RolltheBones:TimeSinceLastCast() then
           local allBuffsBelowThreshold = true
@@ -711,7 +711,7 @@ local function APL ()
 end
 
 local function Init ()
-  -- Nothing
+  HR.Print("You are using a fork - if there are issues, message me on Discord: kekwxqcl")
 end
 
 HR.SetAPL(260, APL, Init)

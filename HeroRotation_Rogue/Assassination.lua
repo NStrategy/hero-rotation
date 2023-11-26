@@ -805,9 +805,9 @@ local function APL ()
   TargetInAoERange = Target:IsInMeleeRange(AoERange)
   if AoEON() then
     Enemies30y = Player:GetEnemiesInRange(30) -- Poisoned Knife & Serrated Bone Spike
-    MeleeEnemies10y = Player:GetEnemiesInMeleeRange(10) -- Fan of Knives & Crimson Tempest
+    MeleeEnemies10y = Player:GetEnemiesInMeleeRange(AoERange) -- Fan of Knives & Crimson Tempest
     MeleeEnemies10yCount = #MeleeEnemies10y
-    MeleeEnemies5y = Player:GetEnemiesInMeleeRange(5) -- Melee cycle
+    MeleeEnemies5y = Player:GetEnemiesInMeleeRange(MeleeRange) -- Melee cycle
   else
     Enemies30y = {}
     MeleeEnemies10y = {}
@@ -928,7 +928,7 @@ local function APL ()
       end
     end
     -- Trick to take in consideration the Recovery Setting
-    if (S.Mutilate:IsCastable() or S.Ambush:IsCastable() or S.AmbushOverride:IsCastable()) and TargetInAoERange then
+    if (S.Mutilate:IsCastable() or S.Ambush:IsCastable() or S.AmbushOverride:IsCastable()) then
       if Cast(S.PoolEnergy) then return "Normal Pooling" end
     end
   end
@@ -938,6 +938,8 @@ local function Init ()
   S.Deathmark:RegisterAuraTracking()
   S.Sepsis:RegisterAuraTracking()
   S.Garrote:RegisterAuraTracking()
+
+  HR.Print("You are using a fork - if there are issues, message me on Discord: kekwxqcl")
 end
 
 HR.SetAPL(259, APL, Init)

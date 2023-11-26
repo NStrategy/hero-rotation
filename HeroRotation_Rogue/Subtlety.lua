@@ -785,9 +785,9 @@ local function APL ()
   TargetInAoERange = Target:IsInMeleeRange(AoERange)
   if AoEON() then
     Enemies30y = Player:GetEnemiesInRange(30) -- Distract
-    MeleeEnemies10y = Player:GetEnemiesInMeleeRange(10) -- Shuriken Storm & Black Powder
+    MeleeEnemies10y = Player:GetEnemiesInMeleeRange(AoERange) -- Shuriken Storm & Black Powder
     MeleeEnemies10yCount = #MeleeEnemies10y
-    MeleeEnemies5y = Player:GetEnemiesInMeleeRange(5) -- Melee cycle
+    MeleeEnemies5y = Player:GetEnemiesInMeleeRange(MeleeRange) -- Melee cycle
   else
     Enemies30y = {}
     MeleeEnemies10y = {}
@@ -976,7 +976,7 @@ local function APL ()
 end
 
 local function Init ()
-  -- Nothing
+  HR.Print("You are using a fork - if there are issues, message me on Discord: kekwxqcl")
 end
 
 HR.SetAPL(261, APL, Init)
