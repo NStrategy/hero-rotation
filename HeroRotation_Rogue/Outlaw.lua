@@ -168,18 +168,34 @@ local function RtB_Reroll ()
         elseif not isHO and rtbBuffs == 2 and Player:BuffUp(S.Broadside) then
           Cache.APLVar.RtB_Reroll = false
         end
-        if not Cache.APLVar.RtB_Reroll and Rogue.RtBRemains() <= 4 then
+        if not Cache.APLVar.RtB_Reroll and Rogue.RtBRemains() <= 3 then
           Cache.APLVar.RtB_Reroll = true
         end
       end
-        -- Following Rogue Discord FAQ: Use Roll the Bones if: You have 0 buffs OR if you have 1 buff and it is not True Bearing
-        -- however builds without HO roll for Broadside instead of True Bearing
-        -- Without 4pc
+      -- Following Rogue Discord FAQ: Use Roll the Bones if: You have 0 buffs OR if you have 1 buff and it is not True Bearing
+      -- however builds without HO roll for Broadside instead of True Bearing
+      -- Without 4pc
       if not has4pc then
         if rtbBuffs == 0 or (rtbBuffs == 1 and not Player:BuffUp(S.TrueBearing)) then
           Cache.APLVar.RtB_Reroll = true
         elseif not isHO and rtbBuffs == 1 and not Player:BuffUp(S.Broadside) then
           Cache.APLVar.RtB_Reroll = true
+        end
+      end
+      -- Extra Reroll check for KiR
+      -- actions+/variable,name=rtb_reroll,value=variable.rtb_reroll|rtb_buffs.normal=0&rtb_buffs.longer>=1&rtb_buffs<5&rtb_buffs.max_remains<=39
+      if S.KeepItRolling:IsAvailable() and not S.KeepItRolling:IsReady() then
+        if S.KeepItRolling:TimeSinceLastCast() < S.RolltheBones:TimeSinceLastCast() then
+          local allBuffsBelowThreshold = true
+          for _, buff in ipairs(RtB_BuffsList) do
+            if Player:BuffUp(buff) and Player:BuffRemains(buff) > 39 then
+              allBuffsBelowThreshold = false
+              break
+            end
+          end
+          if allBuffsBelowThreshold and RtB_Buffs() < 5 then
+            Cache.APLVar.RtB_Reroll = true
+          end
         end
       end
     end
@@ -201,7 +217,7 @@ end
 
 -- Determine if we are allowed to use Vanish offensively in the current situation
 local function Vanish_DPS_Condition ()
-  -- You can vanish if we've set the UseDPSVanish setting, and we're either not tanking or we're solo but the DPS vanish while solo flag is set).
+  -- You can vanish if we've set the UseDPSVanish setting, and we're either not tanking or we're solo but the DPS vanish while solo flag is set). Homebrew: Deleted Tanking check as it bugs out Totem in AD - could probably say "and not Target:NPCID() == xxxxxx" but I couldnt care less
   return Settings.Commons.UseDPSVanish or Settings.Commons.UseSoloVanish
 end
 
@@ -285,16 +301,24 @@ local function CDs ()
       else
         if HR.Cast(S.BladeFlurry) then return "Cast Blade Flurry (ST, 2+Targets,5+Targets" end
       end
-      -- Use Blade Flurry at 3-4 targets if missing combo points equal to the combo points it will grant
-    elseif EnemiesBFCount >= 3 and EnemiesBFCount <= 4 
-        and ComboPointsDeficit >= (EnemiesBFCount + num(Player:BuffUp(S.Broadside))) and not Finish_Condition() then
+    end
+    -- At 3-4 targets, you can use Blade Flurry as a builder if you are missing combo points equal to the amount Blade Flurry would give you.
+    local broadsideBonus = num(Player:BuffUp(S.Broadside))
+    local potentialComboPointsGain = EnemiesBFCount + (broadsideBonus * EnemiesBFCount)
+    local potentialComboPointsTotal = ComboPoints + potentialComboPointsGain
+    local finishThreshold = Rogue.CPMaxSpend() - 1 - num(Player:StealthUp(true, true) and S.Crackshot:IsAvailable())
+
+    if EnemiesBFCount >= 3 and EnemiesBFCount <= 4 
+        and potentialComboPointsTotal == finishThreshold
+        and not Finish_Condition() then
         if Settings.Outlaw.GCDasOffGCD.BladeFlurry then
-            HR.CastSuggested(S.BladeFlurry)
+          HR.CastSuggested(S.BladeFlurry)
         else
-            if HR.Cast(S.BladeFlurry) then return "Cast Blade Flurry (3-4 Targets)" end
+          if HR.Cast(S.BladeFlurry) then return "Cast Blade Flurry (3 or 4 Target Filler)" end
         end
     end
-end
+  end
+  
 
   -- # Use Roll the Bones if reroll conditions are met, or just before buffs expire based on T31 and upcoming stealth cooldowns
   -- actions.cds+=/roll_the_bones,if=variable.rtb_reroll|rtb_buffs.max_remains<=1+(cooldown.shadow_dance.remains<=1|cooldown.vanish.remains<=1)*6 Homebrew: No check for Tierset anymore.
@@ -604,7 +628,7 @@ local function APL ()
         ShouldReturn = Stealth()
         if ShouldReturn then return "Stealth (Opener): " .. ShouldReturn end
         if S.KeepItRolling:IsAvailable() and S.GhostlyStrike:IsAvailable() and S.EchoingReprimand:IsAvailable() then
-          if HR.Cast(S.GhostlyStrike) then return "Cast Ghostly Strike KiR (Opener)" end
+          if HR.Cast(S.GhostlyStrike, Settings.Outlaw.OffGCDasOffGCD.GhostlyStrike) then return "Cast Ghostly Strike KiR (Opener)" end
         end
         if S.Ambush:IsCastable() then
           if HR.Cast(S.Ambush) then return "Cast Ambush (Opener)" end
