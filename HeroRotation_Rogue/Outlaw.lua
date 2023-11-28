@@ -165,8 +165,6 @@ local function RtB_Reroll ()
       if has4pc then
         if rtbBuffs <= 1 or (rtbBuffs == 2 and Player:BuffUp(S.LoadedDiceBuff)) then
           Cache.APLVar.RtB_Reroll = true
-        elseif not isHO and rtbBuffs == 2 and Player:BuffUp(S.Broadside) then
-          Cache.APLVar.RtB_Reroll = false
         end
         if not Cache.APLVar.RtB_Reroll and Rogue.RtBRemains() <= 3 then
           Cache.APLVar.RtB_Reroll = true
@@ -711,7 +709,7 @@ local function APL ()
 end
 
 local function Init ()
-  HR.Print("You are using a fork - if there are issues, message me on Discord: kekwxqcl")
+  HR.Print("You are using a fork: THIS IS NOT THE OFFICIAL VERSION - if there are issues, message me on Discord: kekwxqcl")
 end
 
 HR.SetAPL(260, APL, Init)
