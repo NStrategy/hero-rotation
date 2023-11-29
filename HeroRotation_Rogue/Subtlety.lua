@@ -172,7 +172,7 @@ local function SuggestCycleDoT(DoTSpell, DoTEvaluation, DoTMinTTD, Enemies)
   if BestUnit then
     HR.CastLeftNameplate(BestUnit, DoTSpell)
   -- Check ranged units next, if the RangedMultiDoT option is enabled
-  elseif Settings.Commons.RangedMultiDoT then
+  elseif Settings.Commons2.RangedMultiDoT then
     BestUnit, BestUnitTTD = nil, DoTMinTTD
     for _, CycleUnit in pairs(MeleeEnemies10y) do
       if CycleUnit:GUID() ~= TargetGUID and Everyone.UnitIsCycleValid(CycleUnit, BestUnitTTD, -CycleUnit:DebuffRemains(DoTSpell))
@@ -646,24 +646,24 @@ local function CDs ()
     end
 
 
-    if Settings.Commons.UseTrinkets then
+    if Settings.Commons.Enabled.Trinkets then
       -- actions.cds+=/use_item,name=ashes_of_the_embersoul,if=buff.flagellation_buff.up&(buff.danse_macabre.stack>=3|!talent.danse_macabre|raid_event.adds.up|equipped.witherbarks_branch) 
       if I.AshesoftheEmbersoul:IsEquippedAndReady() then
         if Player:BuffUp(S.Flagellation) and (Player:BuffStack(S.DanseMacabreBuff) >= 3 or not S.DanseMacabre:IsAvailable() or I.WitherbarksBranch:IsEquipped()) then
-           if HR.Cast(I.AshesoftheEmbersoul, nil, Settings.Commons.TrinketDisplayStyle) then return "Ashes Of the Embersoul"; end
+           if HR.Cast(I.AshesoftheEmbersoul, nil, Settings.Commons.DisplayStyle.Trinkets) then return "Ashes Of the Embersoul"; end
         end
       end
       -- actions.cds+=/use_item,name=witherbarks_branch,if=buff.flagellation_buff.up&talent.invigorating_shadowdust|buff.shadow_blades.up|equipped.bandolier_of_twisted_blades&raid_event.adds.up
       if I.WitherbarksBranch:IsEquippedAndReady() then
         if (Player:BuffUp(S.Flagellation) and S.InvigoratingShadowdust:IsAvailable()) or
             Player:BuffUp(S.ShadowBlades) or I.BandolierOfTwistedBlades:IsEquipped() then
-            if HR.Cast(I.WitherbarksBranch, nil, Settings.Commons.TrinketDisplayStyle) then return "Witherbark's Branch"; end
+            if HR.Cast(I.WitherbarksBranch, nil, Settings.Commons.DisplayStyle.Trinkets) then return "Witherbark's Branch"; end
         end
       end
       -- actions.cds+=/use_item,name=mirror_of_fractured_tomorrows,if=buff.shadow_dance.up&(target.time_to_die>=15|equipped.ashes_of_the_embersoul)
       if I.MirrorOfFracturedTomorrows:IsEquippedAndReady() then
         if Player:BuffUp(S.ShadowDanceBuff) and (Target:FilteredTimeToDie(">=", 15) or I.AshesoftheEmbersoul:IsEquipped()) then
-          if HR.Cast(I.MirrorOfFracturedTomorrows, nil, Settings.Commons.TrinketDisplayStyle) then return "Mirror Of Fractured Tomorrows"; end
+          if HR.Cast(I.MirrorOfFracturedTomorrows, nil, Settings.Commons.DisplayStyle.Trinkets) then return "Mirror Of Fractured Tomorrows"; end
         end
       end
       -- actions.cds+=/use_item,name=manic_grieftorch,use_off_gcd=1,if=!stealthed.all&(!raid_event.adds.up|!equipped.stormeaters_boon|trinket.stormeaters_boon.cooldown.remains>20)
@@ -671,7 +671,7 @@ local function CDs ()
         if (not Player:StealthUp(true, true)
             and (not I.StormEatersBoon:IsEquipped()
                 or I.StormEatersBoon:CooldownRemains() > 20)) then
-            if HR.Cast(I.ManicGrieftorch, nil, Settings.Commons.TrinketDisplayStyle) then return "Manic Grieftorch" end
+            if HR.Cast(I.ManicGrieftorch, nil, Settings.Commons.DisplayStyle.Trinkets) then return "Manic Grieftorch" end
         end
       end
       -- actions.cds+=/use_item,name=beacon_to_the_beyond,use_off_gcd=1,if=!stealthed.all&(buff.deeper_daggers.up|!talent.deeper_daggers)&(!raid_event.adds.up|!equipped.stormeaters_boon|trinket.stormeaters_boon.cooldown.remains>20)
@@ -681,7 +681,7 @@ local function CDs ()
                 or not S.DeeperDaggers:IsAvailable())
             and (not I.StormEatersBoon:IsEquipped()
                 or I.StormEatersBoon:CooldownRemains() > 20)) then
-            if HR.Cast(I.BeaconToTheBeyond, nil, Settings.Commons.TrinketDisplayStyle) then return "Beacon To The Beyond" end
+            if HR.Cast(I.BeaconToTheBeyond, nil, Settings.Commons.DisplayStyle.Trinkets) then return "Beacon To The Beyond" end
         end
       end
       -- actions.cds+=/use_items,if=!stealthed.all&(!trinket.mirror_of_fractured_tomorrows.cooldown.ready|!equipped.mirror_of_fractured_tomorrows)|fight_remains<10
@@ -689,7 +689,7 @@ local function CDs ()
         or HL.BossFilteredFightRemains("<", 10) then
         local TrinketToUse = Player:GetUseableItems(OnUseExcludes)
         if TrinketToUse then
-            if HR.Cast(TrinketToUse, nil, Settings.Commons.TrinketDisplayStyle) then
+            if HR.Cast(TrinketToUse, nil, Settings.Commons.DisplayStyle.Trinkets) then
                 return "Generic use_items for " .. TrinketToUse:Name()
             end
         end
@@ -780,7 +780,7 @@ local function APL ()
 
   -- Unit Update
   MeleeRange = S.AcrobaticStrikes:IsAvailable() and 8 or 5
-  AoERange = S.AcrobaticStrikes:IsAvailable() and 10 or 13
+  AoERange = S.AcrobaticStrikes:IsAvailable() and 13 or 10
   TargetInMeleeRange = Target:IsInMeleeRange(MeleeRange)
   TargetInAoERange = Target:IsInMeleeRange(AoERange)
   if AoEON() then
@@ -976,7 +976,7 @@ local function APL ()
 end
 
 local function Init ()
-  HR.Print("You are using a fork - if there are issues, message me on Discord: kekwxqcl")
+  HR.Print("You are using a fork: THIS IS NOT THE OFFICIAL VERSION - if there are issues, message me on Discord: kekwxqcl")
 end
 
 HR.SetAPL(261, APL, Init)

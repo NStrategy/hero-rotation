@@ -42,6 +42,7 @@ local Rogue = HR.Commons.Rogue
 local Settings = {
   General = HR.GUISettings.General,
   Commons = HR.GUISettings.APL.Rogue.Commons,
+  Commons2 = HR.GUISettings.APL.Rogue.Commons2,
   Assassination = HR.GUISettings.APL.Rogue.Assassination
 }
 
@@ -192,6 +193,9 @@ local function UsePriorityRotation()
     -- Yalnu (Flourishing Ancient)
     elseif Target:NPCID() == 84400 then
       return true
+    -- Witherbark
+    elseif Target:NPCID() == 81522 then
+      return true
     end
   end
 
@@ -208,7 +212,7 @@ end
 local function NotPoolingVar()
   if (Target:DebuffUp(S.Deathmark) or Target:DebuffUp(S.Kingsbane) or Player:BuffUp(S.ShadowDanceBuff) or Target:DebuffUp(S.ShivDebuff)
     or S.ThistleTea:FullRechargeTime() < 20) or Player:EnergyPercentage() >= 80 or (Player:HasTier(31, 4)
-      and ((Player:BuffUp(S.Envenom) and Player:BuffRemains(S.Envenom) <= 2) or HL.BossFilteredFightRemains("<=", 90))) then
+    and ((Player:BuffUp(S.Envenom) and Player:BuffRemains(S.Envenom) <= 2) or HL.BossFilteredFightRemains("<=", 90))) then
     return true
   end
   return false
@@ -255,7 +259,7 @@ local function SuggestCycleDoT(DoTSpell, DoTEvaluation, DoTMinTTD, Enemies)
   if BestUnit then
     CastLeftNameplate(BestUnit, DoTSpell)
   -- Check ranged units next, if the RangedMultiDoT option is enabled
-  elseif Settings.Commons.RangedMultiDoT then
+  elseif Settings.Commons2.RangedMultiDoT then
     BestUnit, BestUnitTTD = nil, DoTMinTTD
     for _, CycleUnit in pairs(MeleeEnemies10y) do
       if CycleUnit:GUID() ~= TargetGUID and Everyone.UnitIsCycleValid(CycleUnit, BestUnitTTD, -CycleUnit:DebuffRemains(DoTSpell))
@@ -306,7 +310,7 @@ local function CheckTargetIfTarget(Mode, ModeEvaluation, IfEvaluation)
 
   -- Prefer melee cycle units over ranged
   RunTargetIfCycler(MeleeEnemies5y)
-  if Settings.Commons.RangedMultiDoT then
+  if Settings.Commons2.RangedMultiDoT then
     RunTargetIfCycler(MeleeEnemies10y)
   end
   -- Prefer current target if equal mode value results to prevent "flickering"
@@ -379,7 +383,7 @@ local function Vanish ()
   if S.ShadowDance:IsCastable() and not S.Kingsbane:IsAvailable() then
     if S.ImprovedGarrote:IsAvailable() and S.Garrote:CooldownUp() and (Target:PMultiplier(S.Garrote) <= 1 or IsDebuffRefreshable(Target, S.Garrote))
       and (S.Deathmark:AnyDebuffUp() or S.Deathmark:CooldownRemains() < 12 or S.Deathmark:CooldownRemains() > 60) and ComboPointsDeficit >= mathmin(MeleeEnemies10yCount, 4) then
-      if Settings.Commons.ShowPooling and Player:EnergyPredicted() < 45 then
+      if Settings.Commons2.ShowPooling and Player:EnergyPredicted() < 45 then
         if Cast(S.PoolEnergy) then return "Pool for Shadow Dance (Garrote)" end
       end
       if Cast(S.ShadowDance, Settings.Assassination.GCDasOffGCD.ShadowDance) then return "Cast Shadow Dance (Garrote)" end
@@ -398,14 +402,14 @@ local function Vanish ()
       if not S.IndiscriminateCarnage:IsAvailable() and (S.Deathmark:AnyDebuffUp() or S.Deathmark:CooldownRemains() < 4)
         and ComboPointsDeficit >= mathmin(MeleeEnemies10yCount, 4) then
         -- actions.cds+=/pool_resource,for_next=1,extra_amount=45
-        if Settings.Commons.ShowPooling and Player:EnergyPredicted() < 45 then
+        if Settings.Commons2.ShowPooling and Player:EnergyPredicted() < 45 then
           if Cast(S.PoolEnergy) then return "Pool for Vanish (Garrote Deathmark)" end
         end
         if Cast(S.Vanish, Settings.Commons.OffGCDasOffGCD.Vanish) then return "Cast Vanish (Garrote No Carnage)" end
       end
       if S.IndiscriminateCarnage:IsAvailable() and MeleeEnemies10yCount > 2 then
         -- actions.cds+=/pool_resource,for_next=1,extra_amount=45
-        if Settings.Commons.ShowPooling and Player:EnergyPredicted() < 45 then
+        if Settings.Commons2.ShowPooling and Player:EnergyPredicted() < 45 then
           if Cast(S.PoolEnergy) then return "Pool for Vanish (Garrote Deathmark)" end
         end
         if Cast(S.Vanish, Settings.Commons.OffGCDasOffGCD.Vanish) then return "Cast Vanish (Garrote Carnage)" end
@@ -425,7 +429,7 @@ local function Vanish ()
 end
 
 local function UsableItems ()
-  if not Settings.Commons.UseTrinkets then
+  if not Settings.Commons.Enabled.Trinkets then
     return
   end
 
@@ -437,13 +441,13 @@ local function UsableItems ()
   -- actions.items+=/use_item,name=witherbarks_branch,use_off_gcd=1,if=(dot.deathmark.ticking)|fight_remains<=22
   -- actions.items+=/use_item,name=algethar_puzzle_box,use_off_gcd=1,if=dot.rupture.ticking&cooldown.deathmark.remains<2|fight_remains<=22
   if I.AshesoftheEmbersoul:IsEquippedAndReady() and (Target:DebuffUp(S.Kingsbane) and Target:DebuffRemains(S.Kingsbane) <= 11 or HL.BossFilteredFightRemains("<", 22)) then
-    if HR.Cast(I.AshesoftheEmbersoul, nil, Settings.Commons.TrinketDisplayStyle) then return "Ashes of the 1Embersoul"; end
+    if HR.Cast(I.AshesoftheEmbersoul, nil, Settings.Commons.DisplayStyle.Trinkets) then return "Ashes of the 1Embersoul"; end
   end
   if I.WitherbarksBranch:IsEquippedAndReady() and (Target:DebuffUp(S.Deathmark) or HL.BossFilteredFightRemains("<", 22)) then
-    if HR.Cast(I.WitherbarksBranch, nil, Settings.Commons.TrinketDisplayStyle) then return "Witherbark Branch"; end
+    if HR.Cast(I.WitherbarksBranch, nil, Settings.Commons.DisplayStyle.Trinkets) then return "Witherbark Branch"; end
   end
   if I.AlgetharPuzzleBox:IsEquippedAndReady() and (Target:DebuffUp(S.Rupture) and S.Deathmark:CooldownRemains() <= 2 or HL.BossFilteredFightRemains("<", 22)) then
-    if HR.Cast(I.AlgetharPuzzleBox, nil, Settings.Commons.TrinketDisplayStyle) then return "Algethar Puzzle Box"; end
+    if HR.Cast(I.AlgetharPuzzleBox, nil, Settings.Commons.DisplayStyle.Trinkets) then return "Algethar Puzzle Box"; end
   end
 
   -- actions.items+=/use_items,slots=trinket1,if=(variable.trinket_sync_slot=1&(debuff.deathmark.up|fight_remains<=20)|(variable.trinket_sync_slot=2&(!trinket.2.cooldown.ready|!debuff.deathmark.up&cooldown.deathmark.remains>20))|!variable.trinket_sync_slot)
@@ -451,11 +455,11 @@ local function UsableItems ()
   if TrinketItem1:IsReady() and not Player:IsItemBlacklisted(TrinketItem1) and not ValueIsInArray(OnUseExcludeTrinkets, TrinketItem1:ID())
     and (TrinketSyncSlot == 1 and (S.Deathmark:AnyDebuffUp() or HL.BossFilteredFightRemains("<", 20))
       or (TrinketSyncSlot == 2 and (not TrinketItem2:IsReady() or not S.Deathmark:AnyDebuffUp() and S.Deathmark:CooldownRemains() > 20)) or TrinketSyncSlot == 0) then
-    if Cast(TrinketItem1, nil, Settings.Commons.TrinketDisplayStyle) then return "Trinket 1"; end
+    if Cast(TrinketItem1, nil, Settings.Commons.DisplayStyle.Trinkets) then return "Trinket 1"; end
   elseif TrinketItem2:IsReady() and not Player:IsItemBlacklisted(TrinketItem2) and not ValueIsInArray(OnUseExcludeTrinkets, TrinketItem2:ID())
     and (TrinketSyncSlot == 2 and (S.Deathmark:AnyDebuffUp() or HL.BossFilteredFightRemains("<", 20))
       or (TrinketSyncSlot == 1 and (not TrinketItem1:IsReady() or not S.Deathmark:AnyDebuffUp() and S.Deathmark:CooldownRemains() > 20)) or TrinketSyncSlot == 0) then
-    if Cast(TrinketItem2, nil, Settings.Commons.TrinketDisplayStyle) then return "Trinket 2"; end
+    if Cast(TrinketItem2, nil, Settings.Commons.DisplayStyle.Trinkets) then return "Trinket 2"; end
   end
 end
 
@@ -476,7 +480,7 @@ local function CDs ()
     if Cast(S.Sepsis, nil, true) then return "Cast Sepsis" end
   end
 
-  if Settings.Commons.UseTrinkets then
+  if Settings.Commons.Enabled.Trinkets then
     if ShouldReturn then
       UsableItems()
     else
@@ -549,6 +553,12 @@ local function CDs ()
   end
 
   -- actions.cds=potion,if=buff.bloodlust.react|target.time_to_die<=60|debuff.vendetta.up&cooldown.vanish.remains<5
+  if Settings.Commons.Enabled.Potions then
+    local PotionSelected = Everyone.PotionSelected()
+    if PotionSelected and PotionSelected:IsReady() and (Player:BloodlustUp() or HL.BossFilteredFightRemains("<", 60) or S.Vanish:CooldownRemains() < 5) then
+      if HR.Cast(PotionSelected, nil, Settings.Commons.DisplayStyle.Potions) then return "Cast Potion"; end
+    end
+  end
   -- Racials
   if S.Deathmark:AnyDebuffUp() and (not ShouldReturn or Settings.Commons.OffGCDasOffGCD.Racials) then
     if ShouldReturn then
@@ -939,7 +949,7 @@ local function Init ()
   S.Sepsis:RegisterAuraTracking()
   S.Garrote:RegisterAuraTracking()
 
-  HR.Print("You are using a fork - if there are issues, message me on Discord: kekwxqcl")
+  HR.Print("You are using a fork: THIS IS NOT THE OFFICIAL VERSION - if there are issues, message me on Discord: kekwxqcl")
 end
 
 HR.SetAPL(259, APL, Init)
