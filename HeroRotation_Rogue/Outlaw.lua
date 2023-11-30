@@ -250,7 +250,7 @@ local function StealthCDs ()
   -- # Crackshot builds use Dance at finish condition
   -- actions.stealth_cds+=/shadow_dance,if=talent.crackshot&variable.finish_condition
   -- synecdoche note: DPS gain in testing to hold off on shadow dance if vanish is coming up in the next 6 seconds to avoid wasting vanish CDR
-  if S.ShadowDance:IsAvailable() and (Target:FilteredTimeToDie(">", 5) or HL.BossFilteredFightRemains(">", 5)) and S.ShadowDance:IsCastable() and S.Crackshot:IsAvailable() and Finish_Condition() and S.Vanish:CooldownRemains() >= 6 then
+  if S.ShadowDance:IsAvailable() and (Target:FilteredTimeToDie(">", 5) or HL.BossFilteredFightRemains(">", 5)) and S.ShadowDance:IsCastable() and S.Crackshot:IsAvailable() and Finish_Condition() and S.Vanish:CooldownRemains() >= (Rogue.CPMaxSpend() * (1 + (Player:BuffUp(S.TrueBearing) and 0.5 or 0))) then
     if HR.Cast(S.ShadowDance, Settings.Commons.OffGCDasOffGCD.ShadowDance) then return "Cast Shadow Dance" end
   end
 
@@ -608,14 +608,14 @@ local function APL ()
     -- Opener
     if not Player:AffectingCombat() then
       -- Precombat CDs
-      -- actions.precombat+=/adrenaline_rush,precombat_seconds=3,if=talent.improved_adrenaline_rush
-      if S.AdrenalineRush:IsReady() and S.ImprovedAdrenalineRush:IsAvailable() and ComboPoints <= 2 then
-        if HR.Cast(S.AdrenalineRush) then return "Cast Adrenaline Rush (Opener)" end
-      end
       -- actions.precombat+=/roll_the_bones,precombat_seconds=2
       -- Use same extended logic as a normal rotation for between pulls
       if S.RolltheBones:IsReady() and not Player:DebuffUp(S.Dreadblades) and (RtB_Buffs() == 0 or RtB_Reroll()) then
         if HR.Cast(S.RolltheBones) then return "Cast Roll the Bones (Opener)" end
+      end
+      -- actions.precombat+=/adrenaline_rush,precombat_seconds=3,if=talent.improved_adrenaline_rush
+      if S.AdrenalineRush:IsReady() and S.ImprovedAdrenalineRush:IsAvailable() and ComboPoints <= 2 then
+        if HR.Cast(S.AdrenalineRush) then return "Cast Adrenaline Rush (Opener)" end
       end
       -- actions.precombat+=/slice_and_dice,precombat_seconds=1
       if S.SliceandDice:IsReady() and Player:BuffRemains(S.SliceandDice) < (1 + ComboPoints) * 1.8 then
