@@ -435,7 +435,7 @@ local function Stealthed (ReturnSpellOnly, StealthSpell)
 
   -- actions.stealthed+=/backstab,if=!buff.premeditation.up&buff.shadow_dance.remains>=3&buff.shadow_blades.up&!used_for_danse&talent.danse_macabre&spell_targets.shuriken_storm<=3&!buff.the_rotten.up
   if S.Backstab:IsCastable() then
-    if not PremeditationBuff and ShadowDanceBuffRemains >= 3 and Player:BuffUp(S.ShadowBlades) and not Used_For_Danse(S.Backstab) 
+    if not PremeditationBuff and Player:BuffRemains(S.ShadowDanceBuff) >= 3 and Player:BuffUp(S.ShadowBlades) and not Used_For_Danse(S.Backstab) 
        and S.DanseMacabre:IsAvailable() and MeleeEnemies10yCount <= 3 and not Player:BuffUp(S.TheRottenBuff) then
        if ReturnSpellOnly then
            -- If calling from a Stealth macro, we don't need the PV suggestion since it's already a macro cast
@@ -451,7 +451,7 @@ local function Stealthed (ReturnSpellOnly, StealthSpell)
   end
   -- actions.stealthed+=/gloomblade,if=!buff.premeditation.up&buff.shadow_dance.remains>=3&buff.shadow_blades.up&!used_for_danse&talent.danse_macabre&spell_targets.shuriken_storm<=4
   if S.Gloomblade:IsCastable() then
-    if not PremeditationBuff and ShadowDanceBuffRemains >= 3 and Player:BuffUp(S.ShadowBlades) and not Used_For_Danse(S.Gloomblade)
+    if not PremeditationBuff and Player:BuffRemains(S.ShadowDanceBuff) >= 3 and Player:BuffUp(S.ShadowBlades) and not Used_For_Danse(S.Gloomblade)
        and S.DanseMacabre:IsAvailable() and MeleeEnemies10yCount <= 4 then
        if ReturnSpellOnly then
            -- If calling from a Stealth macro, we don't need the PV suggestion since it's already a macro cast
@@ -582,7 +582,7 @@ local function CDs ()
     -- actions.cds+=/shuriken_tornado,if=variable.snd_condition&!buff.shadow_dance.up&!buff.flagellation_buff.up&!buff.flagellation_persist.up&!buff.shadow_blades.up&spell_targets.shuriken_storm<=2&!raid_event.adds.up
     if S.ShurikenTornado:IsReady() then
       if SnDCondition and Player:BuffUp(S.SymbolsofDeath) and ComboPoints <= 2 and 
-        not Player:BuffUp(S.PremeditationBuff) and (not S.Flagellation:IsAvailable() or S.Flagellation:CooldownRemains() > 20) and MeleeEnemies10yCount >= 3 then
+        not PremeditationBuff and (not S.Flagellation:IsAvailable() or S.Flagellation:CooldownRemains() > 20) and MeleeEnemies10yCount >= 3 then
         if HR.Cast(S.ShurikenTornado, Settings.Subtlety.GCDasOffGCD.ShurikenTornado) then return "Cast Shuriken Tornado (SoD)" end
       end
       if SnDCondition and not Player:BuffUp(S.ShadowDanceBuff) and not Player:BuffUp(S.Flagellation) and not Player:BuffUp(S.FlagellationPersistBuff) and not Player:BuffUp(S.ShadowBlades) and MeleeEnemies10yCount <= 2 then
@@ -621,8 +621,8 @@ local function CDs ()
     -- actions.cds+=/potion,if=buff.bloodlust.react|fight_remains<30|buff.symbols_of_death.up&(buff.shadow_blades.up|cooldown.shadow_blades.remains<=10)
     if Settings.Commons.Enabled.Potions then
       local PotionSelected = Everyone.PotionSelected()
-      if PotionSelected and PotionSelected:IsReady() and Player:BloodlustUp() or HL.BossFilteredFightRemains("<", 30) or Player:BuffUp(S.SymbolsofDeath)
-        and (Player:BuffUp(S.ShadowBlades) or S.ShadowBlades:CooldownRemains() <= 10) then
+      if PotionSelected and PotionSelected:IsReady() and (Player:BloodlustUp() or HL.BossFilteredFightRemains("<", 30) or Player:BuffUp(S.SymbolsofDeath)
+        and (Player:BuffUp(S.ShadowBlades) or S.ShadowBlades:CooldownRemains() <= 10)) then
         if Cast(PotionSelected, nil, Settings.Commons.DisplayStyle.Potions) then return "Cast Potion"; end
       end
     end
