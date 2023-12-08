@@ -69,7 +69,6 @@ end, "PLAYER_EQUIPMENT_CHANGED" )
 local Enemies30y, EnemiesBF, EnemiesBFCount
 local ShouldReturn; -- Used to get the return string
 local BladeFlurryRange = 6
-local BetweenTheEyesDMGThreshold
 local EffectiveComboPoints, ComboPoints, ComboPointsDeficit
 local Energy, EnergyRegen, EnergyDeficit, EnergyTimeToMax, EnergyMaxOffset
 local Interrupts = {
@@ -104,6 +103,14 @@ local RtB_BuffsList = {
   S.SkullandCrossbones,
   S.TrueBearing
 }
+
+
+local function rtb_value ()
+  -- actions+=/variable,name=rtb_value,value=buff.broadside.up+buff.skull_and_crossbones.up+buff.true_bearing.up+buff.ruthless_precision.up+0.5*buff.buried_treasure.up+(1+(spell_targets.blade_flurry>=2))*0.5*buff.grand_melee.up
+  return num(Player:BuffUp(S.Broadside)) + num(Player:BuffUp(S.SkullandCrossbones)) + num(Player:BuffUp(S.TrueBearing))
+    + num(Player:BuffUp(S.RuthlessPrecision)) + 0.5 * num(Player:BuffUp(S.BuriedTreasure)) + (1 + (num(EnemiesBFCount >= 2))) * 0.5 * num(Player:BuffUp(S.GrandMelee))
+end
+
 
 -- Get the number of Roll the Bones buffs currently on
 local function RtB_Buffs ()
@@ -159,10 +166,16 @@ local function RtB_Reroll ()
     else
       -- Reset the default value of RtB_Reroll
       Cache.APLVar.RtB_Reroll = false
+      RtB_Buffs()
       -- Following Rogue Discord FAQ: Use Roll the Bones if: You have 0-1 buffs OR if you have 2 buffs and Loaded Dice is active.
       -- With 4pc
       if S.Crackshot:IsAvailable() and Player:HasTier(31, 4) then
         if (RtB_Buffs() <= 1 + num(Player:BuffUp(S.LoadedDiceBuff))) then
+          Cache.APLVar.RtB_Reroll = true
+        end
+      end
+      if not S.HiddenOpportunity:IsAvailable() then
+        if RtB_Buffs() == 1 or (rtb_value() <= 2 and Player:BuffUp(S.LoadedDiceBuff)) then
           Cache.APLVar.RtB_Reroll = true
         end
       end
@@ -176,7 +189,7 @@ local function RtB_Reroll ()
           Cache.APLVar.RtB_Reroll = true
         end
       end
-      -- Extra Reroll check for KiR
+      -- Extra Reroll check for KiR -- actions+=/variable,name=rtb_reroll,value=variable.rtb_reroll&rtb_buffs.longer=0|rtb_buffs.normal=0&rtb_buffs.longer>=1&rtb_buffs<5&rtb_buffs.max_remains<=39&!stealthed.all
       -- After you press KIR, those KIR buffs don't get rerolled by the next Roll the Bones. So use RTB once after you press KIR to try and get even more buffs. Only do this after your KIR buffs have ticked below 39s and you do not already have 5+ buffs.
       if S.KeepItRolling:IsAvailable() and not S.KeepItRolling:IsReady() then
         if S.KeepItRolling:TimeSinceLastCast() < S.RolltheBones:TimeSinceLastCast() then
@@ -229,39 +242,39 @@ local function Shadow_Dance_Condition ()
     and (S.FanTheHammer:TalentRank() < 2 or Player:BuffDown(S.Opportunity))) and not S.Crackshot:IsAvailable()
 end
 
-
 local function StealthCDs ()
   -- # Hidden Opportunity builds without Crackshot use Vanish if Audacity is not active and when under max Opportunity stacks
   -- actions.stealth_cds+=/vanish,if=talent.hidden_opportunity&!talent.crackshot&!buff.audacity.up&(variable.vanish_opportunity_condition|buff.opportunity.stack<buff.opportunity.max_stack)&variable.ambush_condition
-  if S.Vanish:IsCastable() and Vanish_DPS_Condition() and S.HiddenOpportunity:IsAvailable() and not S.Crackshot:IsAvailable() and not Player:BuffUp(S.Audacity)
+  if S.Vanish:IsCastable() and (not Target:NPCID() == 204560 or not Target:NPCID() == 174773) and Vanish_DPS_Condition() and S.HiddenOpportunity:IsAvailable() and not S.Crackshot:IsAvailable() and not Player:BuffUp(S.Audacity)
     and (Vanish_Opportunity_Condition() or Player:BuffStack(S.Opportunity) < 6) and Ambush_Condition() then
     if HR.Cast(S.Vanish, Settings.Commons.OffGCDasOffGCD.Vanish) then return "Cast Vanish (HO)" end
   end
 
   -- # Crackshot builds or builds without Hidden Opportunity use Vanish at finish condition. NS note: Vanish into BtE on cooldown at 6+ CPs with BtE ready
   -- actions.stealth_cds+=/vanish,if=(!talent.hidden_opportunity|talent.crackshot)&variable.finish_condition
-  if S.Vanish:IsCastable() and S.BetweentheEyes:IsReady() and Vanish_DPS_Condition() and (not S.HiddenOpportunity:IsAvailable() or S.Crackshot:IsAvailable()) and Finish_Condition() then
+  if S.Vanish:IsCastable() and (not Target:NPCID() == 204560 or not Target:NPCID() == 174773) and S.BetweentheEyes:IsReady() and Vanish_DPS_Condition() and (not S.HiddenOpportunity:IsAvailable() or S.Crackshot:IsAvailable()) and Finish_Condition() then
     if HR.Cast(S.Vanish, Settings.Commons.OffGCDasOffGCD.Vanish) then return "Cast Vanish (Finish)" end
   end
 
   -- # Crackshot builds use Dance at finish condition. NS note:  Dance into BtE on cooldown at 6+ CPs with BtE ready
   -- actions.stealth_cds+=/shadow_dance,if=talent.crackshot&variable.finish_condition
   -- synecdoche note: DPS gain in testing to hold off on shadow dance if vanish is coming up in the next 6 seconds to avoid wasting vanish CDR
-  if S.ShadowDance:IsAvailable() and S.BetweentheEyes:IsReady() and S.ShadowDance:IsCastable() and S.Crackshot:IsAvailable() and Finish_Condition() and S.Vanish:CooldownRemains() >= (Rogue.CPMaxSpend() * (1 + (Player:BuffUp(S.TrueBearing) and 0.5 or 0))) then
+  -- NS note: cooldown.vanish.remains>=(cp_max_spend*(1+buff.true_bearing.up*0.5)) has an equal dps as synecdoches input, mine seems to be more flexible in actualy play (?)
+  if S.ShadowDance:IsAvailable() and (not Target:NPCID() == 204560 or not Target:NPCID() == 174773) and S.BetweentheEyes:IsReady() and S.ShadowDance:IsCastable() and S.Crackshot:IsAvailable() and Finish_Condition() and S.Vanish:CooldownRemains() >= (Rogue.CPMaxSpend() * (1 + (Player:BuffUp(S.TrueBearing) and 0.5 or 0))) then
     if HR.Cast(S.ShadowDance, Settings.Commons.OffGCDasOffGCD.ShadowDance) then return "Cast Shadow Dance" end
   end
   -- # Hidden Opportunity builds without Crackshot use Dance if Audacity and Opportunity are not active
   -- actions.stealth_cds+=/shadow_dance,if=!talent.keep_it_rolling&variable.shadow_dance_condition&buff.slice_and_dice.up
   -- &(variable.finish_condition|talent.hidden_opportunity)&(!talent.hidden_opportunity|!cooldown.vanish.ready)
-  if S.ShadowDance:IsAvailable() and S.ShadowDance:IsCastable() and not S.KeepItRolling:IsAvailable() and Shadow_Dance_Condition() and Player:BuffUp(S.SliceandDice)
+  if S.ShadowDance:IsAvailable() and (not Target:NPCID() == 204560 or not Target:NPCID() == 174773) and not S.Crackshot:IsAvailable() and S.ShadowDance:IsCastable() and not S.KeepItRolling:IsAvailable() and Shadow_Dance_Condition() and Player:BuffUp(S.SliceandDice)
       and (Finish_Condition() or S.HiddenOpportunity:IsAvailable()) and (not S.HiddenOpportunity:IsAvailable() or not S.Vanish:IsReady()) then
-    if HR.Cast(S.ShadowDance, Settings.Commons.OffGCDasOffGCD.ShadowDance) then return "Cast Shadow Dance" end
+      if HR.Cast(S.ShadowDance, Settings.Commons.OffGCDasOffGCD.ShadowDance) then return "Cast Shadow Dance" end
   end
 
   -- # Keep it Rolling builds without Crackshot use Dance at finish condition but hold it for an upcoming Keep it Rolling
   -- actions.stealth_cds+=/shadow_dance,if=talent.keep_it_rolling&variable.shadow_dance_condition
   -- &(cooldown.keep_it_rolling.remains<=30|cooldown.keep_it_rolling.remains>120&(variable.finish_condition|talent.hidden_opportunity))
-  if S.ShadowDance:IsAvailable() and S.ShadowDance:IsCastable() and S.KeepItRolling:IsAvailable() and Shadow_Dance_Condition()
+  if S.ShadowDance:IsAvailable() and (not Target:NPCID() == 204560 or not Target:NPCID() == 174773) and S.ShadowDance:IsCastable() and S.KeepItRolling:IsAvailable() and Shadow_Dance_Condition()
     and (S.KeepItRolling:CooldownRemains() <= 30 or S.KeepItRolling:CooldownRemains() >= 120 and (Finish_Condition() or S.HiddenOpportunity:IsAvailable())) then
     if HR.Cast(S.ShadowDance, Settings.Commons.OffGCDasOffGCD.ShadowDance) then return "Cast Shadow Dance" end
   end
@@ -279,7 +292,7 @@ local function CDs ()
   -- actions.cds=adrenaline_rush,if=(!buff.adrenaline_rush.up|stealthed.all&talent.crackshot&talent.improved_adrenaline_rush)
   -- &(combo_points<=2|!talent.improved_adrenaline_rush)
   if CDsON() and S.AdrenalineRush:IsCastable()
-    and (not Player:BuffUp(S.AdrenalineRush) or S.Crackshot:IsAvailable() and S.ImprovedAdrenalineRush:IsAvailable())
+    and (not Player:BuffUp(S.AdrenalineRush) or Player:StealthUp(true, true) and S.Crackshot:IsAvailable() and S.ImprovedAdrenalineRush:IsAvailable())
     and (ComboPoints <= 2 or not S.ImprovedAdrenalineRush:IsAvailable()) then
     if HR.Cast(S.AdrenalineRush, Settings.Outlaw.OffGCDasOffGCD.AdrenalineRush) then return "Cast Adrenaline Rush" end
   end
@@ -310,17 +323,25 @@ local function CDs ()
   -- # Use Roll the Bones if reroll conditions are met, or with no buffs, or 2s before buffs expire with T31, or 7s before buffs expire with Vanish/Dance ready
   -- actions.cds+=/roll_the_bones,if=variable.rtb_reroll|rtb_buffs=0|rtb_buffs.max_remains<=2&set_bonus.tier31_4pc|rtb_buffs.max_remains<=7&(cooldown.shadow_dance.ready|cooldown.vanish.ready)
   -- synecdoche note: also don't want to roll the bones inside a crackshot window; this isn't actually captured by the APL, but is a damage gain in local testing
-  -- NS note: increase Rogue.RtBRemains() <= 7 to 8 to give more wiggle room, increased Rogue.RtBRemains() <= 2 to 3 to give more wiggle room 
+  -- NS note: increase Rogue.RtBRemains() <= 7 to 8 to give more wiggle room, increased Rogue.RtBRemains() <= 2 to 5 as CtO procs seem to count towards rtb remains, making it show you only reroll very late. Since the prio of RTB is relativly low, it will mostly show at 3 seconds, which is fine.
   if S.RolltheBones:IsReady() then
     local outside_crackshot_window = not Player:StealthUp(true, true) or not S.Crackshot:IsAvailable()
-    if outside_crackshot_window and (RtB_Reroll() or RtB_Buffs() == 0 or (Rogue.RtBRemains() <= 3 and Player:HasTier(31, 4)) or (Rogue.RtBRemains() <= 8 and (S.ShadowDance:IsReady() or S.Vanish:IsReady()))) then
+    if outside_crackshot_window and (RtB_Reroll() or RtB_Buffs() == 0 or (Rogue.RtBRemains() <= 5 and Player:HasTier(31, 4)) or (Rogue.RtBRemains() <= 8 and (S.ShadowDance:IsReady() or S.Vanish:IsReady()))) then
       if HR.Cast(S.RolltheBones, Settings.Outlaw.GCDasOffGCD.RolltheBones) then return "Cast Roll the Bones" end
     end
   end
 
   -- # Use Keep it Rolling with at least 3 buffs (4 with T31)
-  -- actions.cds+=/keep_it_rolling,if=!variable.rtb_reroll&rtb_buffs>=3+set_bonus.tier31_4pc&(buff.shadow_dance.down|rtb_buffs>=6)
-  if S.KeepItRolling:IsReady() and not RtB_Reroll() and RtB_Buffs() >= 3 + num(Player:HasTier(31, 4)) and (Player:BuffDown(S.ShadowDance) or RtB_Buffs() >= 6) then
+  -- actions.cds+=/keep_it_rolling,if=!variable.rtb_reroll&variable.rtb_value>=3&(buff.shadow_dance.down|rtb_buffs>=6)&(variable.rtb_value>=3.5|(buff.skull_and_crossbones.up&buff.skull_and_crossbones.remains<1)|(buff.true_bearing.up&buff.true_bearing.remains<1)|(buff.ruthless_precision.up&buff.ruthless_precision.remains<1)|(buff.broadside.up&buff.broadside.remains<1)|(buff.buried_treasure.up&buff.buried_treasure.remains<1)|(buff.grand_melee.up&buff.grand_melee.remains<1))
+  if S.KeepItRolling:IsReady() and not RtB_Reroll() and rtb_value() >= 3 
+       and (Player:BuffDown(S.ShadowDance) or RtB_Buffs() >= 6) 
+       and (rtb_value() >= 3.5 
+       or (Player:BuffUp(S.SkullandCrossbones) and Player:BuffRemains(S.SkullandCrossbones) < 1)
+       or (Player:BuffUp(S.TrueBearing) and Player:BuffRemains(S.TrueBearing) < 1)
+       or (Player:BuffUp(S.RuthlessPrecision) and Player:BuffRemains(S.RuthlessPrecision) < 1)
+       or (Player:BuffUp(S.Broadside) and Player:BuffRemains(S.Broadside) < 1)
+       or (Player:BuffUp(S.BuriedTreasure) and Player:BuffRemains(S.BuriedTreasure) < 1)
+       or (Player:BuffUp(S.GrandMelee) and Player:BuffRemains(S.GrandMelee) < 1)) then
     if HR.Cast(S.KeepItRolling, Settings.Outlaw.GCDasOffGCD.KeepItRolling) then return "Cast Keep it Rolling" end
   end
 
