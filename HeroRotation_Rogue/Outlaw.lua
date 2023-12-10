@@ -111,7 +111,6 @@ local function rtb_value ()
     + num(Player:BuffUp(S.RuthlessPrecision)) + 0.5 * num(Player:BuffUp(S.BuriedTreasure)) + (1 + (num(EnemiesBFCount >= 2))) * 0.5 * num(Player:BuffUp(S.GrandMelee))
 end
 
-
 -- Get the number of Roll the Bones buffs currently on
 local function RtB_Buffs ()
   if not Cache.APLVar.RtB_Buffs then
@@ -137,6 +136,20 @@ local function RtB_Buffs ()
   end
   return Cache.APLVar.RtB_Buffs.Total
 end
+
+-- Function to get the longest remaining duration of RtB buffs
+-- NS note: The LongestRtBRemains() function iteratively compares the durations of all Roll the Bones buffs and identifies the longest one, ensuring the reroll decision is based on the buff with the maximum remaining time
+local function LongestRtBRemains()
+    local longestDuration = 0
+    for _, buff in ipairs(RtB_BuffsList) do
+        local remains = Player:BuffRemains(buff)
+        if remains > longestDuration then
+            longestDuration = remains
+        end
+    end
+    return longestDuration
+end
+
 
 -- RtB rerolling strategy, return true if we should reroll
 local function RtB_Reroll ()
@@ -169,7 +182,7 @@ local function RtB_Reroll ()
       RtB_Buffs()
       -- Following Rogue Discord FAQ: Use Roll the Bones if: You have 0-1 buffs OR if you have 2 buffs and Loaded Dice is active.
       -- With 4pc
-      if S.Crackshot:IsAvailable() and Player:HasTier(31, 4) then
+      if S.HiddenOpportunity:IsAvailable() and Player:HasTier(31, 4) then
         if (RtB_Buffs() <= 1 + num(Player:BuffUp(S.LoadedDiceBuff))) then
           Cache.APLVar.RtB_Reroll = true
         end
@@ -178,6 +191,16 @@ local function RtB_Reroll ()
         if RtB_Buffs() == 1 or (rtb_value() <= 2 and Player:BuffUp(S.LoadedDiceBuff)) then
           Cache.APLVar.RtB_Reroll = true
         end
+      end
+      -- Added safety reroll check for the situation if we are at 3 seconds of normal buffs and a cto from stealth procs, my new LongestRtBRemains would not trigger in the RTB condition, thereby not rerolling correctly. With this, if there are 3 or more buffs under 3 seconds, it would reroll even tho the longest duration may be longer. Will add further safety checks in the future/if needed
+      local buffsCloseToExpiration = 0
+      for _, buff in ipairs(RtB_BuffsList) do
+        if Player:BuffUp(buff) and Player:BuffRemains(buff) <= 3 then
+          buffsCloseToExpiration = buffsCloseToExpiration + 1
+        end
+      end
+      if buffsCloseToExpiration >= 3 and Player:HasTier(31, 4) and S.RolltheBones:TimeSinceLastCast() > 26 then 
+        Cache.APLVar.RtB_Reroll = true
       end
       -- Following Rogue Discord FAQ: Use Roll the Bones if: You have 0 buffs OR if you have 1 buff and it is not True Bearing
       -- however builds without HO roll for Broadside instead of True Bearing
@@ -200,7 +223,9 @@ local function RtB_Reroll ()
               break
             end
           end
-          if allBuffsBelowThreshold and RtB_Buffs() < 5 and not Player:StealthUp(true, true) then
+          if RtB_Buffs() >= 5 then
+            Cache.APLVar.RtB_Reroll = false
+          elseif allBuffsBelowThreshold and RtB_Buffs() <= 4 and not Player:StealthUp(true, true) then
             Cache.APLVar.RtB_Reroll = true
           end
         end
@@ -323,10 +348,10 @@ local function CDs ()
   -- # Use Roll the Bones if reroll conditions are met, or with no buffs, or 2s before buffs expire with T31, or 7s before buffs expire with Vanish/Dance ready
   -- actions.cds+=/roll_the_bones,if=variable.rtb_reroll|rtb_buffs=0|rtb_buffs.max_remains<=2&set_bonus.tier31_4pc|rtb_buffs.max_remains<=7&(cooldown.shadow_dance.ready|cooldown.vanish.ready)
   -- synecdoche note: also don't want to roll the bones inside a crackshot window; this isn't actually captured by the APL, but is a damage gain in local testing
-  -- NS note: increase Rogue.RtBRemains() <= 7 to 8 to give more wiggle room, increased Rogue.RtBRemains() <= 2 to 5 as CtO procs seem to count towards rtb remains, making it show you only reroll very late. Since the prio of RTB is relativly low, it will mostly show at 3 seconds, which is fine.
+  -- NS note: Reroll decision will now be based on the remaining time of the longest active RtB buff. No automatic reroll just because one of the shorter buffs from CtO is about to expire although it was only extended, therefore keeping 5 and 6 buffs running till the lower ones run out, thereby only rerolling when 4 buffs are hit. 
   if S.RolltheBones:IsReady() then
     local outside_crackshot_window = not Player:StealthUp(true, true) or not S.Crackshot:IsAvailable()
-    if outside_crackshot_window and (RtB_Reroll() or RtB_Buffs() == 0 or (Rogue.RtBRemains() <= 5 and Player:HasTier(31, 4)) or (Rogue.RtBRemains() <= 8 and (S.ShadowDance:IsReady() or S.Vanish:IsReady()))) then
+    if outside_crackshot_window and (RtB_Reroll() or RtB_Buffs() == 0 or (LongestRtBRemains() <= 3 and Player:HasTier(31, 4)) or (LongestRtBRemains() <= 8 and (S.ShadowDance:IsReady() or S.Vanish:IsReady()))) then
       if HR.Cast(S.RolltheBones, Settings.Outlaw.GCDasOffGCD.RolltheBones) then return "Cast Roll the Bones" end
     end
   end
