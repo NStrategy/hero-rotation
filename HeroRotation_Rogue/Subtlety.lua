@@ -602,6 +602,14 @@ local function CDs ()
         if HR.Cast(S.GoremawsBite) then return "Cast GoremawsBite" end
       end
     end
+    -- custom Smolderon condition
+    if S.Vanish:IsCastable() then
+      if Player:BuffUp(S.ShadowDanceBuff) and S.SecretTechnique:TimeSinceLastCast() < 5 and (Player:BuffUp(S.Flagellation) or Player:BuffUp(S.FlagellationPersistBuff)) and S.ShadowBlades:CooldownRemains() <=32 and Target:NPCID() == 200927 then
+        ShouldReturn = StealthMacro(S.Vanish, EnergyThreshold)
+        if ShouldReturn then return "Vanish Macro " .. ShouldReturn end
+      end
+    end
+    -- Fuu Tea condition
     if S.ThistleTea:IsReady() then
       -- actions.cds+=/thistle_tea,if=!buff.thistle_tea.up&cooldown.thistle_tea.charges_fractional>=2.5&buff.shadow_dance.remains>=4 -- Fuus APL
       if not Player:BuffUp(S.ThistleTea) and S.ThistleTea:ChargesFractional() >= 2.5 and Player:BuffRemains(S.ShadowDanceBuff) >= 4 then
