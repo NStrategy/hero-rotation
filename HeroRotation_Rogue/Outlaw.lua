@@ -604,7 +604,7 @@ end
 --- ======= MAIN =======
 local function APL ()
   -- Local Update
-  BladeFlurryRange = S.AcrobaticStrikes:IsAvailable() and 10 or 6
+  BladeFlurryRange = S.AcrobaticStrikes:IsAvailable() and 9 or 6
   ComboPoints = Player:ComboPoints()
   EffectiveComboPoints = Rogue.EffectiveComboPoints(ComboPoints)
   ComboPointsDeficit = Player:ComboPointsDeficit()
@@ -674,7 +674,7 @@ local function APL ()
         if S.HiddenOpportunity:IsAvailable() and S.Ambush:IsCastable() then
           if HR.Cast(S.Ambush) then return "Cast Ambush (Opener)" end
         elseif not S.HiddenOpportunity:IsAvailable() and S.SinisterStrike:IsCastable() then
-          if HR.Cast(S.SinisterStrike) then return "Cast SinisterStrike (Opener)" end
+          if HR.Cast(S.SinisterStrike) then return "Cast Sinister Strike (Opener)" end
         end
       elseif Finish_Condition() then
         ShouldReturn = Finish()
