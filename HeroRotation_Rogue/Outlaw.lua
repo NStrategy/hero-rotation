@@ -104,13 +104,6 @@ local RtB_BuffsList = {
   S.TrueBearing
 }
 
-
-local function rtb_value ()
-  -- actions+=/variable,name=rtb_value,value=buff.broadside.up+buff.skull_and_crossbones.up+buff.true_bearing.up+buff.ruthless_precision.up+0.5*buff.buried_treasure.up+(1+(spell_targets.blade_flurry>=2))*0.5*buff.grand_melee.up
-  return num(Player:BuffUp(S.Broadside)) + num(Player:BuffUp(S.SkullandCrossbones)) + num(Player:BuffUp(S.TrueBearing))
-    + num(Player:BuffUp(S.RuthlessPrecision)) + 0.5 * num(Player:BuffUp(S.BuriedTreasure)) + (1 + (num(EnemiesBFCount >= 2))) * 0.5 * num(Player:BuffUp(S.GrandMelee))
-end
-
 -- Get the number of Roll the Bones buffs currently on
 local function RtB_Buffs ()
   if not Cache.APLVar.RtB_Buffs then
@@ -182,13 +175,8 @@ local function RtB_Reroll ()
       RtB_Buffs()
       -- Following Rogue Discord FAQ: Use Roll the Bones if: You have 0-1 buffs OR if you have 2 buffs and Loaded Dice is active.
       -- With 4pc
-      if S.HiddenOpportunity:IsAvailable() and Player:HasTier(31, 4) then
+      if S.Crackshot:IsAvailable() and Player:HasTier(31, 4) then
         if (RtB_Buffs() <= 1 + num(Player:BuffUp(S.LoadedDiceBuff))) then
-          Cache.APLVar.RtB_Reroll = true
-        end
-      end
-      if not S.HiddenOpportunity:IsAvailable() then
-        if RtB_Buffs() == 1 or (rtb_value() <= 2 and Player:BuffUp(S.LoadedDiceBuff)) then
           Cache.APLVar.RtB_Reroll = true
         end
       end
@@ -313,12 +301,11 @@ local function StealthCDs ()
 end
 
 local function CDs ()
-  -- # Cooldowns Use Adrenaline Rush if it is not active and at 2cp if Improved, but Crackshot builds can refresh it in stealth
-  -- actions.cds=adrenaline_rush,if=(!buff.adrenaline_rush.up|stealthed.all&talent.crackshot&talent.improved_adrenaline_rush)
-  -- &(combo_points<=2|!talent.improved_adrenaline_rush)
+  -- # Use Adrenaline Rush if it is not active and between 1-5 CP, but Crackshot builds can refresh it early in stealth
+  -- actions.cds=adrenaline_rush,if=(!buff.adrenaline_rush.up|stealthed.all&talent.crackshot&talent.improved_adrenaline_rush)&(!variable.finish_condition|!talent.improved_adrenaline_rush)
   if CDsON() and S.AdrenalineRush:IsCastable()
     and (not Player:BuffUp(S.AdrenalineRush) or Player:StealthUp(true, true) and S.Crackshot:IsAvailable() and S.ImprovedAdrenalineRush:IsAvailable())
-    and (ComboPoints <= 2 or not S.ImprovedAdrenalineRush:IsAvailable()) then
+    and (not Finish_Condition() or not S.ImprovedAdrenalineRush:IsAvailable()) then
     if HR.Cast(S.AdrenalineRush, Settings.Outlaw.OffGCDasOffGCD.AdrenalineRush) then return "Cast Adrenaline Rush" end
   end
 
@@ -357,21 +344,14 @@ local function CDs ()
   end
 
   -- # Use Keep it Rolling with at least 3 buffs (4 with T31)
-  -- actions.cds+=/keep_it_rolling,if=!variable.rtb_reroll&variable.rtb_value>=3&(buff.shadow_dance.down|rtb_buffs>=6)&(variable.rtb_value>=3.5|(buff.skull_and_crossbones.up&buff.skull_and_crossbones.remains<1)|(buff.true_bearing.up&buff.true_bearing.remains<1)|(buff.ruthless_precision.up&buff.ruthless_precision.remains<1)|(buff.broadside.up&buff.broadside.remains<1)|(buff.buried_treasure.up&buff.buried_treasure.remains<1)|(buff.grand_melee.up&buff.grand_melee.remains<1))
-  if S.KeepItRolling:IsReady() and not RtB_Reroll() and rtb_value() >= 3 
-       and (Player:BuffDown(S.ShadowDance) or RtB_Buffs() >= 6) 
-       and (rtb_value() >= 3.5 
-       or (Player:BuffUp(S.SkullandCrossbones) and Player:BuffRemains(S.SkullandCrossbones) < 1)
-       or (Player:BuffUp(S.TrueBearing) and Player:BuffRemains(S.TrueBearing) < 1)
-       or (Player:BuffUp(S.RuthlessPrecision) and Player:BuffRemains(S.RuthlessPrecision) < 1)
-       or (Player:BuffUp(S.Broadside) and Player:BuffRemains(S.Broadside) < 1)
-       or (Player:BuffUp(S.BuriedTreasure) and Player:BuffRemains(S.BuriedTreasure) < 1)
-       or (Player:BuffUp(S.GrandMelee) and Player:BuffRemains(S.GrandMelee) < 1)) then
+  -- -- actions.cds+=/keep_it_rolling,if=!variable.rtb_reroll&rtb_buffs>=3+set_bonus.tier31_4pc&(buff.shadow_dance.down|rtb_buffs>=6)
+  if S.KeepItRolling:IsReady() and not RtB_Reroll() and RtB_Buffs() >= 3 + num(Player:HasTier(31, 4)) and (Player:BuffDown(S.ShadowDance) or RtB_Buffs() >= 6) then
     if HR.Cast(S.KeepItRolling, Settings.Outlaw.GCDasOffGCD.KeepItRolling) then return "Cast Keep it Rolling" end
   end
 
-  --actions.cds+=/ghostly_strike
-  if S.GhostlyStrike:IsAvailable() and S.GhostlyStrike:IsReady() then
+  -- # Don't Ghostly Strike at 7cp
+  -- actions.cds+=/ghostly_strike,if=effective_combo_points<cp_max_spend
+  if S.GhostlyStrike:IsAvailable() and S.GhostlyStrike:IsReady() and EffectiveComboPoints < Rogue.CPMaxSpend() then
     if HR.Cast(S.GhostlyStrike, Settings.Outlaw.OffGCDasOffGCD.GhostlyStrike) then return "Cast Ghostly Strike" end
   end
 
@@ -495,11 +475,10 @@ local function Stealth()
 		if HR.CastPooling(S.Dispatch) then return "Cast Dispatch" end
 	end
 
-	-- # 2 Fan the Hammer Crackshot builds can consume Opportunity in stealth with max stacks, Broadside, and low CPs, or with Greenskins active
-	-- actions.stealth+=/pistol_shot,if=talent.crackshot&talent.fan_the_hammer.rank>=2&buff.opportunity.stack>=6
-	-- &(buff.broadside.up&combo_points<=1|buff.greenskins_wickers.up)
-	if S.PistolShot:IsCastable() and Target:IsSpellInRange(S.PistolShot) and S.Crackshot:IsAvailable() and S.FanTheHammer:TalentRank() >= 2 and Player:BuffStack(S.Opportunity) >= 6
-		and (Player:BuffUp(S.Broadside) and ComboPoints <= 1 or Player:BuffUp(S.GreenskinsWickersBuff)) then
+	-- # 2 Fan the Hammer Crackshot builds can consume Opportunity without Audacity in stealth with Broadside and low CPs, or with Greenskins active
+	-- actions.stealth+=/pistol_shot,if=talent.crackshot&talent.fan_the_hammer.rank>=2&buff.opportunity.up&(buff.broadside.up&combo_points<=2|buff.greenskins_wickers.up)&!buff.audacity.up
+	if S.PistolShot:IsCastable() and Target:IsSpellInRange(S.PistolShot) and S.Crackshot:IsAvailable() and S.FanTheHammer:TalentRank() >= 2 and Player:BuffUp(S.Opportunity)
+		and (Player:BuffUp(S.Broadside) and ComboPoints <= 2 or Player:BuffUp(S.GreenskinsWickersBuff)) and Player:BuffDown(S.AudacityBuff) then
 		if HR.CastPooling(S.PistolShot) then return "Cast Pistol Shot" end
 	end
 
