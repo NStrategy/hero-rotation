@@ -475,10 +475,10 @@ local function Stealth()
 		if HR.CastPooling(S.Dispatch) then return "Cast Dispatch" end
 	end
 
-	-- # 2 Fan the Hammer Crackshot builds can consume Opportunity without Audacity in stealth with Broadside and low CPs, or with Greenskins active
-	-- actions.stealth+=/pistol_shot,if=talent.crackshot&talent.fan_the_hammer.rank>=2&buff.opportunity.up&(buff.broadside.up&combo_points<=2|buff.greenskins_wickers.up)&!buff.audacity.up
-	if S.PistolShot:IsCastable() and Target:IsSpellInRange(S.PistolShot) and S.Crackshot:IsAvailable() and S.FanTheHammer:TalentRank() >= 2 and Player:BuffUp(S.Opportunity)
-		and (Player:BuffUp(S.Broadside) and ComboPoints <= 2 or Player:BuffUp(S.GreenskinsWickersBuff)) and Player:BuffDown(S.AudacityBuff) then
+	-- # 2 Fan the Hammer Crackshot builds can consume Opportunity in stealth with max stacks, Broadside, and low CPs, or with Greenskins active
+	-- actions.stealth+=/pistol_shot,if=talent.crackshot&talent.fan_the_hammer.rank>=2&buff.opportunity.stack>=6&(buff.broadside.up&combo_points<=1|buff.greenskins_wickers.up)
+	if S.PistolShot:IsCastable() and Target:IsSpellInRange(S.PistolShot) and S.Crackshot:IsAvailable() and S.FanTheHammer:TalentRank() >= 2 and Player:BuffStack(S.Opportunity) >= 6
+		and (Player:BuffUp(S.Broadside) and ComboPoints <= 1 or Player:BuffUp(S.GreenskinsWickersBuff)) then
 		if HR.CastPooling(S.PistolShot) then return "Cast Pistol Shot" end
 	end
 
