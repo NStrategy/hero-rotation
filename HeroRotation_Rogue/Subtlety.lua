@@ -657,9 +657,9 @@ local function CDs ()
 
 
     if Settings.Commons.Enabled.Trinkets then
-      -- actions.cds+=/use_item,name=ashes_of_the_embersoul,if=buff.flagellation_buff.up&(buff.danse_macabre.stack>=3|!talent.danse_macabre|raid_event.adds.up|equipped.witherbarks_branch) -- Fuus APL
+      -- actions.cds+=/use_item,name=ashes_of_the_embersoul,if=(buff.cold_blood.up|(!talent.danse_macabre&buff.shadow_dance.up|buff.danse_macabre.stack>=3)&!talent.cold_blood)|fight_remains<10
       if I.AshesoftheEmbersoul:IsEquippedAndReady() then
-        if Player:BuffUp(S.Flagellation) and (Player:BuffStack(S.DanseMacabreBuff) >= 3 or not S.DanseMacabre:IsAvailable() or I.WitherbarksBranch:IsEquipped()) then
+        if (Player:BuffUp(S.ColdBlood) or (not S.DanseMacabre:IsAvailable() and Player:BuffUp(S.ShadowDanceBuff) or Player:BuffStack(S.DanseMacabreBuff) >= 3) and not S.ColdBlood:IsAvailable()) or HL.BossFilteredFightRemains("<", 10) then
            if HR.Cast(I.AshesoftheEmbersoul, nil, Settings.Commons.DisplayStyle.Trinkets) then return "Ashes Of the Embersoul"; end
         end
       end
@@ -694,8 +694,8 @@ local function CDs ()
             if HR.Cast(I.BeaconToTheBeyond, nil, Settings.Commons.DisplayStyle.Trinkets) then return "Beacon To The Beyond" end
         end
       end
-      -- actions.cds+=/use_items,if=!stealthed.all&(!trinket.mirror_of_fractured_tomorrows.cooldown.ready|!equipped.mirror_of_fractured_tomorrows)|fight_remains<10
-      if not Player:StealthUp(true, true) and (not I.MirrorOfFracturedTomorrows:IsReady() or not I.MirrorOfFracturedTomorrows:IsEquipped())
+      -- actions.cds+=/use_items,if=!stealthed.all&(!trinket.mirror_of_fractured_tomorrows.cooldown.ready|!equipped.mirror_of_fractured_tomorrows)&(!trinket.ashes_of_the_embersoul.cooldown.ready|!equipped.ashes_of_the_embersoul)|fight_remains<10
+      if not Player:StealthUp(true, true) and (not I.MirrorOfFracturedTomorrows:IsReady() or not I.MirrorOfFracturedTomorrows:IsEquipped()) and (not I.AshesoftheEmbersoul:IsReady() or not I.AshesoftheEmbersoul:IsEquipped())
         or HL.BossFilteredFightRemains("<", 10) then
         local TrinketToUse = Player:GetUseableItems(OnUseExcludes)
         if TrinketToUse then
