@@ -609,6 +609,13 @@ local function CDs ()
         if ShouldReturn then return "Vanish Macro " .. ShouldReturn end
       end
     end
+    -- custom TSwift condition
+    if S.Vanish:IsCastable() then
+      if Player:BuffUp(S.ShadowDanceBuff) and S.SecretTechnique:TimeSinceLastCast() < 5 and Player:BuffUp(S.ShadowBlades) and Target:NPCID() == 209090 then
+        ShouldReturn = StealthMacro(S.Vanish, EnergyThreshold)
+        if ShouldReturn then return "Vanish Macro " .. ShouldReturn end
+      end
+    end
     -- Fuu Tea condition
     if S.ThistleTea:IsReady() then
       -- actions.cds+=/thistle_tea,if=!buff.thistle_tea.up&cooldown.thistle_tea.charges_fractional>=2.5&buff.shadow_dance.remains>=4 -- Fuus APL
