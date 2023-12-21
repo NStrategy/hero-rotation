@@ -611,7 +611,7 @@ local function CDs ()
     end
     -- custom TSwift condition
     if S.Vanish:IsCastable() then
-      if Player:BuffUp(S.ShadowDanceBuff) and S.SecretTechnique:TimeSinceLastCast() < 5 and Player:BuffUp(S.ShadowBlades) and Target:NPCID() == 209090 then
+      if Player:BuffUp(S.ShadowDanceBuff) and S.SecretTechnique:TimeSinceLastCast() < 5 and not S.Vanish:TimeSinceLastCast() < 5 and Player:BuffUp(S.ShadowBlades) and Target:NPCID() == 209090 then
         ShouldReturn = StealthMacro(S.Vanish, EnergyThreshold)
         if ShouldReturn then return "Vanish Macro " .. ShouldReturn end
       end
