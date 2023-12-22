@@ -195,12 +195,12 @@ local function Stealth_Helper ()
   end
 end
 local function ShD_Threshold ()
-  -- actions.stealth_cds=variable,name=shd_threshold,value=cooldown.shadow_dance.charges_fractional>=0.75+talent.shadow_dance
-  return S.ShadowDance:ChargesFractional() >= 0.75 + BoolToInt(S.ShadowDanceTalent:IsAvailable())
+  -- actions.stealth_cds=variable,name=shd_threshold,value=cooldown.shadow_dance.charges_fractional>=1+talent.shadow_dance
+  return S.ShadowDance:ChargesFractional() >= 1 + BoolToInt(S.ShadowDanceTalent:IsAvailable())
 end
 local function ShD_Combo_Points ()
-  -- actions.stealth_cds+=/variable,name=shd_combo_points,value=combo_points.deficit>=3
-  return ComboPointsDeficit >= 3
+  -- actions.stealth_cds+=/variable,name=shd_combo_points,value=combo_points.deficit=0
+  return ComboPointsDeficit == 0
 end
 local function SnD_Condition ()
   -- actions+=/variable,name=snd_condition,value=buff.slice_and_dice.up|spell_targets.shuriken_storm>=cp_max_spend
@@ -611,7 +611,7 @@ local function CDs ()
     end
     -- custom TSwift condition
     if S.Vanish:IsCastable() then
-      if Player:BuffUp(S.ShadowDanceBuff) and S.SecretTechnique:TimeSinceLastCast() < 5 and not S.Vanish:TimeSinceLastCast() < 5 and Player:BuffUp(S.ShadowBlades) and Target:NPCID() == 209090 then
+      if Player:BuffUp(S.ShadowDanceBuff) and S.SecretTechnique:TimeSinceLastCast() < 5 and not (S.Vanish:TimeSinceLastCast() < 5) and Player:BuffUp(S.ShadowBlades) and Target:NPCID() == 209090 then
         ShouldReturn = StealthMacro(S.Vanish, EnergyThreshold)
         if ShouldReturn then return "Vanish Macro " .. ShouldReturn end
       end
@@ -720,7 +720,7 @@ end
 -- # Stealth Cooldowns
 local function Stealth_CDs (EnergyThreshold)
   if HR.CDsON() then
-    -- actions.stealth_cds+=/vanish,if=(combo_points.deficit>1|buff.shadow_blades.up&talent.invigorating_shadowdust)&!variable.shd_threshold&(cooldown.flagellation.remains>=60|!talent.flagellation|fight_remains<=(30*cooldown.vanish.charges))&(cooldown.symbols_of_death.remains>3|!set_bonus.tier30_2pc)&(cooldown.secret_technique.remains>=10|!talent.secret_technique|cooldown.vanish.charges>=2&talent.invigorating_shadowdust&(buff.the_rotten.up|!talent.the_rotten)&!raid_event.adds.up) -- Maybe do a condition for Smolderon specifically, but probably too difficult
+    -- actions.stealth_cds+=/vanish,if=(combo_points.deficit>1|buff.shadow_blades.up&talent.invigorating_shadowdust)&!variable.shd_threshold&(cooldown.flagellation.remains>=60|!talent.flagellation|fight_remains<=(30*cooldown.vanish.charges))&(cooldown.symbols_of_death.remains>3|!set_bonus.tier30_2pc)&(cooldown.secret_technique.remains>=10|!talent.secret_technique|cooldown.vanish.charges>=2&talent.invigorating_shadowdust&(buff.the_rotten.up|!talent.the_rotten)&!raid_event.adds.up) 
       if S.Vanish:IsCastable()
         and (ComboPointsDeficit > 1 or Player:BuffUp(S.ShadowBlades) and S.InvigoratingShadowdust:IsAvailable())
         and not ShD_Threshold()
@@ -742,12 +742,11 @@ local function Stealth_CDs (EnergyThreshold)
     end
   end
   if TargetInMeleeRange and S.ShadowDance:IsCastable() and HR.CDsON() then
-    -- actions.stealth_cds+=/shadow_dance,if=(dot.rupture.ticking|talent.invigorating_shadowdust)&variable.rotten_cb&(!talent.the_first_dance|combo_points.deficit>=4|buff.shadow_blades.up)&(variable.shd_combo_points&variable.shd_threshold|(buff.shadow_blades.up|cooldown.symbols_of_death.up&!talent.sepsis|buff.symbols_of_death.remains>=4&!set_bonus.tier30_2pc|!buff.symbols_of_death.remains&set_bonus.tier30_2pc)&cooldown.secret_technique.remains<10+12*(!talent.invigorating_shadowdust|set_bonus.tier30_2pc))
+    -- actions.stealth_cds+=/shadow_dance,if=(dot.rupture.ticking|talent.invigorating_shadowdust)&variable.rotten_cb&(!talent.the_first_dance|combo_points.deficit>=4|buff.shadow_blades.up)&((buff.shadow_blades.up|cooldown.symbols_of_death.up&!talent.sepsis|buff.symbols_of_death.remains>=4&!set_bonus.tier30_2pc|!buff.symbols_of_death.remains&set_bonus.tier30_2pc)&cooldown.secret_technique.remains<10+12*(!talent.invigorating_shadowdust|set_bonus.tier30_2pc))
     -- NOTE: |buff.flagellation.up is a dead operation in SimC due to a typo, since the buff we use in-game is buff.flagellation_buff.up, ignoring
     if  (Target:DebuffUp(S.Rupture) or S.InvigoratingShadowdust:IsAvailable()) and Rotten_CB() and 
-        (not S.TheFirstDance:IsAvailable() or ComboPointsDeficit >= 4 or Player:BuffUp(S.ShadowBlades)) and
-        (ShD_Combo_Points() and ShD_Threshold() or 
-        (Player:BuffUp(S.ShadowBlades) or 
+        (not S.TheFirstDance:IsAvailable() or ComboPointsDeficit >= 4 or Player:BuffUp(S.ShadowBlades)) and 
+        ((Player:BuffUp(S.ShadowBlades) or 
         S.SymbolsofDeath:CooldownUp() and not S.Sepsis:IsAvailable() or 
         Player:BuffRemains(S.SymbolsofDeath) >= 4 and not Player:HasTier(30, 2) or 
         not Player:BuffUp(S.SymbolsofDeath) and Player:HasTier(30, 2)) and
@@ -929,13 +928,13 @@ local function APL ()
       if ShouldReturn then return "Stealth CDs: " .. ShouldReturn end
     end
 
-    -- actions+=/call_action_list,name=finish,if=effective_combo_points>=cp_max_spend
+    -- actions+=/call_action_list,name=finish,if=effective_combo_points>=cp_max_spend&(cooldown.symbols_of_death.remains>3|buff.symbols_of_death.up)
     -- # Finish at maximum or close to maximum combo point value
-    -- actions+=/call_action_list,name=finish,if=combo_points.deficit<=1|fight_remains<=1&effective_combo_points>=3
+    -- actions+=/call_action_list,name=finish,if=(combo_points.deficit<=1|fight_remains<=1&effective_combo_points>=3)&(cooldown.symbols_of_death.remains>3|buff.symbols_of_death.up)
     -- # Finish at 4+ against 4 targets (outside stealth)
     -- actions+=/call_action_list,name=finish,if=spell_targets.shuriken_storm>=4&effective_combo_points>=4
-    if EffectiveComboPoints >= Rogue.CPMaxSpend()
-      or (ComboPointsDeficit <= 1 or (HL.BossFilteredFightRemains("<=", 1) and EffectiveComboPoints >= 3))
+    if EffectiveComboPoints >= Rogue.CPMaxSpend() and (S.SymbolsofDeath:CooldownRemains() > 3 or Player:BuffUp(S.SymbolsofDeath))
+      or ((ComboPointsDeficit <= 1 or (HL.BossFilteredFightRemains("<=", 1) and EffectiveComboPoints >= 3))) and (S.SymbolsofDeath:CooldownRemains() > 3 or Player:BuffUp(S.SymbolsofDeath))
       or (MeleeEnemies10yCount >= 4 and EffectiveComboPoints >= 4) then
       ShouldReturn = Finish()
       if ShouldReturn then return "Finish: " .. ShouldReturn end
