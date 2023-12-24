@@ -20,6 +20,7 @@ local CDsON = HR.CDsON
 local Cast = HR.Cast
 local CastPooling = HR.CastPooling
 local CastSuggested = HR.CastSuggested
+local CastAnnotated = HR.CastAnnotated
 -- Num/Bool Helper Functions
 local num = HR.Commons.Everyone.num
 local bool = HR.Commons.Everyone.bool
@@ -313,7 +314,7 @@ local function CDs ()
   -- actions.cds+=/blade_flurry,if=(spell_targets>=2-talent.underhanded_upper_hand&!stealthed.rogue)&buff.blade_flurry.remains<gcd
   if S.BladeFlurry:IsReady() then
     if (EnemiesBFCount >= 2 or (S.UnderhandedUpperhand:IsAvailable() and Player:BuffUp(S.AdrenalineRush) and EnemiesBFCount == 1) and not Player:StealthUp(true, false))
-      and Player:BuffRemains(S.BladeFlurry) < Player:GCDRemains() then
+      and Player:BuffRemains(S.BladeFlurry) < Player:GCD() then
       if Settings.Outlaw.GCDasOffGCD.BladeFlurry then
         HR.CastSuggested(S.BladeFlurry)
       else
@@ -450,7 +451,7 @@ end
 local function Stealth()
 	-- actions.stealth=blade_flurry,if=talent.subterfuge&talent.hidden_opportunity&spell_targets>=2&buff.blade_flurry.remains<gcd
 	if S.BladeFlurry:IsReady() and S.BladeFlurry:IsCastable() and AoEON() and S.Subterfuge:IsAvailable() and S.HiddenOpportunity:IsAvailable() and EnemiesBFCount >= 2
-		and Player:BuffRemains(S.BladeFlurry) <= Player:GCDRemains() then
+		and Player:BuffRemains(S.BladeFlurry) <= Player:GCD() then
 		if Settings.Outlaw.GCDasOffGCD.BladeFlurry then
 		  HR.CastSuggested(S.BladeFlurry)
 		else
@@ -674,7 +675,7 @@ local function APL ()
 
   if Everyone.TargetIsValid() then
     -- Interrupts
-    ShouldReturn = Everyone.Interrupt(5, S.Kick, true, Interrupts)
+    ShouldReturn = Everyone.Interrupt(S.Kick, true, Interrupts)
     if ShouldReturn then return ShouldReturn end
 
     -- Blind
@@ -725,6 +726,12 @@ local function APL ()
     if S.PistolShot:IsCastable() and Target:IsSpellInRange(S.PistolShot) and not Target:IsInRange(BladeFlurryRange) and not Player:StealthUp(true, true)
       and EnergyDeficit < 25 and (ComboPointsDeficit >= 1 or EnergyTimeToMax <= 1.2) then
       if HR.Cast(S.PistolShot) then return "Cast Pistol Shot (OOR)" end
+    end
+    -- Generic Pooling suggestion
+    if not Target:IsSpellInRange(S.Dispatch) then
+      if CastAnnotated(S.PoolEnergy, false, "OOR") then return "Pool Energy (OOR)" end
+    else
+      if Cast(S.PoolEnergy) then return "Pool Energy" end
     end
   end
 end

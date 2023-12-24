@@ -47,7 +47,6 @@ local OnUseExcludes = {
   I.MirrorOfFracturedTomorrows:ID(),
   I.AshesoftheEmbersoul:ID(),
   I.WitherbarksBranch:ID(),
-  I.BandolierOfTwistedBlades:ID(),
 }
 -- Rotation Var
 local MeleeRange, AoERange, TargetInMeleeRange, TargetInAoERange
@@ -881,7 +880,7 @@ local function APL ()
 
   if Everyone.TargetIsValid() then
     -- Interrupts
-    ShouldReturn = Everyone.Interrupt(5, S.Kick, true, Interrupts)
+    ShouldReturn = Everyone.Interrupt(S.Kick, true, Interrupts)
     if ShouldReturn then return ShouldReturn end
 
     -- Blind
