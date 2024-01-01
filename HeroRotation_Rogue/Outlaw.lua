@@ -477,10 +477,10 @@ local function Stealth()
 	end
 
 	-- # 2 Fan the Hammer Crackshot builds can consume Opportunity in stealth with max stacks, Broadside, and low CPs, or with Greenskins active
-	-- actions.stealth+=/pistol_shot,if=talent.crackshot&talent.fan_the_hammer.rank>=2&buff.opportunity.stack>=6&(buff.broadside.up&combo_points<=1|buff.greenskins_wickers.up)
-	if S.PistolShot:IsCastable() and Target:IsSpellInRange(S.PistolShot) and S.Crackshot:IsAvailable() and S.FanTheHammer:TalentRank() >= 2 and Player:BuffStack(S.Opportunity) >= 6
+	-- actions.stealth+=/pistol_shot,if=talent.crackshot&talent.fan_the_hammer.rank>=2&buff.opportunity.stack>=6&(buff.broadside.up&combo_points<=1|buff.greenskins_wickers.up) NS note: added not KiR and HO check since KiR builds would only want to use PS below 4 cp, also not checking for max stacks anymore since faq states Pistol Shot in stealth with an Opportunity proc  
+	if S.PistolShot:IsCastable() and not S.KeepItRolling:IsAvailable() and S.HiddenOpportunity:IsAvailable() and Target:IsSpellInRange(S.PistolShot) and S.Crackshot:IsAvailable() and S.FanTheHammer:TalentRank() >= 2 and Player:BuffUp(S.Opportunity)
 		and (Player:BuffUp(S.Broadside) and ComboPoints <= 1 or Player:BuffUp(S.GreenskinsWickersBuff)) then
-		if HR.CastPooling(S.PistolShot) then return "Cast Pistol Shot" end
+		if HR.CastPooling(S.PistolShot) then return "Cast Pistol Shot (Stealth HO)" end
 	end
 
 	-- actions.stealth+=/ambush,if=talent.hidden_opportunity
@@ -543,7 +543,8 @@ local function Build ()
 
 	-- # With Audacity + Hidden Opportunity + Fan the Hammer, consume Opportunity to proc Audacity any time Ambush is not available
 	-- actions.build+=/pistol_shot,if=talent.fan_the_hammer&talent.audacity&talent.hidden_opportunity&buff.opportunity.up&!buff.audacity.up
-	if S.FanTheHammer:IsAvailable() and S.Audacity:IsAvailable() and S.HiddenOpportunity:IsAvailable() and Player:BuffUp(S.Opportunity) and Player:BuffDown(S.AudacityBuff) then
+  -- NS note: following rogue faq  Pistol Shot with an Opportunity proc any time Ambush is not available. Still use even if you are at 5cp. (would probably dont need the check but who care really)
+	if S.FanTheHammer:IsAvailable() and S.Audacity:IsAvailable() and S.HiddenOpportunity:IsAvailable() and Player:BuffUp(S.Opportunity) and Player:BuffDown(S.AudacityBuff) and ComboPoints <=5 then
 		if HR.CastPooling(S.PistolShot) then return "Cast Pistol Shot (Audacity)" end
 	end
 
@@ -564,7 +565,7 @@ local function Build ()
 	-- &(!cooldown.vanish.ready&!cooldown.shadow_dance.ready|stealthed.all|!talent.crackshot|talent.fan_the_hammer.rank<=1)
 	if S.FanTheHammer:IsAvailable() and Player:BuffUp(S.Opportunity) and ComboPointsDeficit > (1+num(S.QuickDraw:IsAvailable())*S.FanTheHammer:TalentRank())
 		and (not S.Vanish:IsReady() and not S.ShadowDance:IsReady() or Player:StealthUp(true, true) or not S.Crackshot:IsAvailable() or S.FanTheHammer:TalentRank() <= 1) then
-		if HR.CastPooling(S.PistolShot) then return "Cast Pistol Shot" end
+		if HR.CastPooling(S.PistolShot) then return "Cast Pistol Shot (KiR)" end
 	end
 
 	-- #If not using Fan the Hammer, then consume Opportunity based on energy, when it will exactly cap CPs, or when using Quick Draw
