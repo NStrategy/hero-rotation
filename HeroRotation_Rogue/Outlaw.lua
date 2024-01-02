@@ -554,6 +554,12 @@ local function Build ()
 		if HR.CastPooling(S.PistolShot) then return "Cast Pistol Shot (GSW Dump)" end
 	end
 
+  -- #custom ps rules from tc channel: With 3 FTH stacks: Without broadside, use PS with 3 or less cp; with broadside use PS with 1 or less cp.
+  -- actions.build+=/pistol_shot,if=talent.fan_the_hammer&buff.opportunity.up&combo_points<=(3-buff.broadside.up*2)
+  if S.FanTheHammer:IsAvailable() and Player:BuffUp(S.Opportunity) and ComboPoints <= (3 - num(Player:BuffUp(S.Broadside)) * 2) then
+    if HR.CastPooling(S.PistolShot) then return "Cast Pistol Shot (FtH TC Rule)" end
+  end
+
 	-- #With Fan the Hammer, consume Opportunity at max stacks or if it will expire
 	-- actions.build+=/pistol_shot,if=talent.fan_the_hammer&buff.opportunity.up&(buff.opportunity.stack>=buff.opportunity.max_stack|buff.opportunity.remains<2)
 	if S.FanTheHammer:IsAvailable() and Player:BuffUp(S.Opportunity) and (Player:BuffStack(S.Opportunity) >= 6 or Player:BuffRemains(S.Opportunity) < 2) then
@@ -561,8 +567,7 @@ local function Build ()
 	end
 
 	-- # With Fan the Hammer, consume Opportunity based on CP deficit, and 2 Fan the Hammer Crackshot builds can briefly hold stacks for an upcoming stealth cooldown
-	-- actions.build+=/pistol_shot,if=talent.fan_the_hammer&buff.opportunity.up&combo_points.deficit>((1+talent.quick_draw)*talent.fan_the_hammer.rank)
-	-- &(!cooldown.vanish.ready&!cooldown.shadow_dance.ready|stealthed.all|!talent.crackshot|talent.fan_the_hammer.rank<=1)
+	-- actions.build+=/pistol_shot,if=talent.fan_the_hammer&buff.opportunity.up&combo_points.deficit>((1+talent.quick_draw)*talent.fan_the_hammer.rank)&(!cooldown.vanish.ready&!cooldown.shadow_dance.ready|stealthed.all|!talent.crackshot|talent.fan_the_hammer.rank<=1)
 	if S.FanTheHammer:IsAvailable() and Player:BuffUp(S.Opportunity) and ComboPointsDeficit > (1+num(S.QuickDraw:IsAvailable())*S.FanTheHammer:TalentRank())
 		and (not S.Vanish:IsReady() and not S.ShadowDance:IsReady() or Player:StealthUp(true, true) or not S.Crackshot:IsAvailable() or S.FanTheHammer:TalentRank() <= 1) then
 		if HR.CastPooling(S.PistolShot) then return "Cast Pistol Shot (KiR)" end
