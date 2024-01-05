@@ -224,11 +224,18 @@ local function RtB_Reroll ()
   return Cache.APLVar.RtB_Reroll
 end
 
--- # Use finishers if at -1 from max combo points, or -2 in Stealth with Crackshot
+-- # Use finishers if at -1 from max combo points, or -2 in Stealth with Crackshot NS note: Force 7 Cp unless max opp stacks
 local function Finish_Condition ()
-  -- actions+=/variable,name=finish_condition,value=effective_combo_points>=cp_max_spend-1-(stealthed.all&talent.crackshot)
-  return EffectiveComboPoints >= Rogue.CPMaxSpend()-1-num((Player:StealthUp(true, true)) and S.Crackshot:IsAvailable())
+    -- actions+=/variable,name=finish_condition,if=(!cooldown.vanish.ready&!cooldown.shadow_dance.ready|stealthed.all|spell_targets.blade_flurry>4),value=effective_combo_points>=cp_max_spend-1-(stealthed.all&talent.crackshot)
+    if (not S.Vanish:IsReady() and not S.ShadowDance:IsReady()) or Player:StealthUp(true, true) or EnemiesBFCount > 4 then
+        return EffectiveComboPoints >= Rogue.CPMaxSpend() - 1 - num(Player:StealthUp(true, true) and S.Crackshot:IsAvailable())
+    -- actions+=/variable,name=finish_condition,if=(cooldown.vanish.ready|cooldown.shadow_dance.ready)&!stealthed.all&spell_targets.blade_flurry<5,value=combo_points>=cp_max_spend-(buff.opportunity.stack>=buff.opportunity.max_stack)
+    elseif (S.Vanish:IsReady() or S.ShadowDance:IsReady()) and not Player:StealthUp(true, true) and EnemiesBFCount < 5 then
+        return ComboPoints >= Rogue.CPMaxSpend() - num(Player:BuffStack(S.Opportunity) >= 6)
+    end
+    return false
 end
+
 
 -- # Ensure we want to cast Ambush prior to triggering a Stealth cooldown
 local function Ambush_Condition ()
@@ -273,7 +280,7 @@ local function StealthCDs ()
   -- # Crackshot builds use Dance at finish condition. NS note:  Dance into BtE on cooldown at 6+ CPs with BtE ready
   -- actions.stealth_cds+=/shadow_dance,if=talent.crackshot&(variable.finish_condition|buff.adrenaline_rush.up&buff.adrenaline_rush.remains<2)
   if S.ShadowDance:IsAvailable() and S.BetweentheEyes:IsReady() and S.ShadowDance:IsCastable() and S.Crackshot:IsAvailable() and (Finish_Condition() or (Player:BuffUp(S.AdrenalineRush) and Player:BuffRemains(S.AdrenalineRush) < 2)) then
-    if HR.Cast(S.ShadowDance, Settings.Commons.OffGCDasOffGCD.ShadowDance) then return "Cast Shadow Dance (Finish)" end
+    if HR.Cast(S.ShadowDance, Settings.Commons.OffGCDasOffGCD.ShadowDance) then return "Cast Shadow Dance (Finish or Extend)" end
   end
   -- # Hidden Opportunity builds without Crackshot use Dance if Audacity and Opportunity are not active
   -- actions.stealth_cds+=/shadow_dance,if=!talent.keep_it_rolling&variable.shadow_dance_condition&buff.slice_and_dice.up
@@ -332,9 +339,9 @@ local function CDs ()
   
 
   -- # # Use Roll the Bones if reroll conditions are met, or with no buffs, or 2s before buffs expire with T31, or 7s before buffs expire with Vanish/Dance ready
-  -- actions.cds+=/roll_the_bones,if=variable.rtb_reroll|rtb_buffs=0|(rtb_buffs.max_remains<=2|buff.broadside.down&rtb_buffs<=3&buff.loaded_dice.up&!stealthed.all)&set_bonus.tier31_4pc|rtb_buffs.max_remains<=7&(cooldown.shadow_dance.ready|cooldown.vanish.ready)&!stealthed.all
+  -- actions.cds+=/roll_the_bones,if=variable.rtb_reroll|rtb_buffs=0|(rtb_buffs.max_remains<=2|(buff.broadside.down|rtb_buffs.max_remains<=9)&rtb_buffs<=3&buff.loaded_dice.up&!stealthed.all)&set_bonus.tier31_4pc|rtb_buffs.max_remains<=7&(cooldown.shadow_dance.ready|cooldown.vanish.ready)&!stealthed.all NS note: Added a KiR check for bs condition as adivsed in the tc channel
   if S.RolltheBones:IsReady() then
-    if RtB_Reroll() or RtB_Buffs() == 0 or (LongestRtBRemains() <= 3 or not Player:BuffUp(S.Broadside) and RtB_Buffs() <= 3 and Player:BuffUp(S.LoadedDiceBuff) and not Player:StealthUp(true, true)) and Player:HasTier(31, 4) or LongestRtBRemains() <= 8 and (S.ShadowDance:IsReady() or S.Vanish:IsReady()) and not Player:StealthUp(true, true) then
+    if RtB_Reroll() or RtB_Buffs() == 0 or (LongestRtBRemains() <= 2 or ((Player:BuffDown(S.Broadside) and S.KeepItRolling:IsAvailable()) or LongestRtBRemains() <= 9) and RtB_Buffs() <= 3 and Player:BuffUp(S.LoadedDiceBuff) and not Player:StealthUp(true, true)) and Player:HasTier(31, 4) or LongestRtBRemains() <= 7 and (S.ShadowDance:IsReady() or S.Vanish:IsReady()) and not Player:StealthUp(true, true) then
       if HR.Cast(S.RolltheBones, Settings.Outlaw.GCDasOffGCD.RolltheBones) then return "Cast Roll the Bones" end
     end
   end
