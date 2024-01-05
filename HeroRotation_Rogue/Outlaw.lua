@@ -181,10 +181,10 @@ local function RtB_Reroll ()
           Cache.APLVar.RtB_Reroll = true
         end
       end
-      -- Added safety reroll check for the situation if we are at 3 seconds of normal buffs and a cto from stealth procs, my new LongestRtBRemains would not trigger in the RTB condition, thereby not rerolling correctly. With this, if there are 3 or more buffs under 3 seconds, it would reroll even tho the longest duration may be longer. Will add further safety checks in the future/if needed
+      -- Added safety reroll check for the situation if we are at 2 seconds of normal buffs and a cto from stealth procs, my new LongestRtBRemains would not trigger in the RTB condition, thereby not rerolling correctly. With this, if there are 3 or more buffs under 2 seconds, it would reroll even tho the longest duration may be longer. Will add further safety checks in the future/if needed
       local buffsCloseToExpiration = 0
       for _, buff in ipairs(RtB_BuffsList) do
-        if Player:BuffUp(buff) and Player:BuffRemains(buff) <= 3 then
+        if Player:BuffUp(buff) and Player:BuffRemains(buff) <= 2 then
           buffsCloseToExpiration = buffsCloseToExpiration + 1
         end
       end
@@ -224,7 +224,7 @@ local function RtB_Reroll ()
   return Cache.APLVar.RtB_Reroll
 end
 
--- # Use finishers if at -1 from max combo points, or -2 in Stealth with Crackshot NS note: Force 7 Cp unless max opp stacks
+-- # Use finishers if at -1 from max combo points, or -2 in Stealth with Crackshot NS note: Force 7 Cp outside of steatlh with Vanish or SD ready unless max opp stacks
 local function Finish_Condition ()
     -- actions+=/variable,name=finish_condition,if=(!cooldown.vanish.ready&!cooldown.shadow_dance.ready|stealthed.all|spell_targets.blade_flurry>4),value=effective_combo_points>=cp_max_spend-1-(stealthed.all&talent.crackshot)
     if (not S.Vanish:IsReady() and not S.ShadowDance:IsReady()) or Player:StealthUp(true, true) or EnemiesBFCount > 4 then
@@ -308,10 +308,10 @@ end
 
 local function CDs ()
   -- # Use Adrenaline Rush if it is not active and between 1-5 CP, but Crackshot builds can refresh it early in stealth
-  -- actions.cds=adrenaline_rush,if=(!buff.adrenaline_rush.up|stealthed.all&talent.crackshot&talent.improved_adrenaline_rush)&(!variable.finish_condition|!talent.improved_adrenaline_rush)
+  -- actions.cds=adrenaline_rush,if=(!buff.adrenaline_rush.up|stealthed.all&talent.crackshot&talent.improved_adrenaline_rush)&(combo_points<=2|!talent.improved_adrenaline_rush)
   if CDsON() and S.AdrenalineRush:IsCastable()
     and (not Player:BuffUp(S.AdrenalineRush) or Player:StealthUp(true, true) and S.Crackshot:IsAvailable() and S.ImprovedAdrenalineRush:IsAvailable())
-    and (not Finish_Condition() or not S.ImprovedAdrenalineRush:IsAvailable()) then
+    and (ComboPoints <= 2 or not S.ImprovedAdrenalineRush:IsAvailable()) then
     if HR.Cast(S.AdrenalineRush, Settings.Outlaw.OffGCDasOffGCD.AdrenalineRush) then return "Cast Adrenaline Rush" end
   end
 
@@ -332,7 +332,7 @@ local function CDs ()
         if Settings.Outlaw.GCDasOffGCD.BladeFlurry then
           HR.CastSuggested(S.BladeFlurry)
         else
-          if HR.Cast(S.BladeFlurry) then return "Cast Blade Flurry (3 or 4 Target Filler)" end
+          if HR.Cast(S.BladeFlurry) then return "Cast Blade Flurry (3 or 4 Target Filler or 5+ Targets)" end
         end
     end
   end
@@ -341,7 +341,8 @@ local function CDs ()
   -- # # Use Roll the Bones if reroll conditions are met, or with no buffs, or 2s before buffs expire with T31, or 7s before buffs expire with Vanish/Dance ready
   -- actions.cds+=/roll_the_bones,if=variable.rtb_reroll|rtb_buffs=0|(rtb_buffs.max_remains<=2|(buff.broadside.down|rtb_buffs.max_remains<=9)&rtb_buffs<=3&buff.loaded_dice.up&!stealthed.all)&set_bonus.tier31_4pc|rtb_buffs.max_remains<=7&(cooldown.shadow_dance.ready|cooldown.vanish.ready)&!stealthed.all NS note: Added a KiR check for bs condition as adivsed in the tc channel
   if S.RolltheBones:IsReady() then
-    if RtB_Reroll() or RtB_Buffs() == 0 or (LongestRtBRemains() <= 2 or ((Player:BuffDown(S.Broadside) and S.KeepItRolling:IsAvailable()) or LongestRtBRemains() <= 9) and RtB_Buffs() <= 3 and Player:BuffUp(S.LoadedDiceBuff) and not Player:StealthUp(true, true)) and Player:HasTier(31, 4) or LongestRtBRemains() <= 7 and (S.ShadowDance:IsReady() or S.Vanish:IsReady()) and not Player:StealthUp(true, true) then
+    local no_crackshot_stealth = not Player:BuffUp(S.SubterfugeBuff) or not Player:BuffUp(S.ShadowDanceBuff) or not Player:BuffUp(S.VanishBuff) or not Player:BuffUp(S.VanishBuff2)
+    if (no_crackshot_stealth and RtB_Reroll() or RtB_Buffs() == 0) or (LongestRtBRemains() <= 2 or ((Player:BuffDown(S.Broadside) and S.KeepItRolling:IsAvailable()) or LongestRtBRemains() <= 9) and RtB_Buffs() <= 3 and Player:BuffUp(S.LoadedDiceBuff) and not Player:StealthUp(true, true)) and Player:HasTier(31, 4) or LongestRtBRemains() <= 7 and (S.ShadowDance:IsReady() or S.Vanish:IsReady()) and not Player:StealthUp(true, true) then
       if HR.Cast(S.RolltheBones, Settings.Outlaw.GCDasOffGCD.RolltheBones) then return "Cast Roll the Bones" end
     end
   end
