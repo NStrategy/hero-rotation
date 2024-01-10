@@ -201,8 +201,8 @@ local function RtB_Reroll ()
           Cache.APLVar.RtB_Reroll = true
         end
       end
-      -- Extra Reroll check for KiR -- actions+=/variable,name=rtb_reroll,value=variable.rtb_reroll&rtb_buffs.longer=0|rtb_buffs.normal=0&rtb_buffs.longer>=1&rtb_buffs<5&rtb_buffs.max_remains<=39&!stealthed.all
-      -- After you press KIR, those KIR buffs don't get rerolled by the next Roll the Bones. So use RTB once after you press KIR to try and get even more buffs. Only do this after your KIR buffs have ticked below 39s and you do not already have 5+ buffs.
+      -- Extra Reroll check for KiR -- actions+=/variable,name=rtb_reroll,value=variable.rtb_reroll&rtb_buffs.longer=0|rtb_buffs.normal=0&rtb_buffs.longer>=1&rtb_buffs<6&rtb_buffs.max_remains<=39&!stealthed.all&buff.loaded_dice.up
+      -- After you press KIR, those KIR buffs don't get rerolled by the next Roll the Bones. So use RTB once after you press KIR to try and get even more buffs. Only Reroll if all active buffs will not be rolled away, not in stealth, Loaded Dice is active, and we have less than 6 buffs
       if S.KeepItRolling:IsAvailable() and not S.KeepItRolling:IsReady() then
         if S.KeepItRolling:TimeSinceLastCast() < S.RolltheBones:TimeSinceLastCast() then
           local allBuffsBelowThreshold = true
@@ -212,9 +212,9 @@ local function RtB_Reroll ()
               break
             end
           end
-          if RtB_Buffs() >= 5 then
+          if RtB_Buffs() == 6 then
             Cache.APLVar.RtB_Reroll = false
-          elseif allBuffsBelowThreshold and RtB_Buffs() <= 4 and not Player:StealthUp(true, true) then
+          elseif allBuffsBelowThreshold and RtB_Buffs() < 6 and not Player:StealthUp(true, true) and Player:BuffUp(S.LoadedDiceBuff) then
             Cache.APLVar.RtB_Reroll = true
           end
         end
@@ -240,7 +240,7 @@ end
 -- # Ensure we want to cast Ambush prior to triggering a Stealth cooldown
 local function Ambush_Condition ()
   -- actions+=/variable,name=ambush_condition,value=(talent.hidden_opportunity|combo_points.deficit>=2+talent.improved_ambush+buff.broadside.up)&energy>=50
-  return (S.HiddenOpportunity:IsAvailable() or ComboPointsDeficit >=2 + num(S.ImprovedAmbush:IsAvailable()) + num(Player:BuffUp(S.Broadside))) and Energy >= 50
+  return (S.HiddenOpportunity:IsAvailable() or ComboPointsDeficit >= 2 + num(S.ImprovedAmbush:IsAvailable()) + num(Player:BuffUp(S.Broadside))) and Energy >= 50
 end
 
 -- Determine if we are allowed to use Vanish offensively in the current situation
@@ -273,13 +273,13 @@ local function StealthCDs ()
 
   -- # Crackshot builds or builds without Hidden Opportunity use Vanish at finish condition. NS note: Vanish into BtE on cooldown at 6+ CPs with BtE ready
   -- actions.stealth_cds+=/vanish,if=(!talent.hidden_opportunity|talent.crackshot)&(variable.finish_condition|buff.adrenaline_rush.up&buff.adrenaline_rush.remains<2)
-  if S.Vanish:IsCastable() and S.BetweentheEyes:IsReady() and Vanish_DPS_Condition() and (not S.HiddenOpportunity:IsAvailable() or S.Crackshot:IsAvailable()) and (Finish_Condition() or (Player:BuffUp(S.AdrenalineRush) and Player:BuffRemains(S.AdrenalineRush) < 2)) then
+  if S.Vanish:IsCastable() and S.BetweentheEyes:IsReady() and Vanish_DPS_Condition() and (not S.HiddenOpportunity:IsAvailable() or S.Crackshot:IsAvailable()) and (Finish_Condition() or (Player:BuffUp(S.AdrenalineRush) and Player:BuffRemains(S.AdrenalineRush) < 2)) then 
     if HR.Cast(S.Vanish, Settings.Commons.OffGCDasOffGCD.Vanish) then return "Cast Vanish (Finish or Extend)" end
   end
 
   -- # Crackshot builds use Dance at finish condition. NS note:  Dance into BtE on cooldown at 6+ CPs with BtE ready
   -- actions.stealth_cds+=/shadow_dance,if=talent.crackshot&(variable.finish_condition|buff.adrenaline_rush.up&buff.adrenaline_rush.remains<2)
-  if S.ShadowDance:IsAvailable() and S.BetweentheEyes:IsReady() and S.ShadowDance:IsCastable() and S.Crackshot:IsAvailable() and (Finish_Condition() or (Player:BuffUp(S.AdrenalineRush) and Player:BuffRemains(S.AdrenalineRush) < 2)) then
+  if S.ShadowDance:IsAvailable() and S.BetweentheEyes:IsReady() and S.ShadowDance:IsCastable() and S.Crackshot:IsAvailable() and (Finish_Condition() or (Player:BuffUp(S.AdrenalineRush) and Player:BuffRemains(S.AdrenalineRush) < 2)) then 
     if HR.Cast(S.ShadowDance, Settings.Commons.OffGCDasOffGCD.ShadowDance) then return "Cast Shadow Dance (Finish or Extend)" end
   end
   -- # Hidden Opportunity builds without Crackshot use Dance if Audacity and Opportunity are not active
@@ -307,19 +307,21 @@ local function StealthCDs ()
 end
 
 local function CDs ()
-  -- # Use Adrenaline Rush if it is not active and between 1-5 CP, but Crackshot builds can refresh it early in stealth
-  -- actions.cds=adrenaline_rush,if=(!buff.adrenaline_rush.up|stealthed.all&talent.crackshot&talent.improved_adrenaline_rush)&(combo_points<=2|!talent.improved_adrenaline_rush)
-  if CDsON() and S.AdrenalineRush:IsCastable()
-    and (not Player:BuffUp(S.AdrenalineRush) or Player:StealthUp(true, true) and S.Crackshot:IsAvailable() and S.ImprovedAdrenalineRush:IsAvailable())
-    and (ComboPoints <= 2 or not S.ImprovedAdrenalineRush:IsAvailable()) then
-    if HR.Cast(S.AdrenalineRush, Settings.Outlaw.OffGCDasOffGCD.AdrenalineRush) then return "Cast Adrenaline Rush" end
+  -- # Cooldowns
+  -- # Use Adrenaline Rush if it is not active and the finisher condition is not met, but Crackshot builds can refresh it with 2cp or lower inside stealth NS note: Added safety check for loaded dice
+  -- actions.cds=adrenaline_rush,if=!buff.adrenaline_rush.up&(!variable.finish_condition|!talent.improved_adrenaline_rush)|stealthed.all&talent.crackshot&talent.improved_adrenaline_rush&combo_points<=2
+  if CDsON() and S.AdrenalineRush:IsCastable() then
+    if (not Player:BuffUp(S.AdrenalineRush) and (not Finish_Condition() or not S.ImprovedAdrenalineRush:IsAvailable()))
+        or (Player:StealthUp(true, true) and S.Crackshot:IsAvailable() and S.ImprovedAdrenalineRush:IsAvailable() and ComboPoints <= 2)
+        or (LongestRtBRemains() <= 3 and not Player:BuffUp(S.LoadedDiceBuff) and (not Finish_Condition() or not S.ImprovedAdrenalineRush:IsAvailable())) then
+        if HR.Cast(S.AdrenalineRush, Settings.Outlaw.OffGCDasOffGCD.AdrenalineRush) then return "Cast Adrenaline Rush" end
+    end
   end
 
-  -- # Maintain Blade Flurry on 2+ targets, and on single target with Underhanded - Following Rogue Discord FAQ - Only maintain BF in single target when Adrenaline Rush is active.
-  -- actions.cds+=/blade_flurry,if=(spell_targets>=2-talent.underhanded_upper_hand&!stealthed.rogue)&buff.blade_flurry.remains<gcd
+  -- # Maintain Blade Flurry on 2+ targets, and on single target with Underhanded during Adrenaline Rush
+  -- actions.cds+=/blade_flurry,if=(spell_targets>=2-talent.underhanded_upper_hand&!stealthed.all&buff.adrenaline_rush.up)&buff.blade_flurry.remains<gcd
   if S.BladeFlurry:IsReady() then
-    if (EnemiesBFCount >= 2 or (S.UnderhandedUpperhand:IsAvailable() and Player:BuffUp(S.AdrenalineRush) and EnemiesBFCount == 1) and not Player:StealthUp(true, false))
-      and Player:BuffRemains(S.BladeFlurry) < Player:GCD() then
+    if (EnemiesBFCount >= 2 - num(S.UnderhandedUpperhand:IsAvailable()) and not Player:StealthUp(true, true) and Player:BuffUp(S.AdrenalineRush)) and Player:BuffRemains(S.BladeFlurry) < Player:GCD() then
       if Settings.Outlaw.GCDasOffGCD.BladeFlurry then
         HR.CastSuggested(S.BladeFlurry)
       else
@@ -339,10 +341,10 @@ local function CDs ()
   
 
   -- # # Use Roll the Bones if reroll conditions are met, or with no buffs, or 2s before buffs expire with T31, or 7s before buffs expire with Vanish/Dance ready
-  -- actions.cds+=/roll_the_bones,if=variable.rtb_reroll|rtb_buffs=0|(rtb_buffs.max_remains<=2|(buff.broadside.down|rtb_buffs.max_remains<=9)&rtb_buffs<=3&buff.loaded_dice.up&!stealthed.all)&set_bonus.tier31_4pc|rtb_buffs.max_remains<=7&(cooldown.shadow_dance.ready|cooldown.vanish.ready)&!stealthed.all NS note: Added a KiR check for bs condition as adivsed in the tc channel
+  -- actions.cds+=/roll_the_bones,if=variable.rtb_reroll|rtb_buffs=0|(rtb_buffs.max_remains<=2|rtb_buffs.max_remains<=9&rtb_buffs<=3&buff.loaded_dice.up&!stealthed.all)&set_bonus.tier31_4pc|rtb_buffs.max_remains<=7&(cooldown.shadow_dance.ready|cooldown.vanish.ready)&!stealthed.all NS note: Added a KiR check for bs condition as adivsed in the tc channel
   if S.RolltheBones:IsReady() then
-    local no_crackshot_stealth = not Player:BuffUp(S.SubterfugeBuff) or not Player:BuffUp(S.ShadowDanceBuff) or not Player:BuffUp(S.VanishBuff) or not Player:BuffUp(S.VanishBuff2)
-    if (no_crackshot_stealth and RtB_Reroll() or RtB_Buffs() == 0) or (LongestRtBRemains() <= 2 or ((Player:BuffDown(S.Broadside) and S.KeepItRolling:IsAvailable()) or LongestRtBRemains() <= 9) and RtB_Buffs() <= 3 and Player:BuffUp(S.LoadedDiceBuff) and not Player:StealthUp(true, true)) and Player:HasTier(31, 4) or LongestRtBRemains() <= 7 and (S.ShadowDance:IsReady() or S.Vanish:IsReady()) and not Player:StealthUp(true, true) then
+    local no_crackshot_stealth = not Player:BuffUp(S.SubterfugeBuff) or not Player:BuffUp(S.ShadowDanceBuff) or not Player:BuffUp(S.VanishBuff) or not Player:BuffUp(S.VanishBuff2) or not Player:BuffUp(S.Stealth) or not Player:BuffUp(S.Stealth2)) -- testing
+    if (not Player:StealthUp(true, true) and (RtB_Reroll() or RtB_Buffs() == 0 or (LongestRtBRemains() <= 2 or LongestRtBRemains() <= 9 and RtB_Buffs() == 3 and Player:BuffUp(S.LoadedDiceBuff)) and Player:HasTier(31, 4) or LongestRtBRemains() <= 7 and (S.ShadowDance:IsReady() or S.Vanish:IsReady()))) then
       if HR.Cast(S.RolltheBones, Settings.Outlaw.GCDasOffGCD.RolltheBones) then return "Cast Roll the Bones" end
     end
   end
@@ -493,10 +495,9 @@ local function Stealth()
 end
 
 local function Finish ()
-	-- # Finishers Use Between the Eyes to keep the crit buff up, but on cooldown if Improved/Greenskins/T30, and avoid overriding Greenskins
-	-- actions.finish=between_the_eyes,if=!talent.crackshot
-	-- &(buff.between_the_eyes.remains<4|talent.improved_between_the_eyes|talent.greenskins_wickers|set_bonus.tier30_4pc)
-	-- &!buff.greenskins_wickers.up
+	-- # Finishers
+  -- # Use Between the Eyes to keep the crit buff up, but on cooldown if Improved/Greenskins/T30, and avoid overriding Greenskins
+	-- actions.finish=between_the_eyes,if=!talent.crackshot&(buff.between_the_eyes.remains<4|talent.improved_between_the_eyes|talent.greenskins_wickers|set_bonus.tier30_4pc)&!buff.greenskins_wickers.up
 	if S.BetweentheEyes:IsCastable() and Target:IsSpellInRange(S.BetweentheEyes) and not S.Crackshot:IsAvailable()
 		and (Player:BuffRemains(S.BetweentheEyes) < 4 or S.ImprovedBetweenTheEyes:IsAvailable() or S.GreenskinsWickers:IsAvailable()
     or Player:HasTier(30, 4)) and Player:BuffDown(S.GreenskinsWickers) then
@@ -551,34 +552,16 @@ local function Build ()
 		if HR.CastPooling(S.PistolShot) then return "Cast Pistol Shot (Audacity)" end
 	end
 
-	-- # Use Greenskins Wickers buff immediately with Opportunity unless running Fan the Hammer
-	-- actions.build+=/pistol_shot,if=buff.greenskins_wickers.up&(!talent.fan_the_hammer&buff.opportunity.up|buff.greenskins_wickers.remains<1.5)
-	if Player:BuffUp(S.GreenskinsWickersBuff) and (not S.FanTheHammer:IsAvailable() and Player:BuffUp(S.Opportunity) or Player:BuffRemains(S.GreenskinsWickersBuff) < 1.5) then
-		if HR.CastPooling(S.PistolShot) then return "Cast Pistol Shot (GSW Dump)" end
-	end
-
-  -- #custom ps rules from tc channel: With 3 FTH stacks: Without broadside, use PS with 3 or less cp; with broadside use PS with 1 or less cp. KiR builds only
-  -- actions.build+=/pistol_shot,if=talent.fan_the_hammer&buff.opportunity.up&combo_points<=(3-buff.broadside.up*2)
-  if S.FanTheHammer:IsAvailable() and S.KeepItRolling:IsAvailable() and Player:BuffUp(S.Opportunity) and ComboPoints <= (3 - num(Player:BuffUp(S.Broadside)) * 2) then
-    if HR.CastPooling(S.PistolShot) then return "Cast Pistol Shot (FtH TC Rule)" end
-  end
-
-	-- #With Fan the Hammer, consume Opportunity at max stacks or if it will expire. NS note: Following tc channel, adding for KiR builds "With 6 stacks of opportunity, or if opportunity buff is running out, use PS at any cp (unless finish condition is fulfilled)."
+	-- # With Fan the Hammer, consume Opportunity as a higher priority if at max stacks or if it will expire. "With 6 stacks of opportunity, or if opportunity buff is running out, use PS at any cp (unless finish condition is fulfilled)."
 	-- actions.build+=/pistol_shot,if=talent.fan_the_hammer&buff.opportunity.up&(buff.opportunity.stack>=buff.opportunity.max_stack|buff.opportunity.remains<2)
 	if S.FanTheHammer:IsAvailable() and ((not Finish_Condition() and S.KeepItRolling:IsAvailable()) or S.HiddenOpportunity:IsAvailable()) and Player:BuffUp(S.Opportunity) and (Player:BuffStack(S.Opportunity) >= 6 or Player:BuffRemains(S.Opportunity) < 2) then
 		if HR.CastPooling(S.PistolShot) then return "Cast Pistol Shot (FtH Dump)" end
 	end
 
-  --#tc reserach line
-  -- actions.build+=/pistol_shot,if=talent.fan_the_hammer&buff.opportunity.up&combo_points<=2&(buff.subterfuge.up|buff.shadow_dance.up)&!cooldown.vanish.ready&!cooldown.shadow_dance.ready&!buff.skull_and_crossbones.up
-  if S.FanTheHammer:IsAvailable() and Player:BuffUp(S.Opportunity) and ComboPoints <= 2 and (Player:BuffUp(S.SubterfugeBuff) or Player:BuffUp(S.ShadowDanceBuff)) and not S.Vanish:IsReady() and not S.ShadowDance:IsReady() and not Player:BuffUp(S.SkullandCrossbones) then
-    if HR.CastPooling(S.PistolShot) then return "Cast Pistol Shot (TC PS Line)" end
-  end
-
-	-- # With Fan the Hammer, consume Opportunity based on CP deficit, and 2 Fan the Hammer Crackshot builds can briefly hold stacks for an upcoming stealth cooldown
-	-- actions.build+=/pistol_shot,if=talent.fan_the_hammer&buff.opportunity.up&combo_points.deficit>((1+talent.quick_draw)*talent.fan_the_hammer.rank)&(!cooldown.vanish.ready&!cooldown.shadow_dance.ready|stealthed.all|!talent.crackshot|talent.fan_the_hammer.rank<=1)
-	if S.FanTheHammer:IsAvailable() and Player:BuffUp(S.Opportunity) and ComboPointsDeficit > (1+num(S.QuickDraw:IsAvailable())*S.FanTheHammer:TalentRank())
-		and (not S.Vanish:IsReady() and not S.ShadowDance:IsReady() or Player:StealthUp(true, true) or not S.Crackshot:IsAvailable() or S.FanTheHammer:TalentRank() <= 1) then
+	-- # With Fan the Hammer, consume Opportunity if it will not overcap CPs, or with 1 CP at minimum NS note: if broadside is active, KIR builds only consume PS at 1cp
+	-- actions.build+=/pistol_shot,if=talent.fan_the_hammer&buff.opportunity.up&(combo_points.deficit>=(1+(talent.quick_draw+buff.broadside.up)*(talent.fan_the_hammer.rank+1))|combo_points<=talent.ruthlessness)
+	if S.FanTheHammer:IsAvailable() and S.KeepItRolling:IsAvailable() and Player:BuffUp(S.Opportunity) and (ComboPointsDeficit >= (1 + (num(S.QuickDraw:IsAvailable()) + num(Player:BuffUp(S.Broadside))) * (S.FanTheHammer:TalentRank() + 1))
+    or ComboPoints <= S.Ruthlessness:TalentRank()) then
 		if HR.CastPooling(S.PistolShot) then return "Cast Pistol Shot (KiR)" end
 	end
 
