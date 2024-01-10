@@ -570,7 +570,7 @@ local function CDs ()
     if (SnDCondition or (not SnDCondition and Player:BuffUp(S.ShadowDanceBuff))) and (not Player:BuffUp(S.TheRottenBuff) or not Player:HasTier(30, 2)) and
       Player:BuffRemains(S.SymbolsofDeath) <= 3 and
       (not S.Flagellation:IsAvailable() or (S.Flagellation:CooldownRemains() > 10 and (S.ShadowDance:ChargesFractional() < 2 or (Player:BuffUp(S.SymbolsofDeath) and Player:BuffRemains(S.SymbolsofDeath) <= 3))) or 
-      S.Flagellation:IsReady() and ComboPoints >= 5 and not S.InvigoratingShadowdust:IsAvailable()) then
+      S.Flagellation:CooldownUp() and ComboPoints >= 5 and not S.InvigoratingShadowdust:IsAvailable()) then
       if HR.Cast(S.SymbolsofDeath, Settings.Subtlety.OffGCDasOffGCD.SymbolsofDeath) then return "Cast Symbols of Death" end
     end
   end
@@ -620,7 +620,7 @@ local function CDs ()
     end
     -- custom TSwift condition
     if S.Vanish:IsCastable() then
-      if Player:BuffUp(S.ShadowDanceBuff) and S.SecretTechnique:TimeSinceLastCast() < 5 and not (S.Vanish:TimeSinceLastCast() < 5) and Player:BuffUp(S.ShadowBlades) and (Target:NPCID() == 209090 or Target:NPCID() == 189632) then
+      if Player:BuffUp(S.ShadowDanceBuff) and S.SecretTechnique:TimeSinceLastCast() < 5 and not (S.Vanish:TimeSinceLastCast() < 5) and Player:BuffUp(S.ShadowBlades) and Target:NPCID() == 209090 then
         ShouldReturn = StealthMacro(S.Vanish, EnergyThreshold)
         if ShouldReturn then return "Vanish Macro " .. ShouldReturn end
       end
