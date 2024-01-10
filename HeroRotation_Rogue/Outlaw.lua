@@ -236,7 +236,6 @@ local function Finish_Condition ()
     return false
 end
 
-
 -- # Ensure we want to cast Ambush prior to triggering a Stealth cooldown
 local function Ambush_Condition ()
   -- actions+=/variable,name=ambush_condition,value=(talent.hidden_opportunity|combo_points.deficit>=2+talent.improved_ambush+buff.broadside.up)&energy>=50
@@ -257,8 +256,7 @@ end
 
 local function Shadow_Dance_Condition ()
   -- # Hidden Opportunity builds without Crackshot use Dance if Audacity and Opportunity are not active
-  -- actions.stealth_cds+=/variable,name=shadow_dance_condition,value=buff.between_the_eyes.up
-  -- &(!talent.hidden_opportunity|!buff.audacity.up&(talent.fan_the_hammer.rank<2|!buff.opportunity.up))&!talent.crackshot
+  -- actions.stealth_cds+=/variable,name=shadow_dance_condition,value=buff.between_the_eyes.up&(!talent.hidden_opportunity|!buff.audacity.up&(talent.fan_the_hammer.rank<2|!buff.opportunity.up))&!talent.crackshot
   return Player:BuffUp(S.BetweentheEyes) and (not S.HiddenOpportunity:IsAvailable() or Player:BuffDown(S.AudacityBuff)
     and (S.FanTheHammer:TalentRank() < 2 or Player:BuffDown(S.Opportunity))) and not S.Crackshot:IsAvailable()
 end
@@ -279,7 +277,7 @@ local function StealthCDs ()
 
   -- # Crackshot builds use Dance at finish condition. NS note:  Dance into BtE on cooldown at 6+ CPs with BtE ready
   -- actions.stealth_cds+=/shadow_dance,if=talent.crackshot&(variable.finish_condition|buff.adrenaline_rush.up&buff.adrenaline_rush.remains<2)
-  if S.ShadowDance:IsAvailable() and S.BetweentheEyes:IsReady() and S.ShadowDance:IsCastable() and S.Crackshot:IsAvailable() and (Finish_Condition() or (Player:BuffUp(S.AdrenalineRush) and Player:BuffRemains(S.AdrenalineRush) < 2 and not S.Vanish:IsReady())) then 
+  if S.ShadowDance:IsAvailable() and S.BetweentheEyes:IsReady() and S.ShadowDance:IsCastable() and (not S.Vanish:IsReady() or S.Vanish:CooldownRemains() >= (Rogue.CPMaxSpend() * (1 + (Player:BuffUp(S.TrueBearing) and 0.5 or 0)))) and S.Crackshot:IsAvailable() and (Finish_Condition() or (Player:BuffUp(S.AdrenalineRush) and Player:BuffRemains(S.AdrenalineRush) < 2 and not S.Vanish:IsReady())) then 
     if HR.Cast(S.ShadowDance, Settings.Commons.OffGCDasOffGCD.ShadowDance) then return "Cast Shadow Dance (Finish or Extend)" end
   end
   -- # Hidden Opportunity builds without Crackshot use Dance if Audacity and Opportunity are not active
@@ -342,7 +340,7 @@ local function CDs ()
 
   -- # # Use Roll the Bones if reroll conditions are met, or with no buffs, or 2s before buffs expire with T31, or 7s before buffs expire with Vanish/Dance ready
   -- actions.cds+=/roll_the_bones,if=variable.rtb_reroll|rtb_buffs=0|(rtb_buffs.max_remains<=2|rtb_buffs.max_remains<=9&rtb_buffs<=3&buff.loaded_dice.up&!stealthed.all)&set_bonus.tier31_4pc|rtb_buffs.max_remains<=7&(cooldown.shadow_dance.ready|cooldown.vanish.ready)&!stealthed.all NS note: Added a KiR check for bs condition as adivsed in the tc channel
-  if S.RolltheBones:IsReady() then
+  if S.RolltheBones:IsCastable() then
     local no_crackshot_stealth = not Player:BuffUp(S.SubterfugeBuff) or not Player:BuffUp(S.ShadowDanceBuff) or not Player:BuffUp(S.VanishBuff) or not Player:BuffUp(S.VanishBuff2) or not Player:BuffUp(S.Stealth) or not Player:BuffUp(S.Stealth2) -- testing
     if (not Player:StealthUp(true, true) and (RtB_Reroll() or RtB_Buffs() == 0 or (LongestRtBRemains() <= 2 or LongestRtBRemains() <= 9 and RtB_Buffs() == 3 and Player:BuffUp(S.LoadedDiceBuff)) and Player:HasTier(31, 4) or LongestRtBRemains() <= 7 and (S.ShadowDance:IsReady() or S.Vanish:IsReady()))) then
       if HR.Cast(S.RolltheBones, Settings.Outlaw.GCDasOffGCD.RolltheBones) then return "Cast Roll the Bones" end
@@ -734,7 +732,7 @@ local function APL ()
 end
 
 local function Init ()
-  HR.Print("You are using a fork: THIS IS NOT THE OFFICIAL VERSION - if there are issues, message me on Discord: kekwxqcl")
+  HR.Print("You are using a fork [Version 1.1]: THIS IS NOT THE OFFICIAL VERSION - if there are issues, message me on Discord: kekwxqcl")
 end
 
 HR.SetAPL(260, APL, Init)
