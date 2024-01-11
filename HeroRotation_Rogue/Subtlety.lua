@@ -247,7 +247,7 @@ local function Secret_Condition()
                     and (Used_For_Danse(S.Eviscerate) or Used_For_Danse(S.BlackPowder) or Used_For_Danse(S.Rupture)) 
                     or not S.DanseMacabre:IsAvailable()
   -- Check if Shadowblades is active and Backstab conditions are met
-  if Player:BuffUp(S.ShadowBlades) and not PremeditationBuff and Player:BuffRemains(S.ShadowDanceBuff) >= 3 
+  if Player:BuffUp(S.ShadowBlades) and Player:BuffRemains(S.ShadowBlades) >= 7 and not PremeditationBuff and Player:BuffRemains(S.ShadowDanceBuff) >= 3 
      and S.DanseMacabre:IsAvailable() and MeleeEnemies10yCount <= 3 and not Used_For_Danse(S.Backstab) then
     -- Require Backstab to be used for the condition to be true
     condition = condition and Used_For_Danse(S.Backstab)
@@ -620,7 +620,7 @@ local function CDs ()
     end
     -- custom TSwift condition
     if S.Vanish:IsCastable() then
-      if Player:BuffUp(S.ShadowDanceBuff) and S.SecretTechnique:TimeSinceLastCast() < 5 and not (S.Vanish:TimeSinceLastCast() < 5) and Player:BuffUp(S.ShadowBlades) and Target:NPCID() == 209090 then
+      if Player:BuffUp(S.ShadowDanceBuff) and S.SecretTechnique:TimeSinceLastCast() < 5 and not (S.Vanish:TimeSinceLastCast() < 5) and Player:BuffUp(S.ShadowBlades) and (Target:NPCID() == 209090 or Target:NPCID() == 189632) then
         ShouldReturn = StealthMacro(S.Vanish, EnergyThreshold)
         if ShouldReturn then return "Vanish Macro " .. ShouldReturn end
       end
