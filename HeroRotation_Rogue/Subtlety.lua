@@ -48,6 +48,7 @@ local OnUseExcludes = {
   I.AshesoftheEmbersoul:ID(),
   I.WitherbarksBranch:ID(),
   I.BattleReadyGoggles:ID(),
+  I.PersonalSpaceAmplifier:ID()
 }
 -- Rotation Var
 local MeleeRange, AoERange, TargetInMeleeRange, TargetInAoERange
@@ -630,13 +631,6 @@ local function CDs ()
       if S.Flagellation:CooldownRemains() <= 30 and S.Flagellation:CooldownRemains() >= 18 and not S.Flagellation:IsCastable() and S.Vanish:IsCastable() and Target:NPCID() == 209090 then
         if HR.Cast(S.ShadowBlades, Settings.Subtlety.OffGCDasOffGCD.ShadowBlades) then return "Cast Shadow Blades" end
       end
-    end
-    -- P3 Vanish Condition
-    if S.Vanish:IsCastable() then
-       if S.ShadowBlades:CooldownRemains() >= 90 and S.Flagellation:CooldownRemains() <= 30 and S.Flagellation:CooldownRemains() >= 18 and not S.Flagellation:IsCastable() and Target:NPCID() == 209090 then
-         ShouldReturn = StealthMacro(S.Vanish, EnergyThreshold)
-         if ShouldReturn then return "Vanish Macro " .. ShouldReturn end
-       end
     end
     -- Fuu Tea condition
     if S.ThistleTea:IsReady() then

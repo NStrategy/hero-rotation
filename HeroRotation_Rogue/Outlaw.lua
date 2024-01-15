@@ -51,7 +51,9 @@ local I = Item.Rogue.Outlaw
 local OnUseExcludes = {
   I.ManicGrieftorch:ID(),
   I.DragonfireBombDispenser:ID(),
-  I.BeaconToTheBeyond:ID()
+  I.BeaconToTheBeyond:ID(),
+  I.BattleReadyGoggles:ID(),
+  I.PersonalSpaceAmplifier:ID()
 }
 
 -- Trinkets
