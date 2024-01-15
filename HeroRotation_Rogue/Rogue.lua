@@ -289,7 +289,7 @@ Item.Rogue.Outlaw = {
   BeaconToTheBeyond       = Item(203963, {13, 14}),
   DragonfireBombDispenser = Item(202610, {13, 14}),
   BattleReadyGoggles      = Item(198326,{1}),
-  PersonalSpaceAmplifier  = Item(153592,{6}),
+  PersonalSpaceAmplifier  = Item(255940,{6}),
 }
 
 Item.Rogue.Subtlety = {
@@ -302,7 +302,7 @@ Item.Rogue.Subtlety = {
   WitherbarksBranch          = Item(109999, {13, 14}),
   BandolierOfTwistedBlades   = Item(207165, {13, 14}),
   BattleReadyGoggles         = Item(198326,{1}),
-  PersonalSpaceAmplifier     = Item(153592,{6})
+  PersonalSpaceAmplifier     = Item(255940,{6})
 }
 
 function Commons.StealthSpell()
