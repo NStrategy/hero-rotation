@@ -289,7 +289,7 @@ Item.Rogue.Outlaw = {
   BeaconToTheBeyond       = Item(203963, {13, 14}),
   DragonfireBombDispenser = Item(202610, {13, 14}),
   BattleReadyGoggles      = Item(198326,{1}),
-  PersonalSpaceAmplifier  = Item(255940,{6}),
+  PersonalSpaceAmplifier  = Item(255940,{6}), -- If you are playing with this enchant, please put your belt item id here instead of "255940". Only then you will not get suggestions.
 }
 
 Item.Rogue.Subtlety = {
@@ -302,7 +302,7 @@ Item.Rogue.Subtlety = {
   WitherbarksBranch          = Item(109999, {13, 14}),
   BandolierOfTwistedBlades   = Item(207165, {13, 14}),
   BattleReadyGoggles         = Item(198326,{1}),
-  PersonalSpaceAmplifier     = Item(255940,{6})
+  PersonalSpaceAmplifier     = Item(255940,{6}) -- If you are playing with this enchant, please put your belt item id here instead of "255940". Only then you will not get suggestions.
 }
 
 function Commons.StealthSpell()
