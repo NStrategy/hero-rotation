@@ -294,7 +294,7 @@ local function Finish (ReturnSpellOnly, StealthSpell)
               if ReturnSpellOnly then
                   return S.Rupture
               else
-                  if S.Rupture:IsReady() and HR.Cast(S.Rupture) then return "Cast Rupture 3" end
+                  if S.Rupture:IsCastable() and HR.Cast(S.Rupture) then return "Cast Rupture 3" end
                   SetPoolingFinisher(S.Rupture)
               end
           end
@@ -310,7 +310,7 @@ local function Finish (ReturnSpellOnly, StealthSpell)
       if ReturnSpellOnly then
         return S.Rupture
       else
-        if S.Rupture:IsReady() and HR.Cast(S.Rupture) then return "Cast Rupture 1" end
+        if S.Rupture:IsCastable() and HR.Cast(S.Rupture) then return "Cast Rupture 1" end
         SetPoolingFinisher(S.Rupture)
       end
     end
@@ -321,7 +321,7 @@ local function Finish (ReturnSpellOnly, StealthSpell)
       if ReturnSpellOnly then
         return S.Rupture
       else
-        if S.Rupture:IsReady() and HR.Cast(S.Rupture) then return "Cast Rupture (Finality)" end
+        if S.Rupture:IsCastable() and HR.Cast(S.Rupture) then return "Cast Rupture (Finality)" end
         SetPoolingFinisher(S.Rupture)
       end
     end
@@ -339,7 +339,7 @@ local function Finish (ReturnSpellOnly, StealthSpell)
   -- actions.finish+=/secret_technique,if=variable.secret_condition&(!talent.cold_blood|cooldown.cold_blood.remains>buff.shadow_dance.remains-2|!talent.improved_shadow_dance)
   -- Attention: Due to the SecTec/ColdBlood interaction, this adaption has additional checks not found in the APL string 
   if S.SecretTechnique:IsCastable() and Secret_Condition()
-      and (not S.ColdBlood:IsAvailable() or (Settings.Commons.OffGCDasOffGCD.ColdBlood and S.ColdBlood:IsReady())
+      and (not S.ColdBlood:IsAvailable() or (Settings.Commons.OffGCDasOffGCD.ColdBlood and S.ColdBlood:IsCastable())
       or Player:BuffUp(S.ColdBlood) or S.ColdBlood:CooldownRemains() > ShadowDanceBuffRemains - 2 or not S.ImprovedShadowDance:IsAvailable()) then
       if ReturnSpellOnly then return S.SecretTechnique end
       if HR.Cast(S.SecretTechnique) then return "Cast Secret Technique" end
@@ -362,7 +362,7 @@ local function Finish (ReturnSpellOnly, StealthSpell)
       if ReturnSpellOnly then
         return S.Rupture
       else
-        if S.Rupture:IsReady() and HR.Cast(S.Rupture) then return "Cast Rupture 2" end
+        if S.Rupture:IsCastable() and HR.Cast(S.Rupture) then return "Cast Rupture 2" end
         SetPoolingFinisher(S.Rupture)
       end
     end
@@ -372,7 +372,7 @@ local function Finish (ReturnSpellOnly, StealthSpell)
     if ReturnSpellOnly then
       return S.BlackPowder
     else
-      if S.BlackPowder:IsReady() and HR.Cast(S.BlackPowder) then return "Cast Black Powder" end
+      if S.BlackPowder:IsCastable() and HR.Cast(S.BlackPowder) then return "Cast Black Powder" end
       SetPoolingFinisher(S.BlackPowder)
     end
   end
@@ -382,7 +382,7 @@ local function Finish (ReturnSpellOnly, StealthSpell)
     if ReturnSpellOnly then
       return S.Eviscerate
     else
-      if S.Eviscerate:IsReady() and HR.Cast(S.Eviscerate) then return "Cast Eviscerate" end
+      if S.Eviscerate:IsCastable() and HR.Cast(S.Eviscerate) then return "Cast Eviscerate" end
       SetPoolingFinisher(S.Eviscerate)
     end
   end
@@ -545,19 +545,19 @@ local function CDs ()
   local SnDCondition = SnD_Condition()
 
   -- actions.cds+=/cold_blood,if=!talent.secret_technique&combo_points>=5
-  if S.ColdBlood:IsReady() and not S.SecretTechnique:IsAvailable() and ComboPoints >= 5 then
+  if S.ColdBlood:IsCastable() and not S.SecretTechnique:IsAvailable() and ComboPoints >= 5 then
     if HR.Cast(S.ColdBlood, Settings.Commons.OffGCDasOffGCD.ColdBlood) then return "Cast Cold Blood" end
   end
 
   if TargetInMeleeRange then
     -- actions.cds+=/sepsis,if=variable.snd_condition&target.time_to_die>=16&(buff.perforated_veins.up|!talent.perforated_veins) TODO: Settings.Subtlety.OffGCDasOffGCD.Sepsis
-    if S.Sepsis:IsReady() and S.Sepsis:IsAvailable() and SnD_Condition() and Target:FilteredTimeToDie(">", 16) then
+    if S.Sepsis:IsCastable() and S.Sepsis:IsAvailable() and SnD_Condition() and Target:FilteredTimeToDie(">", 16) then
      if Player:BuffUp(S.PerforatedVeinsBuff) or not S.PerforatedVeins:IsAvailable() then
       if HR.Cast(S.Sepsis) then return "Cast Sepsis" end
      end
     end
     -- actions.cds+=/flagellation,target_if=max:target.time_to_die,if=variable.snd_condition&combo_points>=5&target.time_to_die>10&(variable.trinket_conditions&cooldown.shadow_blades.remains<=3|fight_remains<=28|cooldown.shadow_blades.remains>=14&talent.invigorating_shadowdust&talent.shadow_dance)&(!talent.invigorating_shadowdust|talent.sepsis|!talent.shadow_dance|talent.invigorating_shadowdust.rank=2&spell_targets.shuriken_storm>=2|cooldown.symbols_of_death.remains<=3|buff.symbols_of_death.remains>3)
-    if HR.CDsON() and S.Flagellation:IsAvailable() and S.Flagellation:IsReady() and SnDCondition and ComboPoints >= 5 and Target:FilteredTimeToDie(">", 10) then
+    if HR.CDsON() and S.Flagellation:IsAvailable() and S.Flagellation:IsCastable() and SnDCondition and ComboPoints >= 5 and Target:FilteredTimeToDie(">", 10) then
       if (Trinket_Conditions() and S.ShadowBlades:CooldownRemains() <= 3 or HL.BossFilteredFightRemains("<=", 28)
         or S.ShadowBlades:CooldownRemains() >= 14 and S.InvigoratingShadowdust:IsAvailable() and S.ShadowDanceTalent:IsAvailable())
         and (not S.InvigoratingShadowdust:IsAvailable() or S.Sepsis:IsAvailable() or not S.ShadowDanceTalent:IsAvailable()
@@ -585,7 +585,7 @@ local function CDs ()
       end
     end
     -- actions.cds+=/echoing_reprimand,if=variable.snd_condition&combo_points.deficit>=3
-    if S.EchoingReprimand:IsReady() and SnDCondition and TargetInMeleeRange and ComboPointsDeficit >= 3 then
+    if S.EchoingReprimand:IsCastable() and SnDCondition and TargetInMeleeRange and ComboPointsDeficit >= 3 then
       if HR.Cast(S.EchoingReprimand, Settings.Commons.GCDasOffGCD.EchoingReprimand) then return "Cast Echoing Reprimand" end
     end
     -- actions.cds+=/shuriken_tornado,if=variable.snd_condition&buff.symbols_of_death.up&combo_points<=2&!buff.premeditation.up&(!talent.flagellation|cooldown.flagellation.remains>20)&spell_targets.shuriken_storm>=3
@@ -628,12 +628,18 @@ local function CDs ()
     end
     -- P3 SB Condition
     if S.ShadowBlades:IsCastable() then
-      if S.Flagellation:CooldownRemains() <= 30 and S.Flagellation:CooldownRemains() >= 18 and not S.Flagellation:IsCastable() and S.Vanish:IsCastable() and Target:NPCID() == 209090 then
+      if S.Flagellation:CooldownRemains() <= 27 and S.Flagellation:CooldownRemains() >= 18 and not S.Flagellation:IsCastable() and S.Vanish:IsCastable() and Target:NPCID() == 209090 then
+        if HR.Cast(S.ShadowBlades, Settings.Subtlety.OffGCDasOffGCD.ShadowBlades) then return "Cast Shadow Blades" end
+      end
+    end
+    -- P2 SB Condition
+    if S.ShadowBlades:IsCastable() then
+      if S.Flagellation:CooldownRemains() <= 10 and S.Flagellation:CooldownRemains() >= 1 and not S.Flagellation:IsCastable() and Target:NPCID() == 209090 then
         if HR.Cast(S.ShadowBlades, Settings.Subtlety.OffGCDasOffGCD.ShadowBlades) then return "Cast Shadow Blades" end
       end
     end
     -- Fuu Tea condition
-    if S.ThistleTea:IsReady() then
+    if S.ThistleTea:IsCastable() then
       -- actions.cds+=/thistle_tea,if=!buff.thistle_tea.up&cooldown.thistle_tea.charges_fractional>=2.5&buff.shadow_dance.remains>=4 -- Fuus APL
       if not Player:BuffUp(S.ThistleTea) and S.ThistleTea:ChargesFractional() >= 2.5 and Player:BuffRemains(S.ShadowDanceBuff) >= 4 then
         if HR.Cast(S.ThistleTea, Settings.Commons.OffGCDasOffGCD.ThistleTea) then return "Cast Thistle Tea (Max Stacks during Shadow Dance)" end
@@ -902,7 +908,7 @@ local function APL ()
 
     -- Blind
     if S.Blind:IsCastable() and Target:NPCID() == 204560 or Target:NPCID() == 174773 then
-       if S.Blind:IsReady() and HR.Cast(S.Blind, Settings.Commons.GCDasOffGCD.Blind) then return "Blind to CC Affix" end
+       if S.Blind:IsCastable() and HR.Cast(S.Blind, Settings.Commons.GCDasOffGCD.Blind) then return "Blind to CC Affix" end
     end
 
     -- Maybe do a KidneyShot check for important adds. Archer in Hold for example.
@@ -914,7 +920,7 @@ local function APL ()
     -- actions+=/slice_and_dice,if=spell_targets.shuriken_storm<cp_max_spend&buff.slice_and_dice.remains<gcd.max&fight_remains>6&combo_points>=4 Homebrew: Not in Dance
     if S.SliceandDice:IsCastable() and MeleeEnemies10yCount < Rogue.CPMaxSpend() and HL.FilteredFightRemains(MeleeEnemies10y, ">", 6)
        and Player:BuffRemains(S.SliceandDice) < Player:GCD() and ComboPoints >= 4 and not Player:BuffUp(S.ShadowDanceBuff) then
-       if S.SliceandDice:IsReady() and HR.Cast(S.SliceandDice) then return "Cast Slice and Dice (Low Duration)" end
+       if S.SliceandDice:IsCastable() and HR.Cast(S.SliceandDice) then return "Cast Slice and Dice (Low Duration)" end
        SetPoolingFinisher(S.SliceandDice)
     end
 
@@ -1002,7 +1008,7 @@ local function APL ()
 end
 
 local function Init ()
-  HR.Print("You are using a fork [Version 1.1]: THIS IS NOT THE OFFICIAL VERSION - if there are issues, message me on Discord: kekwxqcl")
+  HR.Print("You are using a fork [Version 1.2]: THIS IS NOT THE OFFICIAL VERSION - if there are issues, message me on Discord: kekwxqcl")
 end
 
 HR.SetAPL(261, APL, Init)
