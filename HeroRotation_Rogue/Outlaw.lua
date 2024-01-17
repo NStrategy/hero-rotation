@@ -273,13 +273,13 @@ local function StealthCDs ()
 
   -- # Crackshot builds or builds without Hidden Opportunity use Vanish at finish condition. NS note: Vanish into BtE on cooldown at 6+ CPs with BtE ready
   -- actions.stealth_cds+=/vanish,if=(!talent.hidden_opportunity|talent.crackshot)&(variable.finish_condition|buff.adrenaline_rush.up&buff.adrenaline_rush.remains<2)
-  if S.Vanish:IsCastable() and S.BetweentheEyes:IsReady() and Vanish_DPS_Condition() and (not S.HiddenOpportunity:IsAvailable() or S.Crackshot:IsAvailable()) and (Finish_Condition() or (Player:BuffUp(S.AdrenalineRush) and Player:BuffRemains(S.AdrenalineRush) < 2)) then 
+  if S.Vanish:IsCastable() and S.BetweentheEyes:IsCastable() and Vanish_DPS_Condition() and (not S.HiddenOpportunity:IsAvailable() or S.Crackshot:IsAvailable()) and (Finish_Condition() or (Player:BuffUp(S.AdrenalineRush) and Player:BuffRemains(S.AdrenalineRush) < 2)) then 
     if HR.Cast(S.Vanish, Settings.Commons.OffGCDasOffGCD.Vanish) then return "Cast Vanish (Finish or Extend)" end
   end
 
   -- # Crackshot builds use Dance at finish condition. NS note:  Dance into BtE on cooldown at 6+ CPs with BtE ready
   -- actions.stealth_cds+=/shadow_dance,if=talent.crackshot&(variable.finish_condition|buff.adrenaline_rush.up&buff.adrenaline_rush.remains<2)
-  if S.ShadowDance:IsAvailable() and S.BetweentheEyes:IsReady() and S.ShadowDance:IsCastable() and S.Vanish:CooldownRemains() >= (Rogue.CPMaxSpend() * (1 + (Player:BuffUp(S.TrueBearing) and 0.5 or 0))) and S.Crackshot:IsAvailable() and (Finish_Condition() or (Player:BuffUp(S.AdrenalineRush) and Player:BuffRemains(S.AdrenalineRush) < 2 and not S.Vanish:IsReady())) then 
+  if S.ShadowDance:IsAvailable() and S.BetweentheEyes:IsCastable() and S.ShadowDance:IsCastable() and S.Vanish:CooldownRemains() >= (Rogue.CPMaxSpend() * (1 + (Player:BuffUp(S.TrueBearing) and 0.5 or 0))) and S.Crackshot:IsAvailable() and (Finish_Condition() or (Player:BuffUp(S.AdrenalineRush) and Player:BuffRemains(S.AdrenalineRush) < 2 and not S.Vanish:IsReady())) then 
     if HR.Cast(S.ShadowDance, Settings.Commons.OffGCDasOffGCD.ShadowDance) then return "Cast Shadow Dance (Finish or Extend)" end
   end
   -- # Hidden Opportunity builds without Crackshot use Dance if Audacity and Opportunity are not active
@@ -320,7 +320,7 @@ local function CDs ()
 
   -- # Maintain Blade Flurry on 2+ targets, and on single target with Underhanded during Adrenaline Rush
   -- actions.cds+=/blade_flurry,if=(spell_targets>=2-talent.underhanded_upper_hand&!stealthed.all&buff.adrenaline_rush.up)&buff.blade_flurry.remains<gcd
-  if S.BladeFlurry:IsReady() then
+  if S.BladeFlurry:IsCastable() then
     if (EnemiesBFCount >= 2 - num(S.UnderhandedUpperhand:IsAvailable()) and not Player:StealthUp(true, true) and Player:BuffUp(S.AdrenalineRush)) and Player:BuffRemains(S.BladeFlurry) < Player:GCD() then
       if Settings.Outlaw.GCDasOffGCD.BladeFlurry then
         HR.CastSuggested(S.BladeFlurry)
@@ -351,7 +351,7 @@ local function CDs ()
 
   -- # Use Keep it Rolling with at least 3 buffs (4 with T31)
   -- -- actions.cds+=/keep_it_rolling,if=!variable.rtb_reroll&rtb_buffs>=3+set_bonus.tier31_4pc&(buff.shadow_dance.down|rtb_buffs>=6)
-  if S.KeepItRolling:IsReady() and not RtB_Reroll() and RtB_Buffs() >= 3 + num(Player:HasTier(31, 4)) and (Player:BuffDown(S.ShadowDance) or RtB_Buffs() >= 6) then
+  if S.KeepItRolling:IsCastable() and not RtB_Reroll() and RtB_Buffs() >= 3 + num(Player:HasTier(31, 4)) and (Player:BuffDown(S.ShadowDance) or RtB_Buffs() >= 6) then
     if HR.Cast(S.KeepItRolling, Settings.Outlaw.GCDasOffGCD.KeepItRolling) then return "Cast Keep it Rolling" end
   end
 
@@ -373,7 +373,7 @@ local function CDs ()
 
   -- # Use Blade Rush at minimal energy outside of stealth
   -- actions.cds+=/blade_rush,if=energy.base_time_to_max>4&!stealthed.all
-  if S.BladeRush:IsReady() and EnergyTimeToMax > 4 and not Player:StealthUp(true, true) then
+  if S.BladeRush:IsCastable() and EnergyTimeToMax > 4 and not Player:StealthUp(true, true) then
     if HR.Cast(S.BladeRush, Settings.Outlaw.GCDasOffGCD.BladeRush) then return "Cast Blade Rush" end
   end
 
@@ -534,7 +534,7 @@ end
 
 local function Build ()
 	-- actions.build+=/echoing_reprimand
-	if CDsON() and S.EchoingReprimand:IsReady() then
+	if CDsON() and S.EchoingReprimand:IsCastable() then
 		if HR.Cast(S.EchoingReprimand, nil, Settings.Commons.GCDasOffGCD.EchoingReprimand) then
 			return "Cast Echoing Reprimand"
 		end
@@ -648,6 +648,9 @@ local function APL ()
         if S.KeepItRolling:IsAvailable() and S.GhostlyStrike:IsReady() and S.EchoingReprimand:IsAvailable() then
           if HR.Cast(S.GhostlyStrike, Settings.Outlaw.OffGCDasOffGCD.GhostlyStrike) then return "Cast Ghostly Strike KiR (Opener)" end
         end
+        if S.KeepItRolling:IsAvailable() and S.EchoingReprimand:IsReady() and S.EchoingReprimand:IsAvailable() then
+          if HR.Cast(S.EchoingReprimand, nil, Settings.Commons.GCDasOffGCD.EchoingReprimand) then return "Cast Echoing Reprimand (Opener)" end
+        end
         if S.HiddenOpportunity:IsAvailable() and S.Ambush:IsCastable() then
           if HR.Cast(S.Ambush) then return "Cast Ambush (Opener)" end
         elseif not S.HiddenOpportunity:IsAvailable() and S.SinisterStrike:IsCastable() then
@@ -734,7 +737,7 @@ local function APL ()
 end
 
 local function Init ()
-  HR.Print("You are using a fork [Version 1.1]: THIS IS NOT THE OFFICIAL VERSION - if there are issues, message me on Discord: kekwxqcl")
+  HR.Print("You are using a fork [Version 1.2]: THIS IS NOT THE OFFICIAL VERSION - if there are issues, message me on Discord: kekwxqcl")
 end
 
 HR.SetAPL(260, APL, Init)
