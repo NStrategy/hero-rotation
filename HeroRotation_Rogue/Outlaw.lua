@@ -344,7 +344,7 @@ local function CDs ()
   -- actions.cds+=/roll_the_bones,if=variable.rtb_reroll|rtb_buffs=0|(rtb_buffs.max_remains<=2|rtb_buffs.max_remains<=9&rtb_buffs<=3&buff.loaded_dice.up&!stealthed.all)&set_bonus.tier31_4pc|rtb_buffs.max_remains<=7&(cooldown.shadow_dance.ready|cooldown.vanish.ready)&!stealthed.all NS note: Added a KiR check for bs condition as adivsed in the tc channel
   if S.RolltheBones:IsCastable() then
     local no_crackshot_stealth = not Player:BuffUp(S.SubterfugeBuff) or not Player:BuffUp(S.ShadowDanceBuff) or not Player:BuffUp(S.VanishBuff) or not Player:BuffUp(S.VanishBuff2) or not Player:BuffUp(S.Stealth) or not Player:BuffUp(S.Stealth2) -- testing
-    if (not Player:StealthUp(true, true) and (RtB_Reroll() or RtB_Buffs() == 0 or (LongestRtBRemains() <= 2 or LongestRtBRemains() <= 9 and RtB_Buffs() == 3 and Player:BuffUp(S.LoadedDiceBuff)) and Player:HasTier(31, 4) or LongestRtBRemains() <= 7 and (S.ShadowDance:IsReady() or S.Vanish:IsReady()))) then
+    if (not Player:StealthUp(true, true) and (RtB_Reroll() or RtB_Buffs() == 0 or (LongestRtBRemains() <= 2.5 or LongestRtBRemains() <= 9 and RtB_Buffs() == 3 and Player:BuffUp(S.LoadedDiceBuff)) and Player:HasTier(31, 4) or LongestRtBRemains() <= 7.5 and (S.ShadowDance:CooldownRemains() <= 2 or S.Vanish:CooldownRemains() <= 2))) then
       if HR.Cast(S.RolltheBones, Settings.Outlaw.GCDasOffGCD.RolltheBones) then return "Cast Roll the Bones" end
     end
   end
@@ -371,14 +371,8 @@ local function CDs ()
     end
   end
 
-  -- # Use Blade Rush at minimal energy outside of stealth
-  -- actions.cds+=/blade_rush,if=energy.base_time_to_max>4&!stealthed.all
-  if S.BladeRush:IsCastable() and EnergyTimeToMax > 4 and not Player:StealthUp(true, true) then
-    if HR.Cast(S.BladeRush, Settings.Outlaw.GCDasOffGCD.BladeRush) then return "Cast Blade Rush" end
-  end
-
-  -- actions.cds+=/call_action_list,name=stealth_cds,if=!stealthed.all
-  if not Player:StealthUp(true, true, true) then
+  -- actions.cds+=/call_action_list,name=stealth_cds,if=!stealthed.all&(!talent.crackshot|cooldown.between_the_eyes.ready)
+  if not Player:StealthUp(true, true) and (not S.Crackshot:IsAvailable() or S.BetweentheEyes:IsCastable()) then
     ShouldReturn = StealthCDs()
     if ShouldReturn then return ShouldReturn end
   end
@@ -387,6 +381,12 @@ local function CDs ()
   if CDsON() and S.ThistleTea:IsCastable() and not Player:BuffUp(S.ThistleTea)
     and (EnergyTrue <= 50 or HL.BossFilteredFightRemains("<", S.ThistleTea:Charges()*6)) then
     if HR.Cast(S.ThistleTea, Settings.Commons.OffGCDasOffGCD.ThistleTea) then return "Cast Thistle Tea" end
+  end
+
+  -- # Use Blade Rush at minimal energy outside of stealth
+  -- actions.cds+=/blade_rush,if=energy.base_time_to_max>4&!stealthed.all
+  if S.BladeRush:IsCastable() and EnergyTimeToMax > 4 and not Player:StealthUp(true, true) then
+    if HR.Cast(S.BladeRush, Settings.Outlaw.GCDasOffGCD.BladeRush) then return "Cast Blade Rush" end
   end
 
   -- actions.cds+=/potion,if=buff.bloodlust.react|fight_remains<30|buff.adrenaline_rush.up
@@ -471,7 +471,7 @@ local function Stealth()
 
   -- # High priority Between the Eyes for Crackshot, except not directly out of Shadowmeld
 	-- actions.stealth+=/between_the_eyes,if=variable.finish_condition&talent.crackshot&(!buff.shadowmeld.up|stealthed.rogue)
-	if S.BetweentheEyes:IsCastable() and Target:IsSpellInRange(S.BetweentheEyes) and (not Player:BuffUp(S.Shadowmeld) or Player:BuffUp(S.SubterfugeBuff) or Player:BuffUp(S.ShadowDanceBuff) or Player:BuffUp(S.VanishBuff) or Player:BuffUp(S.VanishBuff2) or Player:BuffUp(S.Stealth) or Player:BuffUp(S.Stealth2))
+	if S.BetweentheEyes:IsCastable() and Target:IsSpellInRange(S.BetweentheEyes) and (not Player:BuffUp(S.Shadowmeld) or Player:BuffUp(S.SubterfugeBuff) or Player:BuffUp(S.ShadowDanceBuff) or Player:BuffUp(S.VanishBuff) or Player:BuffUp(S.VanishBuff2) or Player:BuffUp(S.Stealth) or Player:BuffUp(S.Stealth2) or Player:StealthUp(true, false))
     and Finish_Condition() and S.Crackshot:IsAvailable() then
     if HR.CastPooling(S.BetweentheEyes) then return "Cast Between the Eyes" end
    end
@@ -505,9 +505,9 @@ local function Finish ()
 	end
 
 	-- #Crackshot builds use Between the Eyes outside of Stealth if Vanish or Dance will not come off cooldown within the next cast
-	-- actions.finish+=/between_the_eyes,if=talent.crackshot&(cooldown.vanish.remains>45&cooldown.shadow_dance.remains>12)
+	-- actions.finish+=/between_the_eyes,if=talent.crackshot&(cooldown.vanish.remains>45&cooldown.shadow_dance.remains>12) NS note: changed 12 to 15 based on suggestion of offical version
 	if S.BetweentheEyes:IsCastable() and Target:IsSpellInRange(S.BetweentheEyes) and S.Crackshot:IsAvailable()
-		and (S.Vanish:CooldownRemains() > 45 and S.ShadowDance:CooldownRemains() > 12) then
+		and (S.Vanish:CooldownRemains() > 45 and S.ShadowDance:CooldownRemains() > 15) then
 		if HR.CastPooling(S.BetweentheEyes) then return "Cast Between the Eyes" end
 	end
 
@@ -561,7 +561,7 @@ local function Build ()
 	-- # With Fan the Hammer, consume Opportunity if it will not overcap CPs, or with 1 CP at minimum NS note: if broadside is active, KIR builds only consume PS at 1cp
 	-- actions.build+=/pistol_shot,if=talent.fan_the_hammer&buff.opportunity.up&(combo_points.deficit>=(1+(talent.quick_draw+buff.broadside.up)*(talent.fan_the_hammer.rank+1))|combo_points<=talent.ruthlessness)
 	if S.FanTheHammer:IsAvailable() and S.KeepItRolling:IsAvailable() and Player:BuffUp(S.Opportunity) and (ComboPointsDeficit >= (1 + (num(S.QuickDraw:IsAvailable()) + num(Player:BuffUp(S.Broadside))) * (S.FanTheHammer:TalentRank() + 1))
-    or ComboPoints <= S.Ruthlessness:TalentRank()) then
+    or ComboPoints <= num(S.Ruthlessness:IsAvailable())) then
 		if HR.CastPooling(S.PistolShot) then return "Cast Pistol Shot (KiR)" end
 	end
 
@@ -613,7 +613,7 @@ local function APL ()
   if not Player:AffectingCombat() and S.Vanish:TimeSinceLastCast() > 1 then
     -- actions.precombat+=/blade_flurry,precombat_seconds=4,if=talent.underhanded_upper_hand
     -- Blade Flurry Breaks Stealth so must be done first
-    if S.BladeFlurry:IsReady() and Player:BuffDown(S.BladeFlurry) and S.UnderhandedUpperhand:IsAvailable() and not Player:StealthUp(true, true) then
+    if S.BladeFlurry:IsReady() and Player:BuffDown(S.BladeFlurry) and S.UnderhandedUpperhand:IsAvailable() and not Player:StealthUp(true, true) and (S.AdrenalineRush:IsCastable() or Player:BuffUp(S.AdrenalineRush)) then
       if HR.Cast(S.BladeFlurry) then return "Blade Flurry (Opener)" end
     end
 
