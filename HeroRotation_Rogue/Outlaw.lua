@@ -266,26 +266,26 @@ end
 local function StealthCDs ()
   -- # Hidden Opportunity builds without Crackshot use Vanish if Audacity is not active and when under max Opportunity stacks
   -- actions.stealth_cds+=/vanish,if=talent.hidden_opportunity&!talent.crackshot&!buff.audacity.up&(variable.vanish_opportunity_condition|buff.opportunity.stack<buff.opportunity.max_stack)&variable.ambush_condition
-  if S.Vanish:IsCastable() and Vanish_DPS_Condition() and S.HiddenOpportunity:IsAvailable() and not S.Crackshot:IsAvailable() and not Player:BuffUp(S.Audacity)
+  if S.Vanish:CooldownRemains() < Player:GCD() and Vanish_DPS_Condition() and S.HiddenOpportunity:IsAvailable() and not S.Crackshot:IsAvailable() and not Player:BuffUp(S.Audacity)
     and (Vanish_Opportunity_Condition() or Player:BuffStack(S.Opportunity) < 6) and Ambush_Condition() then
     if HR.Cast(S.Vanish, Settings.Commons.OffGCDasOffGCD.Vanish) then return "Cast Vanish (HO)" end
   end
 
   -- # Crackshot builds or builds without Hidden Opportunity use Vanish at finish condition. NS note: Vanish into BtE on cooldown at 6+ CPs with BtE ready
   -- actions.stealth_cds+=/vanish,if=(!talent.hidden_opportunity|talent.crackshot)&(variable.finish_condition|buff.adrenaline_rush.up&buff.adrenaline_rush.remains<2)
-  if S.Vanish:IsCastable() and S.BetweentheEyes:IsCastable() and Vanish_DPS_Condition() and (not S.HiddenOpportunity:IsAvailable() or S.Crackshot:IsAvailable()) and (Finish_Condition() or (Player:BuffUp(S.AdrenalineRush) and Player:BuffRemains(S.AdrenalineRush) < 2)) then 
+  if S.Vanish:CooldownRemains() < Player:GCD() and S.BetweentheEyes:IsCastable() and Vanish_DPS_Condition() and (not S.HiddenOpportunity:IsAvailable() or S.Crackshot:IsAvailable()) and (Finish_Condition() or (Player:BuffUp(S.AdrenalineRush) and Player:BuffRemains(S.AdrenalineRush) < 2)) then 
     if HR.Cast(S.Vanish, Settings.Commons.OffGCDasOffGCD.Vanish) then return "Cast Vanish (Finish or Extend)" end
   end
 
   -- # Crackshot builds use Dance at finish condition. NS note:  Dance into BtE on cooldown at 6+ CPs with BtE ready
   -- actions.stealth_cds+=/shadow_dance,if=talent.crackshot&(variable.finish_condition|buff.adrenaline_rush.up&buff.adrenaline_rush.remains<2)
-  if S.ShadowDance:IsAvailable() and S.BetweentheEyes:IsCastable() and S.ShadowDance:IsCastable() and S.Vanish:CooldownRemains() >= (Rogue.CPMaxSpend() * (1 + (Player:BuffUp(S.TrueBearing) and 0.5 or 0))) and S.Crackshot:IsAvailable() and (Finish_Condition() or (Player:BuffUp(S.AdrenalineRush) and Player:BuffRemains(S.AdrenalineRush) < 2 and not S.Vanish:IsReady())) then 
+  if S.ShadowDance:IsAvailable() and not Player:StealthUp(true, false) and S.BetweentheEyes:IsCastable() and S.ShadowDance:CooldownRemains() < Player:GCD() and S.Vanish:CooldownRemains() >= (Rogue.CPMaxSpend() * (1 + (Player:BuffUp(S.TrueBearing) and 0.5 or 0))) and S.Crackshot:IsAvailable() and (Finish_Condition() or (Player:BuffUp(S.AdrenalineRush) and Player:BuffRemains(S.AdrenalineRush) < 2 and not S.Vanish:IsReady())) then 
     if HR.Cast(S.ShadowDance, Settings.Commons.OffGCDasOffGCD.ShadowDance) then return "Cast Shadow Dance (Finish or Extend)" end
   end
   -- # Hidden Opportunity builds without Crackshot use Dance if Audacity and Opportunity are not active
   -- actions.stealth_cds+=/shadow_dance,if=!talent.keep_it_rolling&variable.shadow_dance_condition&buff.slice_and_dice.up
   -- &(variable.finish_condition|talent.hidden_opportunity)&(!talent.hidden_opportunity|!cooldown.vanish.ready)
-  if S.ShadowDance:IsAvailable() and not S.Crackshot:IsAvailable() and S.ShadowDance:IsCastable() and S.HiddenOpportunity:IsAvailable() and Shadow_Dance_Condition() and Player:BuffUp(S.SliceandDice)
+  if S.ShadowDance:IsAvailable() and not S.Crackshot:IsAvailable() and S.ShadowDance:CooldownRemains() < Player:GCD() and S.HiddenOpportunity:IsAvailable() and Shadow_Dance_Condition() and Player:BuffUp(S.SliceandDice)
       and (Finish_Condition() or S.HiddenOpportunity:IsAvailable()) and (not S.HiddenOpportunity:IsAvailable() or not S.Vanish:IsReady()) then
       if HR.Cast(S.ShadowDance, Settings.Commons.OffGCDasOffGCD.ShadowDance) then return "Cast Shadow Dance (No Crackshot)" end
   end
@@ -293,7 +293,7 @@ local function StealthCDs ()
   -- # Keep it Rolling builds without Crackshot use Dance at finish condition but hold it for an upcoming Keep it Rolling
   -- actions.stealth_cds+=/shadow_dance,if=talent.keep_it_rolling&variable.shadow_dance_condition
   -- &(cooldown.keep_it_rolling.remains<=30|cooldown.keep_it_rolling.remains>120&(variable.finish_condition|talent.hidden_opportunity))
-  if S.ShadowDance:IsAvailable() and not S.Crackshot:IsAvailable() and S.ShadowDance:IsCastable() and S.KeepItRolling:IsAvailable() and Shadow_Dance_Condition()
+  if S.ShadowDance:IsAvailable() and not S.Crackshot:IsAvailable() and S.ShadowDance:CooldownRemains() < Player:GCD() and S.KeepItRolling:IsAvailable() and Shadow_Dance_Condition()
     and (S.KeepItRolling:CooldownRemains() <= 30 or S.KeepItRolling:CooldownRemains() >= 120 and (Finish_Condition() or S.HiddenOpportunity:IsAvailable())) then
     if HR.Cast(S.ShadowDance, Settings.Commons.OffGCDasOffGCD.ShadowDance) then return "Cast Shadow Dance (KiR no Crackshot)" end
   end
@@ -311,7 +311,7 @@ local function CDs ()
   -- # Use Adrenaline Rush if it is not active and the finisher condition is not met, but Crackshot builds can refresh it with 2cp or lower inside stealth NS note: Added safety check for loaded dice
   -- actions.cds=adrenaline_rush,if=!buff.adrenaline_rush.up&(!variable.finish_condition|!talent.improved_adrenaline_rush)|stealthed.all&talent.crackshot&talent.improved_adrenaline_rush&combo_points<=2
   if CDsON() and S.AdrenalineRush:IsCastable() then
-    if (not Player:BuffUp(S.AdrenalineRush) and (not Finish_Condition() or not S.ImprovedAdrenalineRush:IsAvailable()))
+    if  not Player:BuffUp(S.AdrenalineRush) and (not Finish_Condition() or not S.ImprovedAdrenalineRush:IsAvailable())
         or (Player:StealthUp(true, true) and S.Crackshot:IsAvailable() and S.ImprovedAdrenalineRush:IsAvailable() and ComboPoints <= 2)
         or (LongestRtBRemains() <= 3 and not Player:BuffUp(S.LoadedDiceBuff) and (not Finish_Condition() or not S.ImprovedAdrenalineRush:IsAvailable())) then
         if HR.Cast(S.AdrenalineRush, Settings.Outlaw.OffGCDasOffGCD.AdrenalineRush) then return "Cast Adrenaline Rush" end
