@@ -279,7 +279,7 @@ local function StealthCDs ()
 
   -- # Crackshot builds use Dance at finish condition. NS note:  Dance into BtE on cooldown at 6+ CPs with BtE ready
   -- actions.stealth_cds+=/shadow_dance,if=talent.crackshot&(variable.finish_condition|buff.adrenaline_rush.up&buff.adrenaline_rush.remains<2)
-  if S.ShadowDance:IsAvailable() and not Player:StealthUp(true, false) and S.BetweentheEyes:IsCastable() and S.ShadowDance:IsCastable() and S.Vanish:CooldownRemains() >= (Rogue.CPMaxSpend() * (1 + (Player:BuffUp(S.TrueBearing) and 0.5 or 0))) and S.Crackshot:IsAvailable() and (Finish_Condition() or (Player:BuffUp(S.AdrenalineRush) and Player:BuffRemains(S.AdrenalineRush) < 2 and not S.Vanish:IsReady())) then 
+  if S.ShadowDance:IsAvailable() and not Player:BuffUp(S.SubterfugeBuff) and S.BetweentheEyes:IsCastable() and S.ShadowDance:IsCastable() and S.Vanish:CooldownRemains() >= (Rogue.CPMaxSpend() * (1 + (Player:BuffUp(S.TrueBearing) and 0.5 or 0))) and S.Crackshot:IsAvailable() and (Finish_Condition() or (Player:BuffUp(S.AdrenalineRush) and Player:BuffRemains(S.AdrenalineRush) < 2 and not S.Vanish:IsReady())) then 
     if HR.Cast(S.ShadowDance, Settings.Commons.OffGCDasOffGCD.ShadowDance) then return "Cast Shadow Dance (Finish or Extend)" end
   end
   -- # Hidden Opportunity builds without Crackshot use Dance if Audacity and Opportunity are not active
@@ -471,7 +471,7 @@ local function Stealth()
 
   -- # High priority Between the Eyes for Crackshot, except not directly out of Shadowmeld
 	-- actions.stealth+=/between_the_eyes,if=variable.finish_condition&talent.crackshot&(!buff.shadowmeld.up|stealthed.rogue)
-	if S.BetweentheEyes:IsCastable() and Target:IsSpellInRange(S.BetweentheEyes) and (not Player:BuffUp(S.Shadowmeld) or Player:BuffUp(S.SubterfugeBuff) or Player:BuffUp(S.ShadowDanceBuff) or Player:BuffUp(S.VanishBuff) or Player:BuffUp(S.VanishBuff2) or Player:BuffUp(S.Stealth) or Player:BuffUp(S.Stealth2) or Player:StealthUp(true, false))
+	if S.BetweentheEyes:IsCastable() and Target:IsSpellInRange(S.BetweentheEyes) and (not Player:BuffUp(S.Shadowmeld) or Player:BuffUp(S.SubterfugeBuff) or Player:BuffUp(S.ShadowDanceBuff) or Player:BuffUp(S.VanishBuff) or Player:BuffUp(S.VanishBuff2) or Player:BuffUp(S.Stealth) or Player:BuffUp(S.Stealth2))
     and Finish_Condition() and S.Crackshot:IsAvailable() then
     if HR.CastPooling(S.BetweentheEyes) then return "Cast Between the Eyes" end
    end
