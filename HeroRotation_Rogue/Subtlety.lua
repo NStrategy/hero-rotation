@@ -328,7 +328,7 @@ local function Finish (ReturnSpellOnly, StealthSpell)
   end
 
   -- actions.finish+=/cold_blood,if=variable.secret_condition&cooldown.secret_technique.ready
-  if S.ColdBlood:IsReady() and Secret_Condition() and S.SecretTechnique:IsReady() then
+  if S.ColdBlood:IsCastable() and Secret_Condition() and S.SecretTechnique:IsCastable() then
     if Settings.Commons.OffGCDasOffGCD.ColdBlood then
       HR.Cast(S.ColdBlood, Settings.Commons.OffGCDasOffGCD.ColdBlood)
     else
@@ -570,7 +570,7 @@ local function CDs ()
   if S.SymbolsofDeath:IsCastable() then
     if (SnDCondition or (not SnDCondition and Player:BuffUp(S.ShadowDanceBuff))) and (not Player:BuffUp(S.TheRottenBuff) or not Player:HasTier(30, 2)) and
       Player:BuffRemains(S.SymbolsofDeath) <= 3 and
-      (not S.Flagellation:IsAvailable() or (S.Flagellation:CooldownRemains() > 10 and (S.ShadowDance:ChargesFractional() < 2 or (Player:BuffUp(S.SymbolsofDeath) and Player:BuffRemains(S.SymbolsofDeath) <= 3))) or 
+      (not S.Flagellation:IsAvailable() or S.Flagellation:CooldownRemains() > 10 or Player:BuffRemains(S.ShadowDance) >= 2 and S.InvigoratingShadowdust:IsAvailable() or 
       S.Flagellation:CooldownUp() and ComboPoints >= 5 and not S.InvigoratingShadowdust:IsAvailable()) then
       if HR.Cast(S.SymbolsofDeath, Settings.Subtlety.OffGCDasOffGCD.SymbolsofDeath) then return "Cast Symbols of Death" end
     end
@@ -787,13 +787,9 @@ local function Stealth_CDs (EnergyThreshold)
     -- actions.stealth_cds+=/shadow_dance,if=(dot.rupture.ticking|talent.invigorating_shadowdust)&variable.rotten_cb&(!talent.the_first_dance|combo_points.deficit>=4|buff.shadow_blades.up)&(variable.shd_combo_points&variable.shd_threshold|(buff.shadow_blades.up|cooldown.symbols_of_death.up&!talent.sepsis|buff.symbols_of_death.remains>=4&!set_bonus.tier30_2pc|!buff.symbols_of_death.remains&set_bonus.tier30_2pc)&cooldown.secret_technique.remains<10+12*(!talent.invigorating_shadowdust|set_bonus.tier30_2pc))
     -- NOTE: |buff.flagellation.up is a dead operation in SimC due to a typo, since the buff we use in-game is buff.flagellation_buff.up, ignoring
     if  (Target:DebuffUp(S.Rupture) or S.InvigoratingShadowdust:IsAvailable()) and Rotten_CB() and 
-        (not S.TheFirstDance:IsAvailable() or ComboPointsDeficit >= 4 or Player:BuffUp(S.ShadowBlades)) and
-        (ShD_Combo_Points() and ShD_Threshold() or 
-        (Player:BuffUp(S.ShadowBlades) or 
-        S.SymbolsofDeath:CooldownUp() and not S.Sepsis:IsAvailable() or 
-        Player:BuffRemains(S.SymbolsofDeath) >= 4 and not Player:HasTier(30, 2) or 
-        not Player:BuffUp(S.SymbolsofDeath) and Player:HasTier(30, 2)) and
-        S.SecretTechnique:CooldownRemains() < 10 + 12 * num(not S.InvigoratingShadowdust:IsAvailable() or Player:HasTier(30, 2))) then
+        (not S.TheFirstDance:IsAvailable() or ComboPointsDeficit >= 4 or Player:BuffUp(S.ShadowBlades)) and (ShD_Combo_Points() and ShD_Threshold() or
+        (Player:BuffUp(S.ShadowBlades) or S.SymbolsofDeath:IsCastable() and not S.Sepsis:IsAvailable() or Player:BuffRemains(S.SymbolsofDeath) >= 4 and not Player:HasTier(30, 2) or 
+        not Player:BuffUp(S.SymbolsofDeath) and Player:HasTier(30, 2)) and  S.SecretTechnique:CooldownRemains() < 10 + 12 * num(not S.InvigoratingShadowdust:IsAvailable() or Player:HasTier(30, 2))) then
         ShouldReturn = StealthMacro(S.ShadowDance, EnergyThreshold)
         if ShouldReturn then return "ShadowDance Macro " .. ShouldReturn end
     end
