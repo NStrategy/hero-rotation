@@ -638,6 +638,26 @@ local function CDs ()
         if HR.Cast(S.ShadowBlades, Settings.Subtlety.OffGCDasOffGCD.ShadowBlades) then return "Cast Shadow Blades" end
       end
     end
+    -- custom Fyrakk Conditions
+    if S.Vanish:IsCastable() then
+      if Player:BuffUp(S.ShadowDanceBuff) and S.SecretTechnique:TimeSinceLastCast() < 5 and not (S.Vanish:TimeSinceLastCast() < 5) and Player:BuffRemains(S.ShadowBlades) > 12 and Target:NPCID() == 204931 then
+        ShouldReturn = StealthMacro(S.Vanish, EnergyThreshold)
+        if ShouldReturn then return "Vanish Macro " .. ShouldReturn end
+      end
+    end
+    -- intermission
+    if S.Vanish:IsCastable() then
+      if Player:BuffUp(S.ShadowDanceBuff) and S.SecretTechnique:TimeSinceLastCast() < 5 and not (S.Vanish:TimeSinceLastCast() < 5) and Player:BuffUp(S.Flagellation) and S.ShadowBlades:CooldownRemains() <= 30 and S.ShadowBlades:CooldownRemains() >= 15 and Target:NPCID() == 204931 then
+        ShouldReturn = StealthMacro(S.Vanish, EnergyThreshold)
+        if ShouldReturn then return "Vanish Macro " .. ShouldReturn end
+      end
+    end
+    -- Cast SB to pull Flag
+    if S.ShadowBlades:IsCastable() then
+      if S.Flagellation:CooldownRemains() <= 30 and S.Flagellation:CooldownRemains() >= 12 and not S.Flagellation:IsCastable() and S.Vanish:IsCastable() and Target:NPCID() == 204931 then
+        if HR.Cast(S.ShadowBlades, Settings.Subtlety.OffGCDasOffGCD.ShadowBlades) then return "Cast Shadow Blades Pull Flag" end
+      end
+    end
     -- Fuu Tea condition
     if S.ThistleTea:IsCastable() then
       -- actions.cds+=/thistle_tea,if=!buff.thistle_tea.up&cooldown.thistle_tea.charges_fractional>=2.5&buff.shadow_dance.remains>=4 -- Fuus APL
@@ -1008,7 +1028,7 @@ local function APL ()
 end
 
 local function Init ()
-  HR.Print("You are using a fork [Version 1.2]: THIS IS NOT THE OFFICIAL VERSION - if there are issues, message me on Discord: kekwxqcl")
+  HR.Print("You are using a fork [Version 1.3]: THIS IS NOT THE OFFICIAL VERSION - if there are issues, message me on Discord: kekwxqcl")
 end
 
 HR.SetAPL(261, APL, Init)
