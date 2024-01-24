@@ -321,7 +321,7 @@ local function CDs ()
   -- # Maintain Blade Flurry on 2+ targets, and on single target with Underhanded during Adrenaline Rush
   -- actions.cds+=/blade_flurry,if=(spell_targets>=2-talent.underhanded_upper_hand&!stealthed.all&buff.adrenaline_rush.up)&buff.blade_flurry.remains<gcd
   if S.BladeFlurry:IsCastable() then
-    if (EnemiesBFCount >= 2 - num(S.UnderhandedUpperhand:IsAvailable()) and not Player:StealthUp(true, true) and Player:BuffUp(S.AdrenalineRush)) and Player:BuffRemains(S.BladeFlurry) < Player:GCD() then
+    if (EnemiesBFCount >= 2 - num(S.UnderhandedUpperhand:IsAvailable() and not Player:StealthUp(true, true) and Player:BuffUp(S.AdrenalineRush))) and Player:BuffRemains(S.BladeFlurry) < Player:GCD() then
       if Settings.Outlaw.GCDasOffGCD.BladeFlurry then
         HR.CastSuggested(S.BladeFlurry)
       else
@@ -482,10 +482,10 @@ local function Stealth()
 	end
 
 	-- # 2 Fan the Hammer Crackshot builds can consume Opportunity in stealth with max stacks, Broadside, and low CPs, or with Greenskins active
-	-- actions.stealth+=/pistol_shot,if=talent.crackshot&talent.fan_the_hammer.rank>=2&buff.opportunity.stack>=6&(buff.broadside.up&combo_points<=1|buff.greenskins_wickers.up) NS note: added not KiR and HO check since KiR builds would only want to use PS below 4 cp, also not checking for max stacks anymore since faq states Pistol Shot in stealth with an Opportunity proc  
-	if S.PistolShot:IsCastable() and not S.KeepItRolling:IsAvailable() and S.HiddenOpportunity:IsAvailable() and Target:IsSpellInRange(S.PistolShot) and S.Crackshot:IsAvailable() and S.FanTheHammer:TalentRank() >= 2 and Player:BuffUp(S.Opportunity)
+	-- actions.stealth+=/pistol_shot,if=talent.crackshot&talent.fan_the_hammer.rank>=2&buff.opportunity.stack>=6&(buff.broadside.up&combo_points<=1|buff.greenskins_wickers.up) NS note: Consume Opportunity procs at 0-1 CP if :rtb_bs: Broadside is active. Both KiR and HO builds now.
+	if S.PistolShot:IsCastable() and Target:IsSpellInRange(S.PistolShot) and S.Crackshot:IsAvailable() and S.FanTheHammer:TalentRank() >= 2 and Player:BuffUp(S.Opportunity)
 		and (Player:BuffUp(S.Broadside) and ComboPoints <= 1 or Player:BuffUp(S.GreenskinsWickersBuff)) then
-		if HR.CastPooling(S.PistolShot) then return "Cast Pistol Shot (Stealth HO)" end
+		if HR.CastPooling(S.PistolShot) then return "Cast Pistol Shot (Broadside)" end
 	end
 
 	-- actions.stealth+=/ambush,if=talent.hidden_opportunity
