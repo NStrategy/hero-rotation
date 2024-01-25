@@ -278,7 +278,7 @@ local function StealthCDs ()
   end
 
   -- # Crackshot builds use Dance at finish condition. NS note:  Dance into BtE on cooldown at 6+ CPs with BtE ready
-  -- actions.stealth_cds+=/shadow_dance,if=talent.crackshot&(variable.finish_condition|buff.adrenaline_rush.up&buff.adrenaline_rush.remains<2)
+  -- actions.stealth_cds+=/shadow_dance,if=talent.crackshot&cooldown.vanish.remains>=(cp_max_spend*(1+(buff.true_bearing.up*0.5)))&(variable.finish_condition|(buff.adrenaline_rush.up&buff.adrenaline_rush.remains<2&!cooldown.vanish.ready)) NS: about 200 dps increase
   if S.ShadowDance:IsAvailable() and not Player:BuffUp(S.SubterfugeBuff) and S.BetweentheEyes:IsCastable() and S.ShadowDance:IsCastable() and S.Vanish:CooldownRemains() >= (Rogue.CPMaxSpend() * (1 + (Player:BuffUp(S.TrueBearing) and 0.5 or 0))) and S.Crackshot:IsAvailable() and (Finish_Condition() or (Player:BuffUp(S.AdrenalineRush) and Player:BuffRemains(S.AdrenalineRush) < 2 and not S.Vanish:IsReady())) then 
     if HR.Cast(S.ShadowDance, Settings.Commons.OffGCDasOffGCD.ShadowDance) then return "Cast Shadow Dance (Finish or Extend)" end
   end
@@ -455,7 +455,7 @@ end
 
 local function Stealth()
 	-- actions.stealth=blade_flurry,if=talent.subterfuge&talent.hidden_opportunity&spell_targets>=2&buff.blade_flurry.remains<gcd
-	if S.BladeFlurry:IsReady() and S.BladeFlurry:IsCastable() and AoEON() and S.Subterfuge:IsAvailable() and S.HiddenOpportunity:IsAvailable() and EnemiesBFCount >= 2
+	if S.BladeFlurry:IsCastable() and AoEON() and S.Subterfuge:IsAvailable() and S.HiddenOpportunity:IsAvailable() and EnemiesBFCount >= 2
 		and Player:BuffRemains(S.BladeFlurry) <= Player:GCD() then
 		if Settings.Outlaw.GCDasOffGCD.BladeFlurry then
 		  HR.CastSuggested(S.BladeFlurry)
@@ -482,8 +482,8 @@ local function Stealth()
 	end
 
 	-- # 2 Fan the Hammer Crackshot builds can consume Opportunity in stealth with max stacks, Broadside, and low CPs, or with Greenskins active
-	-- actions.stealth+=/pistol_shot,if=talent.crackshot&talent.fan_the_hammer.rank>=2&buff.opportunity.stack>=6&(buff.broadside.up&combo_points<=1|buff.greenskins_wickers.up) NS note: Consume Opportunity procs at 0-1 CP if :rtb_bs: Broadside is active. Both KiR and HO builds now.
-	if S.PistolShot:IsCastable() and Target:IsSpellInRange(S.PistolShot) and S.Crackshot:IsAvailable() and S.FanTheHammer:TalentRank() >= 2 and Player:BuffUp(S.Opportunity)
+	-- actions.stealth+=/pistol_shot,if=talent.crackshot&talent.fan_the_hammer.rank>=2&buff.opportunity.stack>=6&(buff.broadside.up&combo_points<=1|buff.greenskins_wickers.up)
+	if S.PistolShot:IsCastable() and Target:IsSpellInRange(S.PistolShot) and S.Crackshot:IsAvailable() and S.FanTheHammer:TalentRank() >= 2 and Player:BuffStack(S.Opportunity) >= 6
 		and (Player:BuffUp(S.Broadside) and ComboPoints <= 1 or Player:BuffUp(S.GreenskinsWickersBuff)) then
 		if HR.CastPooling(S.PistolShot) then return "Cast Pistol Shot (Broadside)" end
 	end
@@ -545,7 +545,7 @@ local function Build ()
     if HR.CastPooling(S.Ambush) then return "Cast Ambush (High-Prio Buffed)" end
   end
 
-	-- # With Audacity + Hidden Opportunity + Fan the Hammer, consume Opportunity to proc Audacity any time Ambush is not available
+	-- # With Audacity + Hidden Opportunity + Fan the Hammer, consume Opportunity to proc Audacity any time Ambush is not available ns note: recheck if for w/e reason KiR builds will use Audacity as well
 	-- actions.build+=/pistol_shot,if=talent.fan_the_hammer&talent.audacity&talent.hidden_opportunity&buff.opportunity.up&!buff.audacity.up
   -- NS note: following rogue faq  Pistol Shot with an Opportunity proc any time Ambush is not available. Still use even if you are at 5cp. (would probably dont need the check but who care really)
 	if S.FanTheHammer:IsAvailable() and S.Audacity:IsAvailable() and S.HiddenOpportunity:IsAvailable() and Player:BuffUp(S.Opportunity) and Player:BuffDown(S.AudacityBuff) and ComboPoints <=5 then
@@ -553,7 +553,7 @@ local function Build ()
 	end
 
 	-- # With Fan the Hammer, consume Opportunity as a higher priority if at max stacks or if it will expire. "With 6 stacks of opportunity, or if opportunity buff is running out, use PS at any cp (unless finish condition is fulfilled)."
-	-- actions.build+=/pistol_shot,if=talent.fan_the_hammer&buff.opportunity.up&(buff.opportunity.stack>=buff.opportunity.max_stack|buff.opportunity.remains<2)
+	-- actions.build+=/pistol_shot,if=talent.fan_the_hammer&buff.opportunity.up&((!variable.finish_condition&talent.keep_it_rolling.enabled)|talent.hidden_opportunity.enabled)&(buff.opportunity.stack>=6|buff.opportunity.remains<2) NS: Custom checks based on FAQ
 	if S.FanTheHammer:IsAvailable() and ((not Finish_Condition() and S.KeepItRolling:IsAvailable()) or S.HiddenOpportunity:IsAvailable()) and Player:BuffUp(S.Opportunity) and (Player:BuffStack(S.Opportunity) >= 6 or Player:BuffRemains(S.Opportunity) < 2) then
 		if HR.CastPooling(S.PistolShot) then return "Cast Pistol Shot (FtH Dump)" end
 	end
