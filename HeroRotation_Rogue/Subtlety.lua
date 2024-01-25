@@ -189,8 +189,10 @@ end
 local function Stealth_Helper ()
   -- actions+=/variable,name=stealth_helper,value=energy>=variable.stealth_threshold
   -- actions+=/variable,name=stealth_helper,value=energy.deficit<=variable.stealth_threshold,if=!talent.vigor|talent.shadowcraft
-  if not S.Vigor:IsAvailable() or S.Shadowcraft:IsAvailable() then
+  if S.InvigoratingShadowdust:IsAvailable() and (not S.Vigor:IsAvailable() or S.Shadowcraft:IsAvailable()) then
     return Player:EnergyDeficitPredicted() <= Stealth_Threshold()
+  elseif S.DarkBrew:IsAvailable() and (not S.Vigor:IsAvailable() or S.Shadowcraft:IsAvailable()) then
+    return (Player:EnergyDeficitPredicted() - 7) <= Stealth_Threshold()
   else
     return Player:Energy() >= Stealth_Threshold()
   end
@@ -571,7 +573,7 @@ local function CDs ()
     if (SnDCondition or (not SnDCondition and Player:BuffUp(S.ShadowDanceBuff))) and (not Player:BuffUp(S.TheRottenBuff) or not Player:HasTier(30, 2)) and
       Player:BuffRemains(S.SymbolsofDeath) <= 3 and
       (not S.Flagellation:IsAvailable() or S.Flagellation:CooldownRemains() > 10 or Player:BuffRemains(S.ShadowDance) >= 2 and S.InvigoratingShadowdust:IsAvailable() or 
-      S.Flagellation:CooldownUp() and ComboPoints >= 5 and not S.InvigoratingShadowdust:IsAvailable()) then
+      S.Flagellation:IsCastable() and ComboPoints >= 5 and not S.InvigoratingShadowdust:IsAvailable()) then
       if HR.Cast(S.SymbolsofDeath, Settings.Subtlety.OffGCDasOffGCD.SymbolsofDeath) then return "Cast Symbols of Death" end
     end
   end
@@ -764,10 +766,8 @@ local function Stealth_CDs (EnergyThreshold)
   if HR.CDsON() then
     -- actions.stealth_cds+=/vanish,if=(combo_points.deficit>1|buff.shadow_blades.up&talent.invigorating_shadowdust)&!variable.shd_threshold&(cooldown.flagellation.remains>=60|!talent.flagellation|fight_remains<=(30*cooldown.vanish.charges))&(cooldown.symbols_of_death.remains>3|!set_bonus.tier30_2pc)&(cooldown.secret_technique.remains>=10|!talent.secret_technique|cooldown.vanish.charges>=2&talent.invigorating_shadowdust&(buff.the_rotten.up|!talent.the_rotten)&!raid_event.adds.up) -- Maybe do a condition for Smolderon specifically, but probably too difficult
       if S.Vanish:IsCastable()
-        and (ComboPointsDeficit > 1 or Player:BuffUp(S.ShadowBlades) and S.InvigoratingShadowdust:IsAvailable())
-        and not ShD_Threshold()
-        and (S.Flagellation:CooldownRemains() >= 60 or not S.Flagellation:IsAvailable() or HL.BossFilteredFightRemains("<=", 30 * S.Vanish:Charges()))
-        and (S.SymbolsofDeath:CooldownRemains() > 3 or not Player:HasTier(30, 2))
+        and (ComboPointsDeficit > 1 or Player:BuffUp(S.ShadowBlades) and S.InvigoratingShadowdust:IsAvailable()) and not ShD_Threshold()
+        and (S.Flagellation:CooldownRemains() >= 60 or not S.Flagellation:IsAvailable() or HL.BossFilteredFightRemains("<=", 30 * S.Vanish:Charges())) and (S.SymbolsofDeath:CooldownRemains() > 3 or not Player:HasTier(30, 2))
         and (S.SecretTechnique:CooldownRemains() >= 10 or not S.SecretTechnique:IsAvailable() or S.Vanish:Charges() >= 2 and S.InvigoratingShadowdust:IsAvailable() and (Player:BuffUp(S.TheRottenBuff) or not S.TheRotten:IsAvailable())) then
         ShouldReturn = StealthMacro(S.Vanish, EnergyThreshold)
         if ShouldReturn then return "Vanish Macro " .. ShouldReturn end
