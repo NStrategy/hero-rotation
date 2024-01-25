@@ -579,7 +579,7 @@ local function CDs ()
   end
 
   if HR.CDsON() then
-    -- actions.cds+=/shadow_blades,if=variable.snd_condition&(combo_points<=1|set_bonus.tier31_4pc)&(buff.flagellation_buff.up|buff.flagellation_persist.up|!talent.flagellation)
+    -- shadow_blades,if=variable.snd_condition&(combo_points<=1|set_bonus.tier31_4pc)&(((buff.flagellation_buff.up|buff.flagellation_persist.up)&cooldown.shadow_dance.charges_fractional<2)|!talent.flagellation) NS note: cooldown.shadow_dance.charges_fractional<2 offers negligible damage gains but aligns more closely with the rotation outlined in the FAQ
     if S.ShadowBlades:IsCastable() then
       if SnDCondition and (ComboPoints <= 1 or Player:HasTier(31, 4)) and 
         (((Player:BuffUp(S.Flagellation) or Player:BuffUp(S.FlagellationPersistBuff)) and S.ShadowDance:ChargesFractional() < 2) or not S.Flagellation:IsAvailable()) then 
