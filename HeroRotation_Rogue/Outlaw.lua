@@ -226,16 +226,10 @@ local function RtB_Reroll ()
   return Cache.APLVar.RtB_Reroll
 end
 
--- # Use finishers if at -1 from max combo points, or -2 in Stealth with Crackshot NS note: Force 7 Cp outside of steatlh with Vanish or SD ready unless max opp stacks
+-- # Use finishers if at -1 from max combo points, or -2 in Stealth with Crackshot NS note: FUCK THE NEW RULE
 local function Finish_Condition ()
-    -- actions+=/variable,name=finish_condition,if=(!cooldown.vanish.ready&!cooldown.shadow_dance.ready|stealthed.all|spell_targets.blade_flurry>4),value=effective_combo_points>=cp_max_spend-1-(stealthed.all&talent.crackshot)
-    if (not S.Vanish:IsReady() and not S.ShadowDance:IsReady()) or Player:StealthUp(true, true) or EnemiesBFCount > 4 then
-        return EffectiveComboPoints >= Rogue.CPMaxSpend() - 1 - num(Player:StealthUp(true, true) and S.Crackshot:IsAvailable())
-    -- actions+=/variable,name=finish_condition,if=(cooldown.vanish.ready|cooldown.shadow_dance.ready)&!stealthed.all&spell_targets.blade_flurry<5,value=combo_points>=cp_max_spend-(buff.opportunity.stack>=buff.opportunity.max_stack)
-    elseif (S.Vanish:IsReady() or S.ShadowDance:IsReady()) and not Player:StealthUp(true, true) and EnemiesBFCount < 5 then
-        return ComboPoints >= Rogue.CPMaxSpend() - num(Player:BuffStack(S.Opportunity) >= 6)
-    end
-    return false
+  -- actions+=/variable,name=finish_condition,value=effective_combo_points>=cp_max_spend-1-(stealthed.all&talent.crackshot)
+  return EffectiveComboPoints >= Rogue.CPMaxSpend()-1-num((Player:StealthUp(true, true)) and S.Crackshot:IsAvailable())
 end
 
 -- # Ensure we want to cast Ambush prior to triggering a Stealth cooldown
