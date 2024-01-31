@@ -177,8 +177,8 @@ local function RtB_Reroll ()
       Cache.APLVar.RtB_Reroll = false
       RtB_Buffs()
       -- Following Rogue Discord FAQ: Use Roll the Bones if: You have 0-1 buffs OR if you have 2 buffs and Loaded Dice is active.
-      -- With 4pc
-      if S.Crackshot:IsAvailable() and Player:HasTier(31, 4) then
+      -- actions+=/variable,name=rtb_reroll,if=set_bonus.tier31_4pc,,value=(rtb_buffs<=1+buff.loaded_dice.up) NS Note: Better on lower ends, more on highest possible dmg
+      if Player:HasTier(31, 4) then
         if (RtB_Buffs() <= 1 + num(Player:BuffUp(S.LoadedDiceBuff))) then
           Cache.APLVar.RtB_Reroll = true
         end
@@ -303,7 +303,7 @@ end
 local function CDs ()
   -- # Cooldowns
   -- # Use Adrenaline Rush if it is not active and the finisher condition is not met, but Crackshot builds can refresh it with 2cp or lower inside stealth NS note: Added safety check for loaded dice
-  -- actions.cds=adrenaline_rush,if=!buff.adrenaline_rush.up&(!variable.finish_condition|!talent.improved_adrenaline_rush)|stealthed.all&talent.crackshot&talent.improved_adrenaline_rush&combo_points<=2
+  -- actions.cds+=/adrenaline_rush,if=(!buff.adrenaline_rush.up&(!variable.finish_condition|!talent.improved_adrenaline_rush))|(stealthed.all&talent.crackshot&talent.improved_adrenaline_rush&combo_points<=2)|(rtb_buffs.max_remains<=3&!buff.loaded_dice.up&(!variable.finish_condition|!talent.improved_adrenaline_rush))
   if CDsON() and S.AdrenalineRush:IsCastable() then
     if  (not Player:BuffUp(S.AdrenalineRush) and (not Finish_Condition() or not S.ImprovedAdrenalineRush:IsAvailable()))
         or (Player:StealthUp(true, true) and S.Crackshot:IsAvailable() and S.ImprovedAdrenalineRush:IsAvailable() and ComboPoints <= 2)
@@ -335,16 +335,16 @@ local function CDs ()
   
 
   -- # # Use Roll the Bones if reroll conditions are met, or with no buffs, or 2s before buffs expire with T31, or 7s before buffs expire with Vanish/Dance ready
-  -- actions.cds+=/roll_the_bones,if=variable.rtb_reroll|rtb_buffs=0|(rtb_buffs.max_remains<=2|rtb_buffs<=3&rtb_buffs.max_remains<=9&buff.loaded_dice.up)&!stealthed.all)&set_bonus.tier31_4pc|rtb_buffs.max_remains<=7&(cooldown.shadow_dance.ready|cooldown.vanish.ready)&!stealthed.all NS note: i Do NoT pLaY lIkE a BoT
+  -- actions.cds+=/roll_the_bones,if=	roll_the_bones,if=(variable.rtb_reroll|rtb_buffs=0|(rtb_buffs.max_remains<=2|rtb_buffs<=3&rtb_buffs.max_remains<=9&buff.loaded_dice.up)&set_bonus.tier31_4pc&!stealthed.all|rtb_buffs.max_remains<=7&(cooldown.shadow_dance.remains<=1|cooldown.vanish.remains<=1)) NS note: <=1 for Vanish and SD are a safety net condtion (more damage on lower sims overall) while also providing more max output in sims.
   if S.RolltheBones:IsCastable() then
     local no_crackshot_stealth = not Player:BuffUp(S.SubterfugeBuff) or not Player:BuffUp(S.ShadowDanceBuff) or not Player:BuffUp(S.VanishBuff) or not Player:BuffUp(S.VanishBuff2) or not Player:BuffUp(S.Stealth) or not Player:BuffUp(S.Stealth2) -- testing
-    if (not Player:StealthUp(true, true) and (RtB_Reroll() or RtB_Buffs() == 0 or (LongestRtBRemains() <= 2.5 or RtB_Buffs() <= 3 and LongestRtBRemains() <= 9 and Player:BuffUp(S.LoadedDiceBuff)) and Player:HasTier(31, 4) or LongestRtBRemains() <= 7.5 and (S.ShadowDance:CooldownRemains() <= 2 or S.Vanish:CooldownRemains() <= 2))) then
+    if (RtB_Reroll() or RtB_Buffs() == 0 or (LongestRtBRemains() <= 2.5 or RtB_Buffs() <= 3 and LongestRtBRemains() <= 9 and Player:BuffUp(S.LoadedDiceBuff)) and Player:HasTier(31, 4) and not Player:StealthUp(true, true) or LongestRtBRemains() <= 7.5 and (S.ShadowDance:CooldownRemains() <= 1 or S.Vanish:CooldownRemains() <= 1)) then
       if HR.Cast(S.RolltheBones, Settings.Outlaw.GCDasOffGCD.RolltheBones) then return "Cast Roll the Bones" end
     end
   end
 
   -- # Use Keep it Rolling with at least 3 buffs (4 with T31)
-  -- -- actions.cds+=/keep_it_rolling,if=!variable.rtb_reroll&rtb_buffs>=3+set_bonus.tier31_4pc&(buff.shadow_dance.down|rtb_buffs>=6)
+  -- actions.cds+=/keep_it_rolling,if=!variable.rtb_reroll&rtb_buffs>=3+set_bonus.tier31_4pc&(buff.shadow_dance.down|rtb_buffs>=6)
   if S.KeepItRolling:IsCastable() and not RtB_Reroll() and RtB_Buffs() >= 3 + num(Player:HasTier(31, 4)) and (Player:BuffDown(S.ShadowDance) or RtB_Buffs() >= 6) then
     if HR.Cast(S.KeepItRolling, Settings.Outlaw.GCDasOffGCD.KeepItRolling) then return "Cast Keep it Rolling" end
   end
@@ -731,7 +731,7 @@ local function APL ()
 end
 
 local function Init ()
-  HR.Print("You are using a fork [Version 1.3]: THIS IS NOT THE OFFICIAL VERSION - if you are having issues, message me on Discord: kekwxqcl")
+  HR.Print("You are using a fork [Version 1.4]: THIS IS NOT THE OFFICIAL VERSION - if you are having issues, message me on Discord: kekwxqcl")
 end
 
 HR.SetAPL(260, APL, Init)
