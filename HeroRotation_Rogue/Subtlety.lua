@@ -923,8 +923,8 @@ local function APL ()
     if ShouldReturn then return ShouldReturn end
 
     -- Blind
-    if S.Blind:IsCastable() and Target:NPCID() == 204560 or Target:NPCID() == 174773 then
-       if S.Blind:IsCastable() and HR.Cast(S.Blind, Settings.Commons.GCDasOffGCD.Blind) then return "Blind to CC Affix" end
+    if S.Blind:IsCastable() and Target:IsInterruptible() and (Target:NPCID() == 204560 or Target:NPCID() == 174773) then
+       if S.Blind:IsReady() and HR.Cast(S.Blind, Settings.Commons.GCDasOffGCD.Blind) then return "Blind to CC Affix" end
     end
 
     -- Maybe do a KidneyShot check for important adds. Archer in Hold for example.
