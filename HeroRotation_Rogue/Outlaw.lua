@@ -335,10 +335,10 @@ local function CDs ()
   
 
   -- # Use Roll the Bones if reroll conditions are met, or with no buffs, or 2s before buffs expire with T31, or 7s before buffs expire with Vanish/Dance ready Maybe add: bs in st, gm in aoe?
-  -- actions.cds+=/roll_the_bones,if=((variable.rtb_reroll&!stealthed.all)|(variable.rtb_reroll&rtb_buffs=1&!buff.broadside.up))|rtb_buffs=0|(rtb_buffs.max_remains<=2|rtb_buffs<=3&rtb_buffs.max_remains<=9&buff.loaded_dice.up)&set_bonus.tier31_4pc&!stealthed.all|rtb_buffs.max_remains<=7&(cooldown.shadow_dance.remains<=1|cooldown.vanish.remains<=1) NS note: <=1 for Vanish and SD are a safety net condtion (more damage on lower sims overall) while also providing more max output in sims.
+  -- actions.cds+=/roll_the_bones,if=((variable.rtb_reroll&!stealthed.all)|(variable.rtb_reroll&rtb_buffs=1&!buff.broadside.up))|rtb_buffs=0|(rtb_buffs.max_remains<=2|rtb_buffs<=3&rtb_buffs.max_remains<=9&buff.loaded_dice.up)&set_bonus.tier31_4pc&!stealthed.all|(!stealthed.all&rtb_buffs.max_remains<=7&(cooldown.shadow_dance.remains<=1|cooldown.vanish.remains<=1))
   if S.RolltheBones:IsCastable() then
     local no_crackshot_stealth = not Player:BuffUp(S.SubterfugeBuff) or not Player:BuffUp(S.ShadowDanceBuff) or not Player:BuffUp(S.VanishBuff) or not Player:BuffUp(S.VanishBuff2) or not Player:BuffUp(S.Stealth) or not Player:BuffUp(S.Stealth2) -- testing
-    if ((RtB_Reroll() and not Player:StealthUp(true, true)) or (RtB_Reroll() and RtB_Buffs() == 1 and not Player:BuffUp(S.Broadside))) or RtB_Buffs() == 0 or (LongestRtBRemains() <= 2.5 or RtB_Buffs() <= 3 and LongestRtBRemains() <= 9 and Player:BuffUp(S.LoadedDiceBuff)) and Player:HasTier(31, 4) and not Player:StealthUp(true, true) or LongestRtBRemains() <= 7.5 and (S.ShadowDance:CooldownRemains() <= 1 or S.Vanish:CooldownRemains() <= 1) then
+    if ((RtB_Reroll() and not Player:StealthUp(true, true)) or (RtB_Reroll() and RtB_Buffs() == 1 and not Player:BuffUp(S.Broadside))) or RtB_Buffs() == 0 or (LongestRtBRemains() <= 2.5 or RtB_Buffs() <= 3 and LongestRtBRemains() <= 9 and Player:BuffUp(S.LoadedDiceBuff)) and Player:HasTier(31, 4) and not Player:StealthUp(true, true) or (not Player:StealthUp(true, true) and LongestRtBRemains() <= 7.5 and (S.ShadowDance:CooldownRemains() <= 1 or S.Vanish:CooldownRemains() <= 1)) then
       if HR.Cast(S.RolltheBones, Settings.Outlaw.GCDasOffGCD.RolltheBones) then return "Cast Roll the Bones" end
     end
   end
@@ -499,7 +499,7 @@ local function Finish ()
 	end
 
 	-- #Crackshot builds use Between the Eyes outside of Stealth if Vanish or Dance will not come off cooldown within the next cast
-	-- actions.finish+=/between_the_eyes,if=talent.crackshot&(cooldown.vanish.remains>45&cooldown.shadow_dance.remains>8) NS note: seems like 15 is too much, 9 sims best
+	-- actions.finish+=/between_the_eyes,if=talent.crackshot&(cooldown.vanish.remains>45&cooldown.shadow_dance.remains>8) NS note: seems like 15 is too much, 8 sims best
 	if S.BetweentheEyes:IsCastable() and Target:IsSpellInRange(S.BetweentheEyes) and S.Crackshot:IsAvailable()
 		and (S.Vanish:CooldownRemains() > 45 and S.ShadowDance:CooldownRemains() > 8) then
 		if HR.CastPooling(S.BetweentheEyes) then return "Cast Between the Eyes" end
