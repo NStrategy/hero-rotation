@@ -19,6 +19,7 @@ local AoEON = HR.AoEON
 local CDsON = HR.CDsON
 local Cast = HR.Cast
 local CastPooling = HR.CastPooling
+local CastQueue = HR.CastQueue
 local CastSuggested = HR.CastSuggested
 local CastAnnotated = HR.CastAnnotated
 -- Num/Bool Helper Functions
@@ -190,7 +191,7 @@ local function RtB_Reroll ()
           buffsCloseToExpiration = buffsCloseToExpiration + 1
         end
       end
-      if buffsCloseToExpiration >= 3 and Player:HasTier(31, 4) and S.RolltheBones:TimeSinceLastCast() > 26 then 
+      if buffsCloseToExpiration >= 3 and Player:HasTier(31, 4) and S.RolltheBones:TimeSinceLastCast() >= 26 then 
         Cache.APLVar.RtB_Reroll = true
       end
       -- Following Rogue Discord FAQ: Use Roll the Bones if: You have 0 buffs OR if you have 1 buff and it is not True Bearing
@@ -272,7 +273,7 @@ local function StealthCDs ()
   end
 
   -- # Crackshot builds use Dance at finish condition. NS note:  Dance into BtE on cooldown at 6+ CPs with BtE ready -- here maybe add default 10 seconds as it sims close to my condtion, will see.
-  -- actions.stealth_cds+=/shadow_dance,if=talent.crackshot&cooldown.vanish.remains>=(cp_max_spend*(1+(buff.true_bearing.up*0.5)))&(variable.finish_condition|(buff.adrenaline_rush.up&buff.adrenaline_rush.remains<2&!cooldown.vanish.ready)) NS: about 200 dps increase
+  -- actions.stealth_cds+=/shadow_dance,if=talent.crackshot&cooldown.vanish.remains>=(cp_max_spend*(1+(buff.true_bearing.up*0.5)))&(variable.finish_condition|(buff.adrenaline_rush.up&buff.adrenaline_rush.remains<2&!cooldown.vanish.ready))
   if S.ShadowDance:IsAvailable() and not Player:BuffUp(S.SubterfugeBuff) and S.BetweentheEyes:IsCastable() and S.ShadowDance:IsCastable() and S.Vanish:CooldownRemains() >= (Rogue.CPMaxSpend() * (1 + (Player:BuffUp(S.TrueBearing) and 0.5 or 0))) and S.Crackshot:IsAvailable() and (Finish_Condition() or (Player:BuffUp(S.AdrenalineRush) and Player:BuffRemains(S.AdrenalineRush) < 2 and not S.Vanish:IsReady())) then 
     if HR.Cast(S.ShadowDance, Settings.Commons.OffGCDasOffGCD.ShadowDance) then return "Cast Shadow Dance (Finish or Extend)" end
   end
@@ -303,12 +304,19 @@ end
 local function CDs ()
   -- # Cooldowns
   -- # Use Adrenaline Rush if it is not active and the finisher condition is not met, but Crackshot builds can refresh it with 2cp or lower inside stealth NS note: Added safety check for loaded dice
-  -- actions.cds+=/adrenaline_rush,if=(!buff.adrenaline_rush.up&(!variable.finish_condition|!talent.improved_adrenaline_rush))|(stealthed.all&talent.crackshot&talent.improved_adrenaline_rush&combo_points<=2)|(rtb_buffs.max_remains<=3&!buff.loaded_dice.up&(!variable.finish_condition|!talent.improved_adrenaline_rush))
+  -- actions.cds+=/adrenaline_rush,if=(!buff.adrenaline_rush.up&(!variable.finish_condition|!talent.improved_adrenaline_rush))|(stealthed.all&talent.crackshot&talent.improved_adrenaline_rush&combo_points<=2)
   if CDsON() and S.AdrenalineRush:IsCastable() then
     if  (not Player:BuffUp(S.AdrenalineRush) and (not Finish_Condition() or not S.ImprovedAdrenalineRush:IsAvailable()))
-        or (Player:StealthUp(true, true) and S.Crackshot:IsAvailable() and S.ImprovedAdrenalineRush:IsAvailable() and ComboPoints <= 2)
-        or (LongestRtBRemains() <= 3 and not Player:BuffUp(S.LoadedDiceBuff) and (not Finish_Condition() or not S.ImprovedAdrenalineRush:IsAvailable())) then
+        or (Player:StealthUp(true, true) and S.Crackshot:IsAvailable() and S.ImprovedAdrenalineRush:IsAvailable() and ComboPoints <= 2) then
         if HR.Cast(S.AdrenalineRush, Settings.Outlaw.OffGCDasOffGCD.AdrenalineRush) then return "Cast Adrenaline Rush" end
+    end
+  end
+
+  -- # Use Adrenaline Rush if the longest remaining Roll the Bones buff is 2 seconds or less, or if the longest remaining buff is 8.5 seconds or less and either Shadow Dance or Vanish cooldowns are 3 seconds or less, provided that Loaded Dice is not active. 
+  -- actions.cds+=/adrenaline_rush,if=(rtb_buffs.max_remains<=2|(rtb_buffs.max_remains<=8.5&(cooldown.shadow_dance.remains<=1|cooldown.vanish.remains<=1)))&!buff.loaded_dice.up&(!variable.finish_condition|!talent.improved_adrenaline_rush)
+  if CDsON() and S.AdrenalineRush:IsCastable() then
+    if (LongestRtBRemains() <= 2 or (LongestRtBRemains() <= 8.5 and (S.ShadowDance:CooldownRemains() <= 3 or S.Vanish:CooldownRemains() <= 3))) and not Player:BuffUp(S.LoadedDiceBuff) and (not Finish_Condition() or not S.ImprovedAdrenalineRush:IsAvailable()) then
+      if HR.Cast(S.AdrenalineRush, Settings.Outlaw.OffGCDasOffGCD.AdrenalineRush) then return "Cast ADR into RTB" end
     end
   end
 
@@ -335,10 +343,10 @@ local function CDs ()
   
 
   -- # Use Roll the Bones if reroll conditions are met, or with no buffs, or 2s before buffs expire with T31, or 7s before buffs expire with Vanish/Dance ready Maybe add: bs in st, gm in aoe?
-  -- actions.cds+=/roll_the_bones,if=((variable.rtb_reroll&!stealthed.all)|(variable.rtb_reroll&rtb_buffs=1&!buff.broadside.up))|rtb_buffs=0|(rtb_buffs.max_remains<=2|rtb_buffs<=3&rtb_buffs.max_remains<=9&buff.loaded_dice.up)&set_bonus.tier31_4pc&!stealthed.all|(!stealthed.all&rtb_buffs.max_remains<=7&(cooldown.shadow_dance.remains<=1|cooldown.vanish.remains<=1))
+  -- actions.cds+=/roll_the_bones,if=((variable.rtb_reroll&!stealthed.all)|(variable.rtb_reroll&rtb_buffs=1&!buff.broadside.up)|(variable.rtb_reroll&rtb_buffs=2&buff.loaded_dice.up&!buff.broadside.up))|rtb_buffs=0|(rtb_buffs.max_remains<=2|rtb_buffs<=3&rtb_buffs.max_remains<=9&buff.loaded_dice.up)&set_bonus.tier31_4pc&!stealthed.all|(!stealthed.all&rtb_buffs.max_remains<=7&(cooldown.shadow_dance.remains<=1|cooldown.vanish.remains<=1))
   if S.RolltheBones:IsCastable() then
     local no_crackshot_stealth = not Player:BuffUp(S.SubterfugeBuff) or not Player:BuffUp(S.ShadowDanceBuff) or not Player:BuffUp(S.VanishBuff) or not Player:BuffUp(S.VanishBuff2) or not Player:BuffUp(S.Stealth) or not Player:BuffUp(S.Stealth2) -- testing
-    if ((RtB_Reroll() and not Player:StealthUp(true, true)) or (RtB_Reroll() and RtB_Buffs() == 1 and not Player:BuffUp(S.Broadside))) or RtB_Buffs() == 0 or (LongestRtBRemains() <= 2.5 or RtB_Buffs() <= 3 and LongestRtBRemains() <= 9 and Player:BuffUp(S.LoadedDiceBuff)) and Player:HasTier(31, 4) and not Player:StealthUp(true, true) or (not Player:StealthUp(true, true) and LongestRtBRemains() <= 7.5 and (S.ShadowDance:CooldownRemains() <= 1 or S.Vanish:CooldownRemains() <= 1)) then
+    if ((RtB_Reroll() and not Player:StealthUp(true, true)) or (RtB_Reroll() and RtB_Buffs() == 1 and not Player:BuffUp(S.Broadside)) or (RtB_Reroll() and RtB_Buffs() == 2 and Player:BuffUp(S.LoadedDiceBuff) and not Player:BuffUp(S.Broadside))) or RtB_Buffs() == 0 or (LongestRtBRemains() <= 2.5 or RtB_Buffs() <= 3 and LongestRtBRemains() <= 9 and Player:BuffUp(S.LoadedDiceBuff)) and Player:HasTier(31, 4) and not Player:StealthUp(true, true) or (not Player:StealthUp(true, true) and LongestRtBRemains() <= 7.5 and (S.ShadowDance:CooldownRemains() <= 1 or S.Vanish:CooldownRemains() <= 1)) then
       if HR.Cast(S.RolltheBones, Settings.Outlaw.GCDasOffGCD.RolltheBones) then return "Cast Roll the Bones" end
     end
   end
