@@ -232,6 +232,8 @@ Spell.Rogue.Subtlety = MergeTableByKey(Spell.Rogue.Commons, {
   ShurikenToss            = Spell(114014),
   SymbolsofDeath          = Spell(212283),
   -- Talents
+  CloakedinShadows        = Spell(382515),
+  CloakedinShadowsBuff    = Spell(386165),
   DanseMacabre            = Spell(382528),
   DanseMacabreBuff        = Spell(393969),
   DeeperDaggers           = Spell(382517),
