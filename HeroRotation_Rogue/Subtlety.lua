@@ -145,7 +145,10 @@ local function UsePriorityRotation()
     elseif Target:NPCID() == 83894 or Target:NPCID() == 83893 or Target:NPCID() == 83892 then
       return true
     -- Yalnu (Flourishing Ancient)
-    elseif Target:NPCID() == 84400 then
+    elseif Target:NPCID() == 84400 or Target:NPCID() == 83846 then
+      return true
+    -- Witherbark
+    elseif Target:NPCID() == 81522 then
       return true
     end
   end
@@ -188,7 +191,8 @@ local function Stealth_Threshold ()
 end
 local function Stealth_Helper ()
   -- actions+=/variable,name=stealth_helper,value=energy>=variable.stealth_threshold
-  -- actions+=/variable,name=stealth_helper,value=energy.deficit<=variable.stealth_threshold,if=!talent.vigor|talent.shadowcraft
+  -- actions+=/variable,name=stealth_helper,value=(energy.deficit-7)<=variable.stealth_threshold,if=talent.dark_brew.enabled&(!talent.vigor.enabled|talent.shadowcraft.enabled)
+  -- actions+=/variable,name=stealth_helper,value=energy.deficit<=variable.stealth_threshold,if=talent.invigorating_shadowdust.enabled&(!talent.vigor.enabled|talent.shadowcraft.enabled)
   if S.InvigoratingShadowdust:IsAvailable() and (not S.Vigor:IsAvailable() or S.Shadowcraft:IsAvailable()) then
     return Player:EnergyDeficitPredicted() <= Stealth_Threshold()
   elseif S.DarkBrew:IsAvailable() and (not S.Vigor:IsAvailable() or S.Shadowcraft:IsAvailable()) then
@@ -226,7 +230,7 @@ local function Skip_Rupture_NPC () -- Homebrew exclude for certain NPCs
    -- AD
       or Target:NPCID() == 128435 or Target:NPCID() == 127315 or Target:NPCID() == 259205 or Target:NPCID() == 125828
    -- EB
-      or Target:NPCID() == 81638 or Target:NPCID() == 81638
+      or Target:NPCID() == 81638
    -- DHT
       or Target:NPCID() == 109908 or Target:NPCID() == 107288 or Target:NPCID() == 100529 or Target:NPCID() == 101074
    -- ToT
@@ -252,8 +256,8 @@ local function Secret_Condition()
   -- Check if Shadowblades is active and Backstab conditions are met
   if Player:BuffUp(S.ShadowBlades) and Player:BuffRemains(S.ShadowBlades) >= 7 and not PremeditationBuff and Player:BuffRemains(S.ShadowDanceBuff) >= 3 
      and S.DanseMacabre:IsAvailable() and MeleeEnemies10yCount <= 3 and not Used_For_Danse(S.Backstab) then
-    -- Require Backstab to be used for the condition to be true
-    condition = condition and Used_For_Danse(S.Backstab)
+     -- Require Backstab to be used for the condition to be true
+     condition = condition and Used_For_Danse(S.Backstab)
   end
 
   return condition
@@ -264,6 +268,15 @@ local function Trinket_Conditions () -- Fuus APL
          I.WitherbarksBranch:IsEquippedAndReady() and I.WitherbarksBranch:CooldownRemains() <= 8 or 
          I.BandolierOfTwistedBlades:IsEquippedAndReady() or S.InvigoratingShadowdust:IsAvailable())
 end
+local function DefensiveVanish ()
+	-- function to excluding vanish in rotation if using Cloaked in Shadows, idea is to have at least 1 charge of Vanish for mechanics/1 Vanish charge always lining up with Blades and Flag
+  if S.CloakedinShadows:IsAvailable() then
+    return true
+  else
+    return false
+  end
+end
+
 
 -- # Finishers
 -- ReturnSpellOnly and StealthSpell parameters are to Predict Finisher in case of Stealth Macros
@@ -426,7 +439,7 @@ local function Stealthed (ReturnSpellOnly, StealthSpell)
   end
 
   -- actions.stealthed=shadowstrike,if=buff.stealth.up&(spell_targets.shuriken_storm<4|variable.priority_rotation)
-  if ShadowstrikeIsCastable and StealthBuff and (MeleeEnemies10yCount < 4 or PriorityRotation) then
+  if ShadowstrikeIsCastable and StealthBuff and MeleeEnemies10yCount < 4 then
     if ReturnSpellOnly then
       return S.Shadowstrike
     else
@@ -568,21 +581,21 @@ local function CDs ()
       end
     end
   end 
-  -- actions.cds+=/symbols_of_death,if=variable.snd_condition&(!buff.the_rotten.up|!set_bonus.tier30_2pc)&buff.symbols_of_death.remains<=3&(!talent.flagellation|cooldown.flagellation.remains>10|buff.shadow_dance.remains>=2&talent.invigorating_shadowdust|cooldown.flagellation.up&combo_points>=5&!talent.invigorating_shadowdust)
+  -- actions.cds+=/symbols_of_death,if=variable.snd_condition&(!buff.the_rotten.up|!set_bonus.tier30_2pc)&buff.symbols_of_death.remains<=3&(!talent.flagellation|(cooldown.flagellation.remains>10|cooldown.flagellation.remains<2)|buff.shadow_dance.remains>=2&talent.invigorating_shadowdust|cooldown.flagellation.up&combo_points>=5&!talent.invigorating_shadowdust)
   if S.SymbolsofDeath:IsCastable() then
     if (SnDCondition or (not SnDCondition and Player:BuffUp(S.ShadowDanceBuff))) and (not Player:BuffUp(S.TheRottenBuff) or not Player:HasTier(30, 2)) and
       Player:BuffRemains(S.SymbolsofDeath) <= 3 and
-      (not S.Flagellation:IsAvailable() or S.Flagellation:CooldownRemains() > 10 or Player:BuffRemains(S.ShadowDance) >= 2 and S.InvigoratingShadowdust:IsAvailable() or 
+      (not S.Flagellation:IsAvailable() or (S.Flagellation:CooldownRemains() > 10 or S.Flagellation:CooldownRemains() < 2) or Player:BuffRemains(S.ShadowDanceBuff) >= 2 and S.InvigoratingShadowdust:IsAvailable() or 
       S.Flagellation:IsCastable() and ComboPoints >= 5 and not S.InvigoratingShadowdust:IsAvailable()) then
       if HR.Cast(S.SymbolsofDeath, Settings.Subtlety.OffGCDasOffGCD.SymbolsofDeath) then return "Cast Symbols of Death" end
     end
   end
 
   if HR.CDsON() then
-    -- shadow_blades,if=variable.snd_condition&(combo_points<=1|set_bonus.tier31_4pc)&(((buff.flagellation_buff.up|buff.flagellation_persist.up)&cooldown.shadow_dance.charges_fractional<2)|!talent.flagellation) NS note: cooldown.shadow_dance.charges_fractional<2 offers negligible damage gains but aligns more closely with the rotation outlined in the FAQ
+    -- actions.cds+=/shadow_blades,if=variable.snd_condition&(combo_points<=1|set_bonus.tier31_4pc)&(((buff.flagellation_buff.up|buff.flagellation_persist.up)&cooldown.shadow_dance.charges_fractional<2)|!talent.flagellation) NS note: cooldown.shadow_dance.charges_fractional<2 offers negligible damage gains but aligns more closely with the rotation outlined in the FAQ
     if S.ShadowBlades:IsCastable() then
       if SnDCondition and (ComboPoints <= 1 or Player:HasTier(31, 4)) and 
-        (((Player:BuffUp(S.Flagellation) or Player:BuffUp(S.FlagellationPersistBuff)) and S.ShadowDance:ChargesFractional() < 2) or not S.Flagellation:IsAvailable()) then 
+        (((Player:BuffUp(S.Flagellation) or (Player:BuffUp(S.FlagellationPersistBuff) and not (Target:NPCID() == 204931))) and S.ShadowDance:ChargesFractional() < 2) or not S.Flagellation:IsAvailable()) then 
         if HR.Cast(S.ShadowBlades, Settings.Subtlety.OffGCDasOffGCD.ShadowBlades) then return "Cast Shadow Blades" end
       end
     end
@@ -642,22 +655,9 @@ local function CDs ()
     end
     -- custom Fyrakk Conditions
     if S.Vanish:IsCastable() then
-      if Player:BuffUp(S.ShadowDanceBuff) and S.SecretTechnique:TimeSinceLastCast() < 5 and not (S.Vanish:TimeSinceLastCast() < 5) and Player:BuffRemains(S.ShadowBlades) > 12 and Target:NPCID() == 204931 then
+      if Player:BuffUp(S.ShadowDanceBuff) and S.SecretTechnique:TimeSinceLastCast() < 5 and not (S.Vanish:TimeSinceLastCast() < 5) and Player:BuffRemains(S.ShadowBlades) > 12 and (Target:NPCID() == 204931 or Target:NPCID() == 207796 or Target:NPCID() == 214012 or Target:NPCID() == 214608) then
         ShouldReturn = StealthMacro(S.Vanish, EnergyThreshold)
         if ShouldReturn then return "Vanish Macro " .. ShouldReturn end
-      end
-    end
-    -- intermission
-    if S.Vanish:IsCastable() then
-      if Player:BuffUp(S.ShadowDanceBuff) and S.SecretTechnique:TimeSinceLastCast() < 5 and not (S.Vanish:TimeSinceLastCast() < 5) and Player:BuffUp(S.Flagellation) and S.ShadowBlades:CooldownRemains() <= 30 and S.ShadowBlades:CooldownRemains() >= 15 and Target:NPCID() == 204931 then
-        ShouldReturn = StealthMacro(S.Vanish, EnergyThreshold)
-        if ShouldReturn then return "Vanish Macro " .. ShouldReturn end
-      end
-    end
-    -- Cast SB to pull Flag
-    if S.ShadowBlades:IsCastable() then
-      if S.Flagellation:CooldownRemains() <= 30 and S.Flagellation:CooldownRemains() >= 12 and not S.Flagellation:IsCastable() and S.Vanish:IsCastable() and Target:NPCID() == 204931 then
-        if HR.Cast(S.ShadowBlades, Settings.Subtlety.OffGCDasOffGCD.ShadowBlades) then return "Cast Shadow Blades Pull Flag" end
       end
     end
     -- Fuu Tea condition
@@ -705,7 +705,11 @@ local function CDs ()
         if HR.Cast(S.AncestralCall, Settings.Commons.OffGCDasOffGCD.Racials) then return "Cast Ancestral Call" end
       end
     end
-
+    -- Vanish for Defensives
+    if (S.Vanish:IsCastable() and DefensiveVanish() and not S.InvigoratingShadowdust:IsAvailable()) and Player:HealthPercentage() <= 30 and not Player:BuffUp(S.CloakedinShadowsBuff) then
+      if HR.Cast(S.Vanish, Settings.Subtlety.OffGCDasOffGCD.Vanish) then return "Cast Vanish" end
+    end
+      
 
     if Settings.Commons.Enabled.Trinkets then
       -- actions.cds+=/use_item,name=ashes_of_the_embersoul,if=(buff.cold_blood.up|(!talent.danse_macabre&buff.shadow_dance.up|buff.danse_macabre.stack>=3)&!talent.cold_blood)|fight_remains<10
@@ -765,9 +769,9 @@ end
 local function Stealth_CDs (EnergyThreshold)
   if HR.CDsON() then
     -- actions.stealth_cds+=/vanish,if=(combo_points.deficit>1|buff.shadow_blades.up&talent.invigorating_shadowdust)&!variable.shd_threshold&(cooldown.flagellation.remains>=60|!talent.flagellation|fight_remains<=(30*cooldown.vanish.charges))&(cooldown.symbols_of_death.remains>3|!set_bonus.tier30_2pc)&(cooldown.secret_technique.remains>=10|!talent.secret_technique|cooldown.vanish.charges>=2&talent.invigorating_shadowdust&(buff.the_rotten.up|!talent.the_rotten)&!raid_event.adds.up) -- Maybe do a condition for Smolderon specifically, but probably too difficult
-      if S.Vanish:IsCastable()
+      if (S.Vanish:IsCastable() and ((not DefensiveVanish() or S.Vanish:Charges() >= 2) or S.InvigoratingShadowdust:IsAvailable()))
         and (ComboPointsDeficit > 1 or Player:BuffUp(S.ShadowBlades) and S.InvigoratingShadowdust:IsAvailable()) and not ShD_Threshold()
-        and (S.Flagellation:CooldownRemains() >= 60 or not S.Flagellation:IsAvailable() or HL.BossFilteredFightRemains("<=", 30 * S.Vanish:Charges())) and (S.SymbolsofDeath:CooldownRemains() > 3 or not Player:HasTier(30, 2))
+        and ((S.Flagellation:CooldownRemains() >= 60 and not (Target:NPCID() == 204931 or Target:NPCID() == 207796 or Target:NPCID() == 214012 or Target:NPCID() == 214608)) or not S.Flagellation:IsAvailable() or HL.BossFilteredFightRemains("<=", 30 * S.Vanish:Charges())) and (S.SymbolsofDeath:CooldownRemains() > 3 or not Player:HasTier(30, 2))
         and (S.SecretTechnique:CooldownRemains() >= 10 or not S.SecretTechnique:IsAvailable() or S.Vanish:Charges() >= 2 and S.InvigoratingShadowdust:IsAvailable() and (Player:BuffUp(S.TheRottenBuff) or not S.TheRotten:IsAvailable())) then
         ShouldReturn = StealthMacro(S.Vanish, EnergyThreshold)
         if ShouldReturn then return "Vanish Macro " .. ShouldReturn end
@@ -784,12 +788,12 @@ local function Stealth_CDs (EnergyThreshold)
     end
   end
   if TargetInMeleeRange and S.ShadowDance:IsCastable() and HR.CDsON() then
-    -- actions.stealth_cds+=/shadow_dance,if=(dot.rupture.ticking|talent.invigorating_shadowdust)&variable.rotten_cb&(!talent.the_first_dance|combo_points.deficit>=4|buff.shadow_blades.up)&(variable.shd_combo_points&variable.shd_threshold|(buff.shadow_blades.up|cooldown.symbols_of_death.up&!talent.sepsis|buff.symbols_of_death.remains>=4&!set_bonus.tier30_2pc|!buff.symbols_of_death.remains&set_bonus.tier30_2pc)&cooldown.secret_technique.remains<10+12*(!talent.invigorating_shadowdust|set_bonus.tier30_2pc))
+    -- actions.stealth_cds+=/shadow_dance,if=(dot.rupture.ticking|talent.invigorating_shadowdust)&variable.rotten_cb&(!talent.the_first_dance|combo_points.deficit>=4|buff.shadow_blades.up)&(variable.shd_combo_points&(variable.shd_threshold&(cooldown.symbols_of_death.up|spell_targets>4))|(buff.shadow_blades.up|cooldown.symbols_of_death.up&!talent.sepsis|buff.symbols_of_death.remains>=4&!set_bonus.tier30_2pc|!buff.symbols_of_death.remains&set_bonus.tier30_2pc)&cooldown.secret_technique.remains<10+12*(!talent.invigorating_shadowdust|set_bonus.tier30_2pc))
     -- NOTE: |buff.flagellation.up is a dead operation in SimC due to a typo, since the buff we use in-game is buff.flagellation_buff.up, ignoring
     if  (Target:DebuffUp(S.Rupture) or S.InvigoratingShadowdust:IsAvailable()) and Rotten_CB() and 
-        (not S.TheFirstDance:IsAvailable() or ComboPointsDeficit >= 4 or Player:BuffUp(S.ShadowBlades)) and (ShD_Combo_Points() and ShD_Threshold() or
+        (not S.TheFirstDance:IsAvailable() or ComboPointsDeficit >= 4 or Player:BuffUp(S.ShadowBlades)) and (ShD_Combo_Points() and (ShD_Threshold() and (S.SymbolsofDeath:IsCastable() or (MeleeEnemies10yCount > 4 and not S.ShurikenTornado:IsAvailable() or (MeleeEnemies10yCount > 5 and S.ShurikenTornado:IsAvailable())))) or --nnn
         (Player:BuffUp(S.ShadowBlades) or S.SymbolsofDeath:IsCastable() and not S.Sepsis:IsAvailable() or Player:BuffRemains(S.SymbolsofDeath) >= 4 and not Player:HasTier(30, 2) or 
-        not Player:BuffUp(S.SymbolsofDeath) and Player:HasTier(30, 2)) and  S.SecretTechnique:CooldownRemains() < 10 + 12 * num(not S.InvigoratingShadowdust:IsAvailable() or Player:HasTier(30, 2))) then
+        not Player:BuffUp(S.SymbolsofDeath) and Player:HasTier(30, 2)) and S.SecretTechnique:CooldownRemains() < 10 + 12 * num(not S.InvigoratingShadowdust:IsAvailable() or Player:HasTier(30, 2))) then
         ShouldReturn = StealthMacro(S.ShadowDance, EnergyThreshold)
         if ShouldReturn then return "ShadowDance Macro " .. ShouldReturn end
     end
@@ -1024,7 +1028,7 @@ local function APL ()
 end
 
 local function Init ()
-  HR.Print("You are using a fork [Version 1.3]: THIS IS NOT THE OFFICIAL VERSION - if there are issues, message me on Discord: kekwxqcl")
+  HR.Print("You are using a fork [Version 1.4]: THIS IS NOT THE OFFICIAL VERSION - if there are issues, message me on Discord: kekwxqcl")
 end
 
 HR.SetAPL(261, APL, Init)
