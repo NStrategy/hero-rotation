@@ -148,7 +148,7 @@ actions.finish+=/rupture,if=(!variable.skip_rupture|variable.priority_rotation)&
 actions.finish+=/rupture,if=buff.finality_rupture.up&buff.shadow_dance.up&spell_targets.shuriken_storm<=4&!action.rupture.used_for_danse
 actions.finish+=/cold_blood,if=variable.secret_condition&cooldown.secret_technique.ready
 # Syncronizes Secret to Cold Blood if possible. Defualts to use once a builder and finisher is used.
-actions.finish+=/secret_technique,if=variable.secret_condition&(!talent.cold_blood|cooldown.cold_blood.remains>buff.shadow_dance.remains-2|!talent.improved_shadow_dance)
+actions.finish+=/secret_technique,if=variable.secret_condition&(!talent.cold_blood|cooldown.cold_blood.remains>buff.shadow_dance.remains-2.5|!talent.improved_shadow_dance)
 # Multidotting targets that will live long enough, refresh during pandemic.
 actions.finish+=/rupture,cycle_targets=1,if=!variable.skip_rupture&!variable.priority_rotation&spell_targets.shuriken_storm>=2&target.time_to_die>=(2*combo_points)&refreshable
 # Refresh Rupture early if it will expire during Symbols. Do that refresh if SoD gets ready in the next 5s.
