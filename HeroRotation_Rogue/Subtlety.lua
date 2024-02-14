@@ -58,6 +58,7 @@ local PoolingAbility, PoolingEnergy, PoolingFinisher; -- Used to store an abilit
 local RuptureThreshold, RuptureDMGThreshold
 local EffectiveComboPoints, ComboPoints, ComboPointsDeficit, StealthEnergyRequired
 local PriorityRotation
+local DungeonSlice = Player:IsInParty() and not Player:IsInRaid()
 
 S.Eviscerate:RegisterDamageFormula(
   -- Eviscerate DMG Formula (Pre-Mitigation):
@@ -240,7 +241,7 @@ local function Skip_Rupture_NPC () -- Homebrew exclude for certain NPCs
    -- Raid
       or Target:NPCID() == 210231 or Target:NPCID() == 207341 or Target:NPCID() == 208459 or Target:NPCID() == 208461 or Target:NPCID() == 214441 or Target:NPCID() == 211306 or Target:NPCID() == 214608
 end
--- Maybe do an exlude cd function for Blades and Flag on certain npcs, like for the first adds in Manor. Dunno if that would brick rotation
+
 local function Rotten_CB ()
   -- actions.stealth_cds+=/variable,name=rotten_cb,value=(!buff.the_rotten.up|!set_bonus.tier30_2pc)&(!talent.cold_blood|cooldown.cold_blood.remains<4|cooldown.cold_blood.remains>10)
   return (not Player:BuffUp(S.TheRottenBuff) or not Player:HasTier(30, 2)) and (not S.ColdBlood:IsAvailable() or S.ColdBlood:CooldownRemains() < 4 or S.ColdBlood:CooldownRemains() > 10)
@@ -249,7 +250,7 @@ local function Used_For_Danse(Spell)
   return Player:BuffUp(S.ShadowDanceBuff) and Spell:TimeSinceLastCast() < S.ShadowDance:TimeSinceLastCast()
 end
 local function Secret_Condition()
-  -- Original conditions for using a finisher (Eviscerate, Black Powder, Rupture) and a builder (Gloomblade, Shadowstrike, Backstab, Shuriken Storm)
+  -- actions.finish+=/variable,name=secret_condition,value=(buff.shadow_blades.up&buff.shadow_blades.remains>=7&!buff.premeditation.up&buff.shadow_dance.remains>=3&talent.danse_macabre&spell_targets.shuriken_storm<=3&!action.backstab.used_for_danse&(action.gloomblade.used_for_danse|action.shadowstrike.used_for_danse|action.backstab.used_for_danse|action.shuriken_storm.used_for_danse)&(action.eviscerate.used_for_danse|action.black_powder.used_for_danse|action.rupture.used_for_danse))|((action.gloomblade.used_for_danse|action.shadowstrike.used_for_danse|action.backstab.used_for_danse|action.shuriken_storm.used_for_danse)&(action.eviscerate.used_for_danse|action.black_powder.used_for_danse|action.rupture.used_for_danse)|!talent.danse_macabre)
   local condition = (Used_For_Danse(S.Gloomblade) or Used_For_Danse(S.Shadowstrike) or Used_For_Danse(S.Backstab) or Used_For_Danse(S.ShurikenStorm)) 
                     and (Used_For_Danse(S.Eviscerate) or Used_For_Danse(S.BlackPowder) or Used_For_Danse(S.Rupture)) 
                     or not S.DanseMacabre:IsAvailable()
@@ -276,7 +277,13 @@ local function DefensiveVanish ()
     return false
   end
 end
-
+local function WillDanceBeCast () -- currently not needed but maybe in the future?
+  -- actions.cds=variable,name=WillDanceBeCast,value=cooldown.shadow_dance.up&(target.time_to_die>2&fight_remains>6)&(dot.rupture.ticking|talent.invigorating_shadowdust)&variable.rotten_cb&(!talent.the_first_dance|combo_points.deficit>=4|buff.shadow_blades.up)&(variable.shd_combo_points&(variable.shd_threshold&(cooldown.symbols_of_death.up|(spell_targets>4&!talent.shuriken_tornado|(spell_targets>5&talent.shuriken_tornado))))|(buff.shadow_blades.up|cooldown.symbols_of_death.up&!talent.sepsis|buff.symbols_of_death.remains>=4&!set_bonus.tier30_2pc|!buff.symbols_of_death.remains&set_bonus.tier30_2pc)&cooldown.secret_technique.remains<10+12*(!talent.invigorating_shadowdust|set_bonus.tier30_2pc))
+  return S.ShadowDance:IsCastable() and (Target:FilteredTimeToDie(">", 2) and HL.FilteredFightRemains(MeleeEnemies10y, ">", 6)) and (Target:DebuffUp(S.Rupture) or S.InvigoratingShadowdust:IsAvailable()) and Rotten_CB() and 
+        (not S.TheFirstDance:IsAvailable() or ComboPointsDeficit >= 4 or Player:BuffUp(S.ShadowBlades)) and (ShD_Combo_Points() and (ShD_Threshold() and (S.SymbolsofDeath:IsCastable() or (MeleeEnemies10yCount > 4 and not S.ShurikenTornado:IsAvailable() or (MeleeEnemies10yCount > 5 and S.ShurikenTornado:IsAvailable())))) or
+        (Player:BuffUp(S.ShadowBlades) or S.SymbolsofDeath:IsCastable() and not S.Sepsis:IsAvailable() or Player:BuffRemains(S.SymbolsofDeath) >= 4 and not Player:HasTier(30, 2) or 
+        not Player:BuffUp(S.SymbolsofDeath) and Player:HasTier(30, 2)) and S.SecretTechnique:CooldownRemains() < 10 + 12 * num(not S.InvigoratingShadowdust:IsAvailable() or Player:HasTier(30, 2)))
+end
 
 -- # Finishers
 -- ReturnSpellOnly and StealthSpell parameters are to Predict Finisher in case of Stealth Macros
@@ -351,11 +358,11 @@ local function Finish (ReturnSpellOnly, StealthSpell)
       if HR.Cast(S.ColdBlood) then return "Cast Cold Blood (SecTec)" end
     end
   end
-  -- actions.finish+=/secret_technique,if=variable.secret_condition&(!talent.cold_blood|cooldown.cold_blood.remains>buff.shadow_dance.remains-2|!talent.improved_shadow_dance)
+  -- actions.finish+=/secret_technique,if=variable.secret_condition&(!talent.cold_blood|cooldown.cold_blood.remains>buff.shadow_dance.remains-3|!talent.improved_shadow_dance)
   -- Attention: Due to the SecTec/ColdBlood interaction, this adaption has additional checks not found in the APL string 
   if S.SecretTechnique:IsCastable() and Secret_Condition()
       and (not S.ColdBlood:IsAvailable() or (Settings.Commons.OffGCDasOffGCD.ColdBlood and S.ColdBlood:IsCastable())
-      or Player:BuffUp(S.ColdBlood) or S.ColdBlood:CooldownRemains() > ShadowDanceBuffRemains - 2 or not S.ImprovedShadowDance:IsAvailable()) then
+      or Player:BuffUp(S.ColdBlood) or S.ColdBlood:CooldownRemains() > ShadowDanceBuffRemains - 3 or not S.ImprovedShadowDance:IsAvailable()) then
       if ReturnSpellOnly then return S.SecretTechnique end
       if HR.Cast(S.SecretTechnique) then return "Cast Secret Technique" end
   end
@@ -571,8 +578,8 @@ local function CDs ()
       if HR.Cast(S.Sepsis) then return "Cast Sepsis" end
      end
     end
-    -- actions.cds+=/flagellation,target_if=max:target.time_to_die,if=variable.snd_condition&combo_points>=5&target.time_to_die>10&(variable.trinket_conditions&cooldown.shadow_blades.remains<=3|fight_remains<=28|cooldown.shadow_blades.remains>=14&talent.invigorating_shadowdust&talent.shadow_dance)&(!talent.invigorating_shadowdust|talent.sepsis|!talent.shadow_dance|talent.invigorating_shadowdust.rank=2&spell_targets.shuriken_storm>=2|cooldown.symbols_of_death.remains<=3|buff.symbols_of_death.remains>3)
-    if HR.CDsON() and S.Flagellation:IsAvailable() and S.Flagellation:IsCastable() and SnDCondition and ComboPoints >= 5 and Target:FilteredTimeToDie(">", 10) then
+    -- actions.cds+=/flagellation,target_if=max:target.time_to_die,if=variable.snd_condition&combo_points>=5&(variable.trinket_conditions&cooldown.shadow_blades.remains<=3|fight_remains<=28|cooldown.shadow_blades.remains>=14&talent.invigorating_shadowdust&talent.shadow_dance)&(!talent.invigorating_shadowdust|talent.sepsis|!talent.shadow_dance|talent.invigorating_shadowdust.rank=2&spell_targets.shuriken_storm>=2|cooldown.symbols_of_death.remains<=3|buff.symbols_of_death.remains>3)
+    if HR.CDsON() and S.Flagellation:IsAvailable() and S.Flagellation:IsCastable() and SnDCondition and ComboPoints >= 5 then
       if (Trinket_Conditions() and S.ShadowBlades:CooldownRemains() <= 3 or HL.BossFilteredFightRemains("<=", 28)
         or S.ShadowBlades:CooldownRemains() >= 14 and S.InvigoratingShadowdust:IsAvailable() and S.ShadowDanceTalent:IsAvailable())
         and (not S.InvigoratingShadowdust:IsAvailable() or S.Sepsis:IsAvailable() or not S.ShadowDanceTalent:IsAvailable()
@@ -581,7 +588,7 @@ local function CDs ()
       end
     end
   end 
-  -- actions.cds+=/symbols_of_death,if=variable.snd_condition&(!buff.the_rotten.up|!set_bonus.tier30_2pc)&buff.symbols_of_death.remains<=3&(!talent.flagellation|(cooldown.flagellation.remains>10|cooldown.flagellation.remains<2)|buff.shadow_dance.remains>=2&talent.invigorating_shadowdust|cooldown.flagellation.up&combo_points>=5&!talent.invigorating_shadowdust)
+  -- actions.cds+=/symbols_of_death,if=(variable.snd_condition|(!variable.snd_condition&buff.shadow_dance.up))&(!buff.the_rotten.up|!set_bonus.tier30_2pc)&buff.symbols_of_death.remains<=3&(!talent.flagellation|(cooldown.flagellation.remains>10|cooldown.flagellation.remains<2)|buff.shadow_dance.remains>=2&talent.invigorating_shadowdust|cooldown.flagellation.up&combo_points>=5&!talent.invigorating_shadowdust)
   if S.SymbolsofDeath:IsCastable() then
     if (SnDCondition or (not SnDCondition and Player:BuffUp(S.ShadowDanceBuff))) and (not Player:BuffUp(S.TheRottenBuff) or not Player:HasTier(30, 2)) and
       Player:BuffRemains(S.SymbolsofDeath) <= 3 and
@@ -712,9 +719,9 @@ local function CDs ()
       
 
     if Settings.Commons.Enabled.Trinkets then
-      -- actions.cds+=/use_item,name=ashes_of_the_embersoul,if=(buff.cold_blood.up|(!talent.danse_macabre&buff.shadow_dance.up|buff.danse_macabre.stack>=3)&!talent.cold_blood)|fight_remains<10
+      -- actions.cds+=/use_item,name=ashes_of_the_embersoul,if=(buff.cold_blood.up|(!talent.danse_macabre&buff.shadow_dance.up|buff.danse_macabre.stack>=3)&!talent.cold_blood)
       if I.AshesoftheEmbersoul:IsEquippedAndReady() then
-        if ((((S.ColdBlood:IsCastable() and ComboPoints >= 5 and S.SecretTechnique:IsCastable() and Secret_Condition()) or Player:BuffUp(S.ColdBlood)) and Player:BuffStack(S.DanseMacabreBuff) >= 3) or (not S.DanseMacabre:IsAvailable() and Player:BuffUp(S.ShadowDanceBuff) or Player:BuffStack(S.DanseMacabreBuff) >= 3) and not S.ColdBlood:IsAvailable()) or HL.BossFilteredFightRemains("<", 10) then
+        if ((((S.ColdBlood:IsCastable() and ComboPoints >= 5 and S.SecretTechnique:IsCastable() and Secret_Condition()) or Player:BuffUp(S.ColdBlood)) and Player:BuffStack(S.DanseMacabreBuff) >= 3) or (not S.DanseMacabre:IsAvailable() and Player:BuffUp(S.ShadowDanceBuff) or Player:BuffStack(S.DanseMacabreBuff) >= 3) and not S.ColdBlood:IsAvailable()) then
            if HR.Cast(I.AshesoftheEmbersoul, nil, Settings.Commons.DisplayStyle.Trinkets) then return "Ashes Of the Embersoul"; end
         end
       end
@@ -788,10 +795,10 @@ local function Stealth_CDs (EnergyThreshold)
     end
   end
   if TargetInMeleeRange and S.ShadowDance:IsCastable() and HR.CDsON() then
-    -- actions.stealth_cds+=/shadow_dance,if=(dot.rupture.ticking|talent.invigorating_shadowdust)&variable.rotten_cb&(!talent.the_first_dance|combo_points.deficit>=4|buff.shadow_blades.up)&(variable.shd_threshold&(cooldown.symbols_of_death.up|(spell_targets>4&!talent.shuriken_tornado|(spell_targets>5&talent.shuriken_tornado))))|(buff.shadow_blades.up|cooldown.symbols_of_death.up&!talent.sepsis|buff.symbols_of_death.remains>=4&!set_bonus.tier30_2pc|!buff.symbols_of_death.remains&set_bonus.tier30_2pc)&cooldown.secret_technique.remains<10+12*(!talent.invigorating_shadowdust|set_bonus.tier30_2pc))
+    -- actions.stealth_cds+=/shadow_dance,if=(dot.rupture.ticking|talent.invigorating_shadowdust)&variable.rotten_cb&(!talent.the_first_dance|combo_points.deficit>=4|buff.shadow_blades.up)&(variable.shd_combo_points&(variable.shd_threshold&(cooldown.symbols_of_death.up|cooldown.shadow_dance.charges_fractional>=2|(spell_targets>4&!talent.shuriken_tornado)|(spell_targets>5&talent.shuriken_tornado)))|(buff.shadow_blades.up|cooldown.symbols_of_death.up&!talent.sepsis|buff.symbols_of_death.remains>=4&!set_bonus.tier30_2pc|!buff.symbols_of_death.remains&set_bonus.tier30_2pc)&cooldown.secret_technique.remains<10+12*(!talent.invigorating_shadowdust|set_bonus.tier30_2pc))
     -- NOTE: |buff.flagellation.up is a dead operation in SimC due to a typo, since the buff we use in-game is buff.flagellation_buff.up, ignoring
     if  (Target:DebuffUp(S.Rupture) or S.InvigoratingShadowdust:IsAvailable()) and Rotten_CB() and 
-        (not S.TheFirstDance:IsAvailable() or ComboPointsDeficit >= 4 or Player:BuffUp(S.ShadowBlades)) and (ShD_Combo_Points() and (ShD_Threshold() and (S.SymbolsofDeath:IsCastable() or (MeleeEnemies10yCount > 4 and not S.ShurikenTornado:IsAvailable() or (MeleeEnemies10yCount > 5 and S.ShurikenTornado:IsAvailable())))) or
+        (not S.TheFirstDance:IsAvailable() or ComboPointsDeficit >= 4 or Player:BuffUp(S.ShadowBlades)) and (ShD_Combo_Points() and (ShD_Threshold() and (S.SymbolsofDeath:IsCastable() or S.ShadowDance:ChargesFractional() >= 2 or (MeleeEnemies10yCount > 4 and not S.ShurikenTornado:IsAvailable()) or (MeleeEnemies10yCount > 5 and S.ShurikenTornado:IsAvailable()))) or
         (Player:BuffUp(S.ShadowBlades) or S.SymbolsofDeath:IsCastable() and not S.Sepsis:IsAvailable() or Player:BuffRemains(S.SymbolsofDeath) >= 4 and not Player:HasTier(30, 2) or 
         not Player:BuffUp(S.SymbolsofDeath) and Player:HasTier(30, 2)) and S.SecretTechnique:CooldownRemains() < 10 + 12 * num(not S.InvigoratingShadowdust:IsAvailable() or Player:HasTier(30, 2))) then
         ShouldReturn = StealthMacro(S.ShadowDance, EnergyThreshold)
@@ -1028,7 +1035,7 @@ local function APL ()
 end
 
 local function Init ()
-  HR.Print("You are using a fork [Version 1.4]: THIS IS NOT THE OFFICIAL VERSION - if there are issues, message me on Discord: kekwxqcl")
+  HR.Print("You are using a fork [Version 1.5]: THIS IS NOT THE OFFICIAL VERSION - if there are issues, message me on Discord: kekwxqcl")
 end
 
 HR.SetAPL(261, APL, Init)
