@@ -568,11 +568,11 @@ local function CDs ()
         if HR.Cast(S.Flagellation, Settings.Subtlety.OffGCDasOffGCD.Flagellation) then return "Cast Flagellation" end
     end
   end 
-  -- actions.cds+=/symbols_of_death,if=(variable.snd_condition|(!variable.snd_condition&buff.shadow_dance.up))&(!buff.the_rotten.up|!set_bonus.tier30_2pc)&buff.symbols_of_death.remains<=3&(!talent.flagellation|(cooldown.flagellation.remains>10|cooldown.flagellation.remains<2)|buff.shadow_dance.remains>=2&talent.invigorating_shadowdust|cooldown.flagellation.up&combo_points>=5&!talent.invigorating_shadowdust)
+  -- actions.cds+=/symbols_of_death,if=(variable.snd_condition|(!variable.snd_condition&buff.shadow_dance.up))&(!buff.the_rotten.up|!set_bonus.tier30_2pc)&buff.symbols_of_death.remains<=3&(!talent.flagellation|(cooldown.flagellation.remains>10|(cooldown.flagellation.remains<2&spell_targets<2))|buff.shadow_dance.remains>=2&talent.invigorating_shadowdust|cooldown.flagellation.up&combo_points>=5&!talent.invigorating_shadowdust)
   if S.SymbolsofDeath:IsCastable() then
     if (SnDCondition or (not SnDCondition and Player:BuffUp(S.ShadowDanceBuff))) and (not Player:BuffUp(S.TheRottenBuff) or not Player:HasTier(30, 2)) and
       Player:BuffRemains(S.SymbolsofDeath) <= 3 and
-      (not S.Flagellation:IsAvailable() or (S.Flagellation:CooldownRemains() > 10 or (S.Flagellation:CooldownRemains() < 2)) or Player:BuffRemains(S.ShadowDanceBuff) >= 2 and S.InvigoratingShadowdust:IsAvailable() or 
+      (not S.Flagellation:IsAvailable() or (S.Flagellation:CooldownRemains() > 10 or (S.Flagellation:CooldownRemains() < 2 and MeleeEnemies10yCount < 2)) or Player:BuffRemains(S.ShadowDanceBuff) >= 2 and S.InvigoratingShadowdust:IsAvailable() or 
       S.Flagellation:IsCastable() and ComboPoints >= 5 and not S.InvigoratingShadowdust:IsAvailable()) then
       if HR.Cast(S.SymbolsofDeath, Settings.Subtlety.OffGCDasOffGCD.SymbolsofDeath) then return "Cast Symbols of Death" end
     end
@@ -580,9 +580,9 @@ local function CDs ()
   -- 189632 = Dummy in Valdraken
   if HR.CDsON() then
     -- actions.cds+=/shadow_blades,if=(combo_points<=1|set_bonus.tier31_4pc)&(((buff.flagellation_buff.up|buff.flagellation_persist.up)&cooldown.shadow_dance.charges_fractional<2)|!talent.flagellation) NS note: cooldown.shadow_dance.charges_fractional<2 offers negligible damage gains but aligns more closely with the rotation outlined in the FAQ
-    if S.ShadowBlades:IsCastable() then
+    if S.ShadowBlades:IsCastable() and not (Target:NPCID() == 209333 and HL.CombatTime() > 60 and HL.CombatTime() < 80) then
       if (ComboPoints <= 1 or Player:HasTier(31, 4)) and 
-        (((Player:BuffUp(S.Flagellation) or (Player:BuffUp(S.FlagellationPersistBuff) and not (Target:NPCID() == 189632 or Target:NPCID() == 204931))) and S.ShadowDance:ChargesFractional() < 2) or not S.Flagellation:IsAvailable()) then 
+        (((Player:BuffUp(S.Flagellation) or (Player:BuffUp(S.FlagellationPersistBuff) and not (Target:NPCID() == 209333 or Target:NPCID() == 204931 or Target:NPCID() == 207796 or Target:NPCID() == 214012 or Target:NPCID() == 214608))) and S.ShadowDance:ChargesFractional() < 2) or not S.Flagellation:IsAvailable()) then 
         if HR.Cast(S.ShadowBlades, Settings.Subtlety.OffGCDasOffGCD.ShadowBlades) then return "Cast Shadow Blades" end
       end
     end
@@ -614,18 +614,31 @@ local function CDs ()
         if HR.Cast(S.GoremawsBite) then return "Cast GoremawsBite" end
       end
     end
+    -- CUSTOM CONDITIONS:::
     -- actions.cds+=/vanish,if=(talent.invigorating_shadowdust&cooldown.flagellation.remains>60&cooldown.shadow_blades.remains<30&cooldown.shadow_blades.remains>5)&(cooldown.secret_technique.remains>=20)
     if DungeonSlice then
-      if S.Vanish:IsCastable() and (S.InvigoratingShadowdust:IsAvailable() and S.Flagellation:CooldownRemains() > 60 and S.ShadowBlades:CooldownRemains() < 30 and S.ShadowBlades:CooldownRemains() > 5)
+      if S.Vanish:IsCastable() and (S.InvigoratingShadowdust:IsAvailable() and S.Flagellation:CooldownRemains() > 60 and S.ShadowBlades:CooldownRemains() < 30 and S.ShadowBlades:CooldownRemains() > 10)
          and S.SecretTechnique:CooldownRemains() >= 20 and not (S.Vanish:TimeSinceLastCast() < 5) then
          ShouldReturn = StealthMacro(S.Vanish, EnergyThreshold)
          if ShouldReturn then return "Vanish Macro " .. ShouldReturn end
       end
     end
-    -- actions.cds+=/vanish,if=(talent.invigorating_shadowdust&cooldown.shadow_blades.remains>110&cooldown.flagellation.remains<30&cooldown.flagellation.remains>5)&(cooldown.secret_technique.remains>=10) Note: Does not get used in sim, will see if it could be used in actual play.
+    -- GR Flag into Vanish at around 1:04 Target:NPCID() == 209333
+    if S.Vanish:IsCastable() then
+      if S.Flagellation:TimeSinceLastCast() < 5 and not (S.Vanish:TimeSinceLastCast() < 5) and S.Flagellation:CooldownRemains() > 60 and Target:NPCID() == 209333 and HL.CombatTime() > 60 and HL.CombatTime() < 70 then
+        ShouldReturn = StealthMacro(S.Vanish, EnergyThreshold)
+        if ShouldReturn then return "Vanish Macro " .. ShouldReturn end
+      end
+    end
+    -- GR Flag
+    if S.Flagellation:IsCastable() and ComboPoints >= 5 then
+      if Target:NPCID() == 209333 and HL.CombatTime() > 60 and HL.CombatTime() < 70 then
+        if HR.Cast(S.Flagellation, Settings.Subtlety.OffGCDasOffGCD.Flagellation) then return "Cast Flagellation" end
+      end
+    end
     -- custom Smolderon condition
     if S.Vanish:IsCastable() then
-      if Player:BuffUp(S.ShadowDanceBuff) and S.SecretTechnique:TimeSinceLastCast() < 5 and (Player:BuffUp(S.Flagellation) or Player:BuffUp(S.FlagellationPersistBuff)) and S.ShadowBlades:CooldownRemains() <=32 and Target:NPCID() == 200927 then
+      if Player:BuffUp(S.ShadowDanceBuff) and S.SecretTechnique:TimeSinceLastCast() < 5 and (Player:BuffUp(S.Flagellation) or Player:BuffUp(S.FlagellationPersistBuff)) and S.ShadowBlades:CooldownRemains() <= 32 and Target:NPCID() == 200927 then
         ShouldReturn = StealthMacro(S.Vanish, EnergyThreshold)
         if ShouldReturn then return "Vanish Macro " .. ShouldReturn end
       end
@@ -638,7 +651,7 @@ local function CDs ()
       end
     end
     -- P3 SB Condition
-    if S.ShadowBlades:IsCastable() then
+    if S.ShadowBlades:IsCastable() and HL.CombatTime() > 250 and HL.CombatTime() < 265 then
       if S.Flagellation:CooldownRemains() <= 27 and S.Flagellation:CooldownRemains() >= 18 and not S.Flagellation:IsCastable() and S.Vanish:IsCastable() and Target:NPCID() == 209090 then
         if HR.Cast(S.ShadowBlades, Settings.Subtlety.OffGCDasOffGCD.ShadowBlades) then return "Cast Shadow Blades" end
       end
@@ -650,22 +663,44 @@ local function CDs ()
       end
     end
     -- custom Fyrakk Conditions
-    if S.Vanish:IsCastable() then
-      if Player:BuffUp(S.ShadowDanceBuff) and S.SecretTechnique:TimeSinceLastCast() < 5 and not (S.Vanish:TimeSinceLastCast() < 5) and Player:BuffRemains(S.ShadowBlades) > 10 and (Target:NPCID() == 189632 or Target:NPCID() == 204931 or Target:NPCID() == 207796 or Target:NPCID() == 214012 or Target:NPCID() == 214608) then
+    if S.Vanish:IsCastable() and HL.CombatTime() < 465 then
+      if Player:BuffUp(S.ShadowDanceBuff) and S.SecretTechnique:TimeSinceLastCast() < 5 and not (S.Vanish:TimeSinceLastCast() < 5) and Player:BuffRemains(S.ShadowBlades) > 10 and (Player:BuffUp(S.Flagellation) or Player:BuffUp(S.FlagellationPersistBuff)) and (Target:NPCID() == 189632 or Target:NPCID() == 204931 or Target:NPCID() == 207796 or Target:NPCID() == 214012 or Target:NPCID() == 214608) and (S.ShadowBlades:TimeSinceLastCast() < S.Flagellation:TimeSinceLastCast())  then
         ShouldReturn = StealthMacro(S.Vanish, EnergyThreshold)
         if ShouldReturn then return "Vanish Macro " .. ShouldReturn end
       end
     end
-
-    -- Current timers for Fyrakk:
+    -- Custom Fyrakk and Nymue Condition - use Shadowblades at 4:48 for Fyrakk (when playing Boss Damage CDs) and 4:50 for Nymue
+    if S.Vanish:IsCastable() then
+      if S.ShadowBlades:CooldownRemains() > 90 and S.Flagellation:CooldownRemains() <= 30 and S.Flagellation:CooldownRemains() >= 7 and not (S.Vanish:TimeSinceLastCast() < 5) and (Target:NPCID() == 206172 or Target:NPCID() == 204931 or Target:NPCID() == 189632) then
+         ShouldReturn = StealthMacro(S.Vanish, EnergyThreshold)
+         if ShouldReturn then return "Vanish Macro " .. ShouldReturn end
+      end
+    end
+    -- Custom Blades Condition for Fyrakk and Nymue - use Shadowblades at 4:48 for Fyrakk (when playing Boss Damage CDs) and 4:50 for Nymue
+    if S.ShadowBlades:IsCastable() then
+      if S.Flagellation:CooldownRemains() <= 30 and S.Flagellation:CooldownRemains() >= 7 and S.Vanish:IsCastable() and (Target:NPCID() == 206172 or Target:NPCID() == 204931) and HL.CombatTime() > 287 and HL.CombatTime() < 295 then
+        if HR.Cast(S.ShadowBlades, Settings.Subtlety.OffGCDasOffGCD.ShadowBlades) then return "Cast Shadow Blades" end
+      end
+    end
+    -- Add timers for Fyrakk:
     -- Pull: Flag-Blades-Vanish (0:00)
     -- P1: Flag (1:00)
     -- Intermission: Flag-Blades-Vanish (2:40)
     -- P2 1st Adds: Flag-Blades-Vanish (4:10)
     -- P2 2nd Adds: Flag-Blades-Vanish (5:40) or P2 Boss (5:50)
     -- P3 Start: Flag-Blades-Vanish (7:18)
-    -- P2 2nd Set: Flag-Blades-Vanish (8:48) -- (you have the possibily to vanish 2 times here. So, use the last charge as you like.
+    -- P3 2nd Set: Flag-Blades-Vanish (8:48) -- (you have the possibily to vanish 2 times here. So, use the last charge as you like.
     -- P3 last set: Flag (9:48)
+    ------------------------------
+    -- Boss timers for Fyrakk:
+    -- Pull: Flag-Blades-Vanish (0:00)
+    -- P1: Flag (1:00)
+    -- Intermission: Flag-Blades-Vanish (2:40)
+    -- P2 Boss: Flag (3:45)
+    -- P2 Boss: Blades-Vanish-Flag (4:48)
+    -- P3 Start: Flag-Blades-Vanish (6:48)
+    -- P3 Lust: Flag-Vanish-Blades (7:48) -- (you could use vanish ealier I guess, depends on boss killtime)
+    -- P3 last set: Flag-Vanish-Blades (9:15)
 
     -- Fuu Tea condition
     if S.ThistleTea:IsCastable() then
@@ -775,10 +810,10 @@ end
 -- # Stealth Cooldowns
 local function Stealth_CDs (EnergyThreshold)
   if HR.CDsON() then
-    -- actions.stealth_cds+=/vanish,if=(combo_points.deficit>1|buff.shadow_blades.up&talent.invigorating_shadowdust)&!variable.shd_threshold&(cooldown.flagellation.remains>=60|!talent.flagellation|fight_remains<=(30*cooldown.vanish.charges))&(cooldown.symbols_of_death.remains>3|!set_bonus.tier30_2pc)&(cooldown.secret_technique.remains>=10|!talent.secret_technique|cooldown.vanish.charges>=2&talent.invigorating_shadowdust&(buff.the_rotten.up|!talent.the_rotten)&!raid_event.adds.up) -- Maybe do a condition for Smolderon specifically, but probably too difficult
+    -- actions.stealth_cds+=/vanish,if=(combo_points.deficit>1|buff.shadow_blades.up&talent.invigorating_shadowdust)&!variable.shd_threshold&(cooldown.flagellation.remains>=60|!talent.flagellation)&(cooldown.symbols_of_death.remains>3|!set_bonus.tier30_2pc)&(cooldown.secret_technique.remains>=10|!talent.secret_technique|cooldown.vanish.charges>=2&talent.invigorating_shadowdust&(buff.the_rotten.up|!talent.the_rotten)&!raid_event.adds.up) -- Maybe do a condition for Smolderon specifically, but probably too difficult
       if (S.Vanish:IsCastable() and ((not S.CloakedinShadows:IsAvailable() or S.Vanish:Charges() >= 2) or S.InvigoratingShadowdust:IsAvailable()))
         and (ComboPointsDeficit > 1 or Player:BuffUp(S.ShadowBlades) and S.InvigoratingShadowdust:IsAvailable()) and not ShD_Threshold()
-        and ((S.Flagellation:CooldownRemains() >= 60 and not (Target:NPCID() == 189632 or Target:NPCID() == 204931 or Target:NPCID() == 207796 or Target:NPCID() == 214012 or Target:NPCID() == 214608)) or not S.Flagellation:IsAvailable() or HL.BossFilteredFightRemains("<=", 30 * S.Vanish:Charges())) and (S.SymbolsofDeath:CooldownRemains() > 3 or not Player:HasTier(30, 2))
+        and ((S.Flagellation:CooldownRemains() >= 60 and not ((Target:NPCID() == 189632 and HL.CombatTime() < 465) or (Target:NPCID() == 204931 and HL.CombatTime() < 465) or Target:NPCID() == 207796 or Target:NPCID() == 214012 or Target:NPCID() == 214608)) or not S.Flagellation:IsAvailable()) and (S.SymbolsofDeath:CooldownRemains() > 3 or not Player:HasTier(30, 2))
         and (S.SecretTechnique:CooldownRemains() >= 10 or not S.SecretTechnique:IsAvailable() or S.Vanish:Charges() >= 2 and S.InvigoratingShadowdust:IsAvailable() and (Player:BuffUp(S.TheRottenBuff) or not S.TheRotten:IsAvailable())) then
         ShouldReturn = StealthMacro(S.Vanish, EnergyThreshold)
         if ShouldReturn then return "Vanish Macro " .. ShouldReturn end
