@@ -321,9 +321,9 @@ local function CDs ()
   end
 
   -- # Maintain Blade Flurry on 2+ targets, and on single target with Underhanded during Adrenaline Rush
-  -- actions.cds+=/blade_flurry,if=(spell_targets>=2-talent.underhanded_upper_hand&!stealthed.all&buff.adrenaline_rush.up)&buff.blade_flurry.remains<gcd
+  -- actions.cds+=/blade_flurry,if=spell_targets>=2-(talent.underhanded_upper_hand&!stealthed.all&buff.adrenaline_rush.up)&buff.blade_flurry.remains<gcd
   if S.BladeFlurry:IsCastable() then
-    if (EnemiesBFCount >= 2 - num(S.UnderhandedUpperhand:IsAvailable() and not Player:StealthUp(true, true) and Player:BuffUp(S.AdrenalineRush))) and Player:BuffRemains(S.BladeFlurry) < Player:GCD() then
+    if EnemiesBFCount >= 2 - (num(S.UnderhandedUpperhand:IsAvailable() and not Player:StealthUp(true, true) and Player:BuffUp(S.AdrenalineRush))) and Player:BuffRemains(S.BladeFlurry) < Player:GCD() then
       if Settings.Outlaw.GCDasOffGCD.BladeFlurry then
         HR.CastSuggested(S.BladeFlurry)
       else
