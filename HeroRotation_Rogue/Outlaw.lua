@@ -75,6 +75,7 @@ local ShouldReturn; -- Used to get the return string
 local BladeFlurryRange = 6
 local EffectiveComboPoints, ComboPoints, ComboPointsDeficit
 local Energy, EnergyRegen, EnergyDeficit, EnergyTimeToMax, EnergyMaxOffset
+local DungeonSlice = Player:IsInParty() and Player:IsInDungeonArea() and not Player:IsInRaid()
 local Interrupts = {
   { S.Blind, "Cast Blind (Interrupt)", function () return true end },
 }
@@ -633,7 +634,7 @@ local function APL ()
       -- Precombat CDs
       -- actions.precombat+=/roll_the_bones,precombat_seconds=2
       -- Use same extended logic as a normal rotation for between pulls
-      if S.RolltheBones:IsReady() and not Player:DebuffUp(S.Dreadblades) and (RtB_Buffs() == 0 or RtB_Reroll()) then
+      if S.RolltheBones:IsReady() and not Player:DebuffUp(S.Dreadblades) and ((RtB_Buffs() == 0 or RtB_Reroll()) or ((Player:BuffUp(S.Stealth) or Player:BuffUp(S.Stealth2)) and LongestRtBRemains() <= 7.5 and DungeonSlice and S.RolltheBones:TimeSinceLastCast() > 1 and (not Player:AffectingCombat() and S.Vanish:TimeSinceLastCast() > 1))) then
         if HR.Cast(S.RolltheBones) then return "Cast Roll the Bones (Opener)" end
       end
       -- actions.precombat+=/adrenaline_rush,precombat_seconds=3,if=talent.improved_adrenaline_rush
