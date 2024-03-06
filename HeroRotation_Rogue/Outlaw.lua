@@ -304,7 +304,7 @@ end
 
 local function CDs ()
   -- # Cooldowns
-  -- # Use Adrenaline Rush if it is not active and the finisher condition is not met, but Crackshot builds can refresh it with 2cp or lower inside stealth NS note: Added safety check for loaded dice
+  -- # Use Adrenaline Rush if it is not active and the finisher condition is not met, but Crackshot builds can refresh it with 2cp or lower inside stealth
   -- actions.cds+=/adrenaline_rush,if=(!buff.adrenaline_rush.up&(!variable.finish_condition|!talent.improved_adrenaline_rush))|(stealthed.all&talent.crackshot&talent.improved_adrenaline_rush&combo_points<=2)
   if CDsON() and S.AdrenalineRush:IsCastable() then
     if  (not Player:BuffUp(S.AdrenalineRush) and (not Finish_Condition() or not S.ImprovedAdrenalineRush:IsAvailable()))
@@ -457,6 +457,16 @@ local function CDs ()
 end
 
 local function Stealth()
+  -- w/e the offical version did - does not change the damage in sims in any way when copied and changed for Stealth actions.
+  if S.BladeFlurry:IsReady() then
+    if S.DeftManeuvers:IsAvailable() and not Finish_Condition() and (EnemiesBFCount >= 3 and ComboPointsDeficit == EnemiesBFCount + num(Player:BuffUp(S.Broadside)) or EnemiesBFCount >= 5) then
+      if Settings.Outlaw.GCDasOffGCD.BladeFlurry then
+        HR.CastSuggested(S.BladeFlurry)
+      else
+        if HR.Cast(S.BladeFlurry) then return "Cast Blade Flurry (3 or 4 Target Filler or 5+ Targets)" end
+      end
+    end
+  end
 	-- actions.stealth=blade_flurry,if=talent.subterfuge&talent.hidden_opportunity&spell_targets>=2&buff.blade_flurry.remains<gcd
 	if S.BladeFlurry:IsCastable() and AoEON() and S.Subterfuge:IsAvailable() and S.HiddenOpportunity:IsAvailable() and EnemiesBFCount >= 2
 		and Player:BuffRemains(S.BladeFlurry) <= Player:GCD() then
