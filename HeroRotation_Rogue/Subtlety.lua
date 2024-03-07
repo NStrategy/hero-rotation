@@ -267,6 +267,7 @@ local function WillDanceBeCast () -- currently not needed but maybe in the futur
         not Player:BuffUp(S.SymbolsofDeath) and Player:HasTier(30, 2)) and S.SecretTechnique:CooldownRemains() < 10 + 12 * num(not S.InvigoratingShadowdust:IsAvailable() or Player:HasTier(30, 2)))
 end
 
+
 -- # Finishers
 -- ReturnSpellOnly and StealthSpell parameters are to Predict Finisher in case of Stealth Macros
 local function Finish (ReturnSpellOnly, StealthSpell)
@@ -665,6 +666,13 @@ local function CDs ()
     -- custom Fyrakk Conditions
     if S.Vanish:IsCastable() and HL.CombatTime() < 465 then
       if Player:BuffUp(S.ShadowDanceBuff) and S.SecretTechnique:TimeSinceLastCast() < 5 and not (S.Vanish:TimeSinceLastCast() < 5) and Player:BuffRemains(S.ShadowBlades) > 10 and (Player:BuffUp(S.Flagellation) or Player:BuffUp(S.FlagellationPersistBuff)) and (Target:NPCID() == 189632 or Target:NPCID() == 204931 or Target:NPCID() == 207796 or Target:NPCID() == 214012 or Target:NPCID() == 214608) and (S.ShadowBlades:TimeSinceLastCast() < S.Flagellation:TimeSinceLastCast()) then
+        ShouldReturn = StealthMacro(S.Vanish, EnergyThreshold)
+        if ShouldReturn then return "Vanish Macro " .. ShouldReturn end
+      end
+    end
+    -- custom Fyrakk Condition for till before Intermission if checked
+    if S.Vanish:IsCastable() and HL.CombatTime() < 170 and HL.CombatTime() > 60 and Settings.Subtlety.VanishFlagintoBlades then
+      if Player:BuffUp(S.ShadowDanceBuff) and S.SecretTechnique:TimeSinceLastCast() < 5 and not (S.Vanish:TimeSinceLastCast() < 5) and S.Flagellation:TimeSinceLastCast() < 7 and S.ShadowBlades:CooldownRemains() <= 30 and S.ShadowBlades:CooldownRemains() >= 10 and (Player:BuffUp(S.Flagellation) or Player:BuffUp(S.FlagellationPersistBuff)) and (Target:NPCID() == 189632 or Target:NPCID() == 204931 or Target:NPCID() == 207796 or Target:NPCID() == 214012 or Target:NPCID() == 214608) then
         ShouldReturn = StealthMacro(S.Vanish, EnergyThreshold)
         if ShouldReturn then return "Vanish Macro " .. ShouldReturn end
       end

@@ -96,7 +96,7 @@ HR.GUISettings.APL.Rogue = {
     EviscerateDMGOffset = 3, -- Used to compute the rupture threshold
     ShDEcoCharge = 1.75, -- Shadow Dance Eco Mode (Min Fractional Charges before using it while CDs are disabled)
     BurnShadowDance = "On Bosses not in Dungeons", -- Burn Shadow Dance charges when the target is about to die
-    UsePriorityRotation = "Never", -- Only for Assassination / Subtlety
+    UsePriorityRotation = "Auto", -- Only for Assassination / Subtlety
     PotionType = {
       Selected = "Power",
     },
@@ -157,4 +157,5 @@ CreatePanelOption("Dropdown", CP_Subtlety, "APL.Rogue.Subtlety.BurnShadowDance",
 CreatePanelOption("CheckButton", CP_Subtlety, "APL.Rogue.Subtlety.StealthMacro.Vanish", "Stealth Combo - Vanish", "Allow suggesting Vanish stealth ability combos (recommended)")
 CreatePanelOption("CheckButton", CP_Subtlety, "APL.Rogue.Subtlety.StealthMacro.Shadowmeld", "Stealth Combo - Shadowmeld", "Allow suggesting Shadowmeld stealth ability combos (recommended)")
 CreatePanelOption("CheckButton", CP_Subtlety, "APL.Rogue.Subtlety.StealthMacro.ShadowDance", "Stealth Combo - Shadow Dance", "Allow suggesting Shadow Dance stealth ability combos (recommended)")
+CreatePanelOption("CheckButton", CP_Subtlety, "APL.Rogue.Subtlety.VanishFlagintoBlades", "Vanish to Flag into Blades at Fyrakk at 1:00-2:40", "Check if you want to use Vanish at around 1:00-1:10 and 2:40-2:50 after Flag to Pull Blades into Flag (currently not supported since you most often have enough Damage. but maybe for better push timings)")
 CreateARPanelOptions(CP_Subtlety, "APL.Rogue.Subtlety")
