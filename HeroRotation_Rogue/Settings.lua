@@ -95,6 +95,8 @@ HR.GUISettings.APL.Rogue = {
   Subtlety = {
     EviscerateDMGOffset = 3, -- Used to compute the rupture threshold
     ShDEcoCharge = 1.75, -- Shadow Dance Eco Mode (Min Fractional Charges before using it while CDs are disabled)
+    VanishFlagintoBlades = true,
+    FunnelTindral = true,
     BurnShadowDance = "On Bosses not in Dungeons", -- Burn Shadow Dance charges when the target is about to die
     UsePriorityRotation = "Auto", -- Only for Assassination / Subtlety
     PotionType = {
@@ -152,10 +154,11 @@ CreateARPanelOptions(CP_Outlaw, "APL.Rogue.Outlaw")
 -- Subtlety
 CreatePanelOption("Slider", CP_Subtlety, "APL.Rogue.Subtlety.EviscerateDMGOffset", {1, 5, 0.25}, "Eviscerate Damage Offset", "Set the Eviscerate Damage Offset, used to compute the rupture threshold.")
 CreatePanelOption("Slider", CP_Subtlety, "APL.Rogue.Subtlety.ShDEcoCharge", {1, 2, 0.1}, "ShD Eco Charge", "Set the Shadow Dance Eco Charge threshold.")
+CreatePanelOption("CheckButton", CP_Subtlety, "APL.Rogue.Subtlety.VanishFlagintoBlades", "Vanish to Flag into Blades at Fyrakk at 1:00-2:40", "Check if you want to use Vanish at around 1:00-1:10 and 2:40-2:50 after Flag to Pull Blades into Flag (currently not supported since you most often have enough Damage. but maybe for better push timings)")
+CreatePanelOption("CheckButton", CP_Subtlety, "APL.Rogue.Subtlety.FunnelTindral", "Full Funnel on Tindral (MUST have priority rotation on Auto) If you do not want to funnel, do not tick this box", "Check if you want to full funnel on Tindral")
 CreatePanelOption("Dropdown", CP_Subtlety, "APL.Rogue.Subtlety.UsePriorityRotation", {"Never", "On Bosses", "Always", "Auto"}, "Use Priority Rotation", "Select when to show rotation for maximum priority damage (at the cost of overall AoE damage.)\nAuto will function as Never except on specific encounters where AoE is not recommended.")
 CreatePanelOption("Dropdown", CP_Subtlety, "APL.Rogue.Subtlety.BurnShadowDance", {"Always", "On Bosses", "On Bosses not in Dungeons"}, "Burn Shadow Dance before Death", "Use remaining Shadow Dance charges when the target is about to die.")
 CreatePanelOption("CheckButton", CP_Subtlety, "APL.Rogue.Subtlety.StealthMacro.Vanish", "Stealth Combo - Vanish", "Allow suggesting Vanish stealth ability combos (recommended)")
 CreatePanelOption("CheckButton", CP_Subtlety, "APL.Rogue.Subtlety.StealthMacro.Shadowmeld", "Stealth Combo - Shadowmeld", "Allow suggesting Shadowmeld stealth ability combos (recommended)")
 CreatePanelOption("CheckButton", CP_Subtlety, "APL.Rogue.Subtlety.StealthMacro.ShadowDance", "Stealth Combo - Shadow Dance", "Allow suggesting Shadow Dance stealth ability combos (recommended)")
-CreatePanelOption("CheckButton", CP_Subtlety, "APL.Rogue.Subtlety.VanishFlagintoBlades", "Vanish to Flag into Blades at Fyrakk at 1:00-2:40", "Check if you want to use Vanish at around 1:00-1:10 and 2:40-2:50 after Flag to Pull Blades into Flag (currently not supported since you most often have enough Damage. but maybe for better push timings)")
 CreateARPanelOptions(CP_Subtlety, "APL.Rogue.Subtlety")

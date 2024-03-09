@@ -151,6 +151,9 @@ local function UsePriorityRotation()
     -- Witherbark
     elseif Target:NPCID() == 81522 then
       return true
+    -- Tindral
+    elseif Target:NPCID() == 209090 and Settings.Subtlety.FunnelTindral then
+      return true
     end
   end
 
@@ -321,7 +324,7 @@ local function Finish (ReturnSpellOnly, StealthSpell)
     end
   end
   -- actions.finish+=/rupture,if=buff.finality_rupture.up&buff.shadow_dance.up&spell_targets.shuriken_storm<=4&!action.rupture.used_for_danse
-  if Player:BuffUp(S.FinalityRuptureBuff) and ShadowDanceBuff and not Skip_Rupture_NPC() and MeleeEnemies10yCount <= 4 and not Used_For_Danse(S.Rupture) and S.Rupture:IsCastable() then
+  if Player:BuffUp(S.FinalityRuptureBuff) and ShadowDanceBuff and not Skip_Rupture_NPC() and (MeleeEnemies10yCount <= 4 or (Target:NPCID() == 209090 and Settings.Subtlety.FunnelTindral)) and not Used_For_Danse(S.Rupture) and S.Rupture:IsCastable() then
     if TargetInMeleeRange then
       if ReturnSpellOnly then
         return S.Rupture
@@ -583,7 +586,7 @@ local function CDs ()
     -- actions.cds+=/shadow_blades,if=(combo_points<=1|set_bonus.tier31_4pc)&(((buff.flagellation_buff.up|buff.flagellation_persist.up)&cooldown.shadow_dance.charges_fractional<2)|!talent.flagellation) NS note: cooldown.shadow_dance.charges_fractional<2 offers negligible damage gains but aligns more closely with the rotation outlined in the FAQ
     if S.ShadowBlades:IsCastable() and not (Target:NPCID() == 209333 and HL.CombatTime() > 60 and HL.CombatTime() < 80) then
       if (ComboPoints <= 1 or Player:HasTier(31, 4)) and 
-        (((Player:BuffUp(S.Flagellation) or (Player:BuffUp(S.FlagellationPersistBuff) and not (Target:NPCID() == 209333 or Target:NPCID() == 204931 or Target:NPCID() == 207796 or Target:NPCID() == 214012 or Target:NPCID() == 214608))) and S.ShadowDance:ChargesFractional() < 2) or not S.Flagellation:IsAvailable()) then 
+        (((Player:BuffUp(S.Flagellation) or (Player:BuffUp(S.FlagellationPersistBuff) and not (Target:NPCID() == 209333 or (Target:NPCID() == 204931 and not Settings.Subtlety.VanishFlagintoBlades) or Target:NPCID() == 207796 or Target:NPCID() == 214012 or Target:NPCID() == 214608))) and S.ShadowDance:ChargesFractional() < 2) or not S.Flagellation:IsAvailable()) then 
         if HR.Cast(S.ShadowBlades, Settings.Subtlety.OffGCDasOffGCD.ShadowBlades) then return "Cast Shadow Blades" end
       end
     end
@@ -602,6 +605,7 @@ local function CDs ()
         if HR.Cast(S.ShurikenTornado, Settings.Subtlety.GCDasOffGCD.ShurikenTornado) then return "Cast Shuriken Tornado (ST)" end
       end
     end
+    -- Tindral and Gnarlroot Boss Mods for Tornado TODO
     -- actions.cds+=/shadow_dance,if=!buff.shadow_dance.up&fight_remains<=8+talent.subterfuge.enabled
     if S.ShadowDance:IsCastable() and MayBurnShadowDance() and not Player:BuffUp(S.ShadowDanceBuff) and HL.BossFilteredFightRemains("<=", 8) then
       ShouldReturn = StealthMacro(S.ShadowDance)
@@ -672,21 +676,21 @@ local function CDs ()
     end
     -- custom Fyrakk Condition for till before Intermission if checked
     if S.Vanish:IsCastable() and HL.CombatTime() < 170 and HL.CombatTime() > 60 and Settings.Subtlety.VanishFlagintoBlades then
-      if Player:BuffUp(S.ShadowDanceBuff) and S.SecretTechnique:TimeSinceLastCast() < 5 and not (S.Vanish:TimeSinceLastCast() < 5) and S.Flagellation:TimeSinceLastCast() < 7 and S.ShadowBlades:CooldownRemains() <= 30 and S.ShadowBlades:CooldownRemains() >= 10 and (Player:BuffUp(S.Flagellation) or Player:BuffUp(S.FlagellationPersistBuff)) and (Target:NPCID() == 189632 or Target:NPCID() == 204931 or Target:NPCID() == 207796 or Target:NPCID() == 214012 or Target:NPCID() == 214608) then
+      if Player:BuffUp(S.ShadowDanceBuff) and S.SecretTechnique:TimeSinceLastCast() < 5 and not (S.Vanish:TimeSinceLastCast() < 5) and S.ShadowBlades:CooldownRemains() <= 30 and S.ShadowBlades:CooldownRemains() >= 5 and (Player:BuffUp(S.Flagellation) or Player:BuffUp(S.FlagellationPersistBuff)) and (Target:NPCID() == 189632 or Target:NPCID() == 204931 or Target:NPCID() == 207796 or Target:NPCID() == 214012 or Target:NPCID() == 214608) then
         ShouldReturn = StealthMacro(S.Vanish, EnergyThreshold)
         if ShouldReturn then return "Vanish Macro " .. ShouldReturn end
       end
     end
     -- Custom Fyrakk and Nymue Condition - use Shadowblades at 4:48 for Fyrakk (when playing Boss Damage CDs) and 4:50 for Nymue
     if S.Vanish:IsCastable() then
-      if S.ShadowBlades:CooldownRemains() > 90 and S.Flagellation:CooldownRemains() <= 30 and S.Flagellation:CooldownRemains() >= 7 and not (S.Vanish:TimeSinceLastCast() < 5) and (Target:NPCID() == 206172 or Target:NPCID() == 204931 or Target:NPCID() == 189632) then
+      if S.ShadowBlades:CooldownRemains() > 90 and S.Flagellation:CooldownRemains() <= 30 and S.Flagellation:CooldownRemains() >= 7 and not (S.Vanish:TimeSinceLastCast() < 5) and (Target:NPCID() == 206172 or Target:NPCID() == 204931) then
          ShouldReturn = StealthMacro(S.Vanish, EnergyThreshold)
          if ShouldReturn then return "Vanish Macro " .. ShouldReturn end
       end
     end
-    -- Custom Blades Condition for Fyrakk and Nymue - use Shadowblades at 4:48 for Fyrakk (when playing Boss Damage CDs) and 4:50 for Nymue
+    -- Custom Blades Condition for Fyrakk and Nymue - use Shadowblades at 4:48 for Fyrakk (when playing Boss Damage CDs) and 4:50 for Nymue added +/- 30 seconds for Fyrakk. Shouldnt trigger to early.
     if S.ShadowBlades:IsCastable() then
-      if S.Flagellation:CooldownRemains() <= 30 and S.Flagellation:CooldownRemains() >= 7 and S.Vanish:IsCastable() and (Target:NPCID() == 206172 or Target:NPCID() == 204931) and HL.CombatTime() > 287 and HL.CombatTime() < 295 then
+      if S.Flagellation:CooldownRemains() <= 30 and S.Flagellation:CooldownRemains() >= 7 and S.Vanish:IsCastable() and (Target:NPCID() == 206172 or Target:NPCID() == 204931) and HL.CombatTime() > 257 and HL.CombatTime() < 325 then
         if HR.Cast(S.ShadowBlades, Settings.Subtlety.OffGCDasOffGCD.ShadowBlades) then return "Cast Shadow Blades" end
       end
     end
