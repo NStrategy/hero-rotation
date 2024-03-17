@@ -677,7 +677,7 @@ local function CDs ()
     end
     -- custom Fyrakk Condition for till before Intermission if checked
     if S.Vanish:IsCastable() and HL.CombatTime() < 170 and HL.CombatTime() > 60 and Settings.Subtlety.VanishFlagintoBlades then
-      if Player:BuffUp(S.ShadowDanceBuff) and S.SecretTechnique:TimeSinceLastCast() < 5 and not (S.Vanish:TimeSinceLastCast() < 5) and S.ShadowBlades:CooldownRemains() <= 30 and S.ShadowBlades:CooldownRemains() >= 5 and (Player:BuffUp(S.Flagellation) or Player:BuffUp(S.FlagellationPersistBuff)) and (Target:NPCID() == 189632 or Target:NPCID() == 204931 or Target:NPCID() == 207796 or Target:NPCID() == 214012 or Target:NPCID() == 214608) then
+      if Player:BuffUp(S.ShadowDanceBuff) and S.SecretTechnique:TimeSinceLastCast() < 5 and not (S.Vanish:TimeSinceLastCast() < 5) and S.ShadowBlades:CooldownRemains() <= 35 and S.ShadowBlades:CooldownRemains() >= 5 and (Player:BuffUp(S.Flagellation) or Player:BuffUp(S.FlagellationPersistBuff)) and (Target:NPCID() == 189632 or Target:NPCID() == 204931 or Target:NPCID() == 207796 or Target:NPCID() == 214012 or Target:NPCID() == 214608) then
         ShouldReturn = StealthMacro(S.Vanish, EnergyThreshold)
         if ShouldReturn then return "Vanish Macro " .. ShouldReturn end
       end
@@ -843,11 +843,11 @@ local function Stealth_CDs (EnergyThreshold)
     end
   end
   if TargetInMeleeRange and S.ShadowDance:IsCastable() and HR.CDsON() then
-    -- actions.stealth_cds+=/shadow_dance,if=(dot.rupture.ticking|talent.invigorating_shadowdust)&variable.rotten_cb&(!talent.the_first_dance|combo_points.deficit>=4|buff.shadow_blades.up)&(variable.shd_combo_points&(variable.shd_threshold&(cooldown.symbols_of_death.up|cooldown.shadow_dance.charges_fractional>=2|(spell_targets>4&!talent.shuriken_tornado)|(spell_targets>5&talent.shuriken_tornado)))|(buff.shadow_blades.up|cooldown.symbols_of_death.up&!talent.sepsis|buff.symbols_of_death.remains>=4&!set_bonus.tier30_2pc|!buff.symbols_of_death.remains&set_bonus.tier30_2pc)&cooldown.secret_technique.remains<10+12*(!talent.invigorating_shadowdust|set_bonus.tier30_2pc))
+    -- actions.stealth_cds+=/shadow_dance,if=(dot.rupture.ticking|talent.invigorating_shadowdust)&variable.rotten_cb&(!talent.the_first_dance|combo_points.deficit>=4|buff.shadow_blades.up)&(variable.shd_combo_points&(variable.shd_threshold&(cooldown.symbols_of_death.up|cooldown.shadow_dance.charges_fractional>=2|(spell_targets>4&!talent.shuriken_tornado)|(spell_targets>5&talent.shuriken_tornado)))|(buff.shadow_blades.remains>10|cooldown.symbols_of_death.up&!talent.sepsis|buff.symbols_of_death.remains>=4&!set_bonus.tier30_2pc|!buff.symbols_of_death.remains&set_bonus.tier30_2pc)&cooldown.secret_technique.remains<10+12*(!talent.invigorating_shadowdust|set_bonus.tier30_2pc))
     -- NOTE: |buff.flagellation.up is a dead operation in SimC due to a typo, since the buff we use in-game is buff.flagellation_buff.up, ignoring
     if  (Target:DebuffUp(S.Rupture) or S.InvigoratingShadowdust:IsAvailable()) and Rotten_CB() and 
         (not S.TheFirstDance:IsAvailable() or ComboPointsDeficit >= 4 or Player:BuffUp(S.ShadowBlades)) and (ShD_Combo_Points() and (ShD_Threshold() and (S.SymbolsofDeath:IsCastable() or S.ShadowDance:ChargesFractional() >= 2 or (MeleeEnemies10yCount > 4 and not S.ShurikenTornado:IsAvailable()) or (MeleeEnemies10yCount > 5 and S.ShurikenTornado:IsAvailable()))) or
-        (Player:BuffUp(S.ShadowBlades) or S.SymbolsofDeath:IsCastable() and not S.Sepsis:IsAvailable() or Player:BuffRemains(S.SymbolsofDeath) >= 4 and not Player:HasTier(30, 2) or 
+        (Player:BuffRemains(S.ShadowBlades) > 10 or S.SymbolsofDeath:IsCastable() and not S.Sepsis:IsAvailable() or Player:BuffRemains(S.SymbolsofDeath) >= 4 and not Player:HasTier(30, 2) or 
         not Player:BuffUp(S.SymbolsofDeath) and Player:HasTier(30, 2)) and S.SecretTechnique:CooldownRemains() < 10 + 12 * num(not S.InvigoratingShadowdust:IsAvailable() or Player:HasTier(30, 2))) then
         ShouldReturn = StealthMacro(S.ShadowDance, EnergyThreshold)
         if ShouldReturn then return "ShadowDance Macro " .. ShouldReturn end
