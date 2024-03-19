@@ -56,7 +56,6 @@ HR.GUISettings.APL.Rogue = {
   Assassination = {
     EnvenomDMGOffset = 3,
     MutilateDMGOffset = 3,
-    AlwaysSuggestGarrote = false, -- Suggest Garrote even when Vanish is up
     UsePriorityRotation = "Never", -- Only for Assassination / Subtlety
     PotionType = {
       Selected = "Power",
@@ -94,7 +93,6 @@ HR.GUISettings.APL.Rogue = {
   },
   Subtlety = {
     EviscerateDMGOffset = 3, -- Used to compute the rupture threshold
-    ShDEcoCharge = 1.75, -- Shadow Dance Eco Mode (Min Fractional Charges before using it while CDs are disabled)
     VanishFlagintoBlades = true,
     FunnelTindral = true,
     BurnShadowDance = "On Bosses not in Dungeons", -- Burn Shadow Dance charges when the target is about to die
@@ -145,7 +143,6 @@ CreateARPanelOptions(CP_Rogue2, "APL.Rogue.Commons2")
 CreatePanelOption("Slider", CP_Assassination, "APL.Rogue.Assassination.EnvenomDMGOffset", {1, 5, 0.25}, "Envenom DMG Offset", "Set the Envenom DMG Offset.")
 CreatePanelOption("Slider", CP_Assassination, "APL.Rogue.Assassination.MutilateDMGOffset", {1, 5, 0.25}, "Mutilate DMG Offset", "Set the Mutilate DMG Offset.")
 CreatePanelOption("Dropdown", CP_Assassination, "APL.Rogue.Assassination.UsePriorityRotation", {"Never", "On Bosses", "Always", "Auto"}, "Use Priority Rotation", "Select when to show rotation for maximum priority damage (at the cost of overall AoE damage.)\nAuto will function as Never except on specific encounters where AoE is not recommended.")
-CreatePanelOption("CheckButton", CP_Assassination, "APL.Rogue.Assassination.AlwaysSuggestGarrote", "Always Suggest Garrote", "Don't prevent Garrote suggestions when using Subterfuge and Vanish is ready. These should ideally be synced, but can be useful if holding Vanish for specific fights.")
 CreateARPanelOptions(CP_Assassination, "APL.Rogue.Assassination")
 -- Outlaw
 CreatePanelOption("Dropdown", CP_Outlaw, "APL.Rogue.Outlaw.RolltheBonesLogic", {"SimC", "1+ Buff", "Broadside", "Buried Treasure", "Grand Melee", "Skull and Crossbones", "Ruthless Precision", "True Bearing"}, "Roll the Bones Logic", "Define the Roll the Bones logic to follow.\n(SimC highly recommended!)")
@@ -153,7 +150,6 @@ CreatePanelOption("Dropdown", CP_Outlaw, "APL.Rogue.Outlaw.KillingSpreeDisplaySt
 CreateARPanelOptions(CP_Outlaw, "APL.Rogue.Outlaw")
 -- Subtlety
 CreatePanelOption("Slider", CP_Subtlety, "APL.Rogue.Subtlety.EviscerateDMGOffset", {1, 5, 0.25}, "Eviscerate Damage Offset", "Set the Eviscerate Damage Offset, used to compute the rupture threshold.")
-CreatePanelOption("Slider", CP_Subtlety, "APL.Rogue.Subtlety.ShDEcoCharge", {1, 2, 0.1}, "ShD Eco Charge", "Set the Shadow Dance Eco Charge threshold.")
 CreatePanelOption("CheckButton", CP_Subtlety, "APL.Rogue.Subtlety.VanishFlagintoBlades", "Vanish to Flag into Blades at Fyrakk at 1:00-2:40", "Check if you want to use Vanish at around 1:00-1:10 and 2:40-2:50 after Flag to Pull Blades into Flag (currently not supported since you most often have enough Damage. but maybe for better push timings)")
 CreatePanelOption("CheckButton", CP_Subtlety, "APL.Rogue.Subtlety.FunnelTindral", "Full Funnel on Tindral (MUST have priority rotation on Auto) If you do not want to funnel, do not tick this box", "Check if you want to full funnel on Tindral")
 CreatePanelOption("Dropdown", CP_Subtlety, "APL.Rogue.Subtlety.UsePriorityRotation", {"Never", "On Bosses", "Always", "Auto"}, "Use Priority Rotation", "Select when to show rotation for maximum priority damage (at the cost of overall AoE damage.)\nAuto will function as Never except on specific encounters where AoE is not recommended.")

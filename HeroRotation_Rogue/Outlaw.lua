@@ -313,14 +313,6 @@ local function CDs ()
     end
   end
 
-  -- # Use Adrenaline Rush if the longest remaining Roll the Bones buff is 2 seconds or less, or if the longest remaining buff is 8.5 seconds or less and either Shadow Dance or Vanish cooldowns are 3 seconds or less, provided that Loaded Dice is not active. 
-  -- actions.cds+=/adrenaline_rush,if=(rtb_buffs.max_remains<=2|(rtb_buffs.max_remains<=8.5&(cooldown.shadow_dance.remains<=1|cooldown.vanish.remains<=1)))&!buff.loaded_dice.up&(!variable.finish_condition|!talent.improved_adrenaline_rush)
-  if CDsON() and S.AdrenalineRush:IsCastable() then
-    if (LongestRtBRemains() <= 2 or (LongestRtBRemains() <= 8.5 and (S.ShadowDance:CooldownRemains() <= 3 or S.Vanish:CooldownRemains() <= 3))) and not Player:BuffUp(S.LoadedDiceBuff) and (not Finish_Condition() or not S.ImprovedAdrenalineRush:IsAvailable()) then
-      if HR.Cast(S.AdrenalineRush, Settings.Outlaw.OffGCDasOffGCD.AdrenalineRush) then return "Cast ADR into RTB" end
-    end
-  end
-
   -- # Maintain Blade Flurry on 2+ targets, and on single target with Underhanded during Adrenaline Rush
   -- actions.cds+=/blade_flurry,if=spell_targets>=2-(talent.underhanded_upper_hand&!stealthed.all&buff.adrenaline_rush.up)&buff.blade_flurry.remains<gcd
   if S.BladeFlurry:IsCastable() then
@@ -533,7 +525,7 @@ local function Finish ()
 
 	-- actions.finish+=/killing_spree,if=debuff.ghostly_strike.up|!talent.ghostly_strike
 	if S.KillingSpree:IsCastable() and Target:IsSpellInRange(S.KillingSpree) and (Target:DebuffUp(S.GhostlyStrike) or not S.GhostlyStrike:IsAvailable()) then
-		if HR.Cast(S.KillingSpree) then return "Cast Killing Spree" end
+		if Cast(S.KillingSpree, nil, Settings.Outlaw.KillingSpreeDisplayStyle) then return "Cast Killing Spree" end
 	end
 
   if S.ColdBlood:IsCastable() and Player:BuffDown(S.ColdBlood) and Target:IsSpellInRange(S.Dispatch) then
@@ -547,10 +539,8 @@ end
 
 local function Build ()
 	-- actions.build+=/echoing_reprimand
-	if CDsON() and S.EchoingReprimand:IsCastable() then
-		if HR.Cast(S.EchoingReprimand, nil, Settings.Commons.GCDasOffGCD.EchoingReprimand) then
-			return "Cast Echoing Reprimand"
-		end
+	if CDsON() and S.EchoingReprimand:IsReady() then
+		if Cast(S.EchoingReprimand, Settings.Commons.GCDasOffGCD.EchoingReprimand, nil, not Target:IsSpellInRange(S.EchoingReprimand)) then return "Cast Echoing Reprimand" end
 	end
 
 	-- actions.build+=/ambush,if=talent.hidden_opportunity&buff.audacity.up
@@ -644,7 +634,7 @@ local function APL ()
       -- Precombat CDs
       -- actions.precombat+=/roll_the_bones,precombat_seconds=2
       -- Use same extended logic as a normal rotation for between pulls
-      if S.RolltheBones:IsReady() and not Player:DebuffUp(S.Dreadblades) and ((RtB_Buffs() == 0 or RtB_Reroll()) or ((Player:BuffUp(S.Stealth) or Player:BuffUp(S.Stealth2)) and LongestRtBRemains() <= 7.5 and DungeonSlice and S.RolltheBones:TimeSinceLastCast() > 1 and (not Player:AffectingCombat() and S.Vanish:TimeSinceLastCast() > 1))) then
+      if S.RolltheBones:IsReady() and not Player:DebuffUp(S.Dreadblades) and (RtB_Buffs() == 0 or RtB_Reroll() or ((Player:BuffUp(S.Stealth) or Player:BuffUp(S.Stealth2)) and LongestRtBRemains() <= 7.5 and DungeonSlice and S.RolltheBones:TimeSinceLastCast() > 1 and (not Player:AffectingCombat() and S.Vanish:TimeSinceLastCast() > 1))) then
         if HR.Cast(S.RolltheBones) then return "Cast Roll the Bones (Opener)" end
       end
       -- actions.precombat+=/adrenaline_rush,precombat_seconds=3,if=talent.improved_adrenaline_rush
@@ -662,7 +652,7 @@ local function APL ()
           if HR.Cast(S.GhostlyStrike, Settings.Outlaw.OffGCDasOffGCD.GhostlyStrike) then return "Cast Ghostly Strike KiR (Opener)" end
         end
         if S.KeepItRolling:IsAvailable() and S.EchoingReprimand:IsReady() and S.EchoingReprimand:IsAvailable() then
-          if HR.Cast(S.EchoingReprimand, nil, Settings.Commons.GCDasOffGCD.EchoingReprimand) then return "Cast Echoing Reprimand (Opener)" end
+          if Cast(S.EchoingReprimand, Settings.Commons.GCDasOffGCD.EchoingReprimand, nil, not Target:IsSpellInRange(S.EchoingReprimand)) then return "Cast Echoing Reprimand (Opener)" end
         end
         if S.HiddenOpportunity:IsAvailable() and S.Ambush:IsCastable() then
           if HR.Cast(S.Ambush) then return "Cast Ambush (Opener)" end
