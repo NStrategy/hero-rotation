@@ -336,10 +336,10 @@ local function CDs ()
   
 
   -- # Use Roll the Bones if reroll conditions are met, or with no buffs, or 2s before buffs expire with T31, or 7s before buffs expire with Vanish/Dance ready Maybe add: bs in st, gm in aoe?
-  -- actions.cds+=/roll_the_bones,if=((variable.rtb_reroll&!stealthed.all)|(variable.rtb_reroll&rtb_buffs=1&!buff.broadside.up)|(variable.rtb_reroll&rtb_buffs=2&buff.loaded_dice.up&!buff.broadside.up))|rtb_buffs=0|(rtb_buffs.max_remains<=2|rtb_buffs<=3&rtb_buffs.max_remains<=9&buff.loaded_dice.up)&set_bonus.tier31_4pc&!stealthed.all|(!stealthed.all&rtb_buffs.max_remains<=7&(cooldown.shadow_dance.remains<=1|cooldown.vanish.remains<=1))
+  -- actions.cds+=/roll_the_bones,if=(variable.rtb_reroll&!stealthed.all)|rtb_buffs=0|(rtb_buffs.max_remains<=2|rtb_buffs<=3&rtb_buffs.max_remains<=9&buff.loaded_dice.up)&set_bonus.tier31_4pc&!stealthed.all|(!stealthed.all&rtb_buffs.max_remains<=7&(cooldown.shadow_dance.remains<=1|cooldown.vanish.remains<=1))
   if S.RolltheBones:IsCastable() then
     local no_crackshot_stealth = not Player:BuffUp(S.SubterfugeBuff) or not Player:BuffUp(S.ShadowDanceBuff) or not Player:BuffUp(S.VanishBuff) or not Player:BuffUp(S.VanishBuff2) or not Player:BuffUp(S.Stealth) or not Player:BuffUp(S.Stealth2) -- testing
-    if ((RtB_Reroll() and not Player:StealthUp(true, true)) or (RtB_Reroll() and RtB_Buffs() == 1 and not Player:BuffUp(S.Broadside)) or (RtB_Reroll() and RtB_Buffs() == 2 and Player:BuffUp(S.LoadedDiceBuff) and not Player:BuffUp(S.Broadside))) or RtB_Buffs() == 0 or (LongestRtBRemains() <= 2.5 or RtB_Buffs() <= 3 and LongestRtBRemains() <= 9 and Player:BuffUp(S.LoadedDiceBuff)) and Player:HasTier(31, 4) and not Player:StealthUp(true, true) or (not Player:StealthUp(true, true) and LongestRtBRemains() <= 7.5 and (S.ShadowDance:CooldownRemains() <= 1 or S.Vanish:CooldownRemains() <= 1)) then
+    if (RtB_Reroll() and not Player:StealthUp(true, true)) or RtB_Buffs() == 0 or (LongestRtBRemains() <= 2.5 or RtB_Buffs() <= 3 and LongestRtBRemains() <= 9 and Player:BuffUp(S.LoadedDiceBuff)) and Player:HasTier(31, 4) and not Player:StealthUp(true, true) or (not Player:StealthUp(true, true) and LongestRtBRemains() <= 7.5 and (S.ShadowDance:CooldownRemains() <= 1 or S.Vanish:CooldownRemains() <= 1)) then
       if HR.Cast(S.RolltheBones, Settings.Outlaw.GCDasOffGCD.RolltheBones) then return "Cast Roll the Bones" end
     end
   end
@@ -551,7 +551,7 @@ local function Build ()
 	-- # With Audacity + Hidden Opportunity + Fan the Hammer, consume Opportunity to proc Audacity any time Ambush is not available ns note: recheck if for w/e reason KiR builds will use Audacity as well
 	-- actions.build+=/pistol_shot,if=talent.fan_the_hammer&talent.audacity&talent.hidden_opportunity&buff.opportunity.up&!buff.audacity.up&combo_points<=5
   -- NS note: following rogue faq  Pistol Shot with an Opportunity proc any time Ambush is not available. Still use even if you are at 5cp. (would probably dont need the check but who care really)
-	if S.FanTheHammer:IsAvailable() and S.Audacity:IsAvailable() and S.HiddenOpportunity:IsAvailable() and Player:BuffUp(S.Opportunity) and Player:BuffDown(S.AudacityBuff) and ComboPoints <=5 then
+	if S.FanTheHammer:IsAvailable() and S.Audacity:IsAvailable() and S.HiddenOpportunity:IsAvailable() and Player:BuffUp(S.Opportunity) and Player:BuffDown(S.AudacityBuff) and ComboPoints <= 5 then
 		if HR.CastPooling(S.PistolShot) then return "Cast Pistol Shot (Audacity)" end
 	end
 
@@ -634,7 +634,7 @@ local function APL ()
       -- Precombat CDs
       -- actions.precombat+=/roll_the_bones,precombat_seconds=2
       -- Use same extended logic as a normal rotation for between pulls
-      if S.RolltheBones:IsReady() and not Player:DebuffUp(S.Dreadblades) and (RtB_Buffs() == 0 or RtB_Reroll() or ((Player:BuffUp(S.Stealth) or Player:BuffUp(S.Stealth2)) and LongestRtBRemains() <= 7.5 and DungeonSlice and S.RolltheBones:TimeSinceLastCast() > 1 and (not Player:AffectingCombat() and S.Vanish:TimeSinceLastCast() > 1))) then
+      if S.RolltheBones:IsReady() and not Player:DebuffUp(S.Dreadblades) and (RtB_Buffs() == 0 or RtB_Reroll() or (LongestRtBRemains() <= 7.5 and DungeonSlice and EnemiesBFCount == 0 )) then
         if HR.Cast(S.RolltheBones) then return "Cast Roll the Bones (Opener)" end
       end
       -- actions.precombat+=/adrenaline_rush,precombat_seconds=3,if=talent.improved_adrenaline_rush
