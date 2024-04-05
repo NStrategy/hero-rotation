@@ -179,7 +179,7 @@ local function RtB_Reroll ()
       Cache.APLVar.RtB_Reroll = false
       RtB_Buffs()
       -- Following Rogue Discord FAQ: Use Roll the Bones if: You have 0-1 buffs OR if you have 2 buffs and Loaded Dice is active.
-      -- actions+=/variable,name=rtb_reroll,if=set_bonus.tier31_4pc,,value=(rtb_buffs<=1+buff.loaded_dice.up) NS Note: Better on lower ends, more on highest possible dmg
+      -- actions+=/variable,name=rtb_reroll,if=set_bonus.tier31_4pc,value=(rtb_buffs<=1+buff.loaded_dice.up)
       if Player:HasTier(31, 4) then
         if (RtB_Buffs() <= 1 + num(Player:BuffUp(S.LoadedDiceBuff))) then
           Cache.APLVar.RtB_Reroll = true
@@ -218,7 +218,7 @@ local function RtB_Reroll ()
           end
           if RtB_Buffs() == 6 then
             Cache.APLVar.RtB_Reroll = false
-          elseif allBuffsBelowThreshold and RtB_Buffs() < 6 and not Player:StealthUp(true, true) and Player:BuffUp(S.LoadedDiceBuff) then
+          elseif allBuffsBelowThreshold and RtB_Buffs() < 6 and (not Player:StealthUp(true, true) or (DungeonSlice and not Player:AffectingCombat() and EnemiesBFCount == 0)) and Player:BuffUp(S.LoadedDiceBuff) then
             Cache.APLVar.RtB_Reroll = true
           end
         end
@@ -336,10 +336,10 @@ local function CDs ()
   
 
   -- # Use Roll the Bones if reroll conditions are met, or with no buffs, or 2s before buffs expire with T31, or 7s before buffs expire with Vanish/Dance ready Maybe add: bs in st, gm in aoe?
-  -- actions.cds+=/roll_the_bones,if=(variable.rtb_reroll&!stealthed.all)|rtb_buffs=0|(rtb_buffs.max_remains<=2|rtb_buffs<=3&rtb_buffs.max_remains<=9&buff.loaded_dice.up)&set_bonus.tier31_4pc&!stealthed.all|(!stealthed.all&rtb_buffs.max_remains<=7&(cooldown.shadow_dance.remains<=1|cooldown.vanish.remains<=1))
+  -- actions.cds+=/roll_the_bones,if=variable.rtb_reroll|rtb_buffs=0|(rtb_buffs.max_remains<=2|rtb_buffs<=3&rtb_buffs.max_remains<=9&buff.loaded_dice.up)&set_bonus.tier31_4pc&!stealthed.all|(!stealthed.all&rtb_buffs.max_remains<=7&(cooldown.shadow_dance.remains<=1|cooldown.vanish.remains<=1))
   if S.RolltheBones:IsCastable() then
     local no_crackshot_stealth = not Player:BuffUp(S.SubterfugeBuff) or not Player:BuffUp(S.ShadowDanceBuff) or not Player:BuffUp(S.VanishBuff) or not Player:BuffUp(S.VanishBuff2) or not Player:BuffUp(S.Stealth) or not Player:BuffUp(S.Stealth2) -- testing
-    if (RtB_Reroll() and not Player:StealthUp(true, true)) or RtB_Buffs() == 0 or (LongestRtBRemains() <= 2.5 or RtB_Buffs() <= 3 and LongestRtBRemains() <= 9 and Player:BuffUp(S.LoadedDiceBuff)) and Player:HasTier(31, 4) and not Player:StealthUp(true, true) or (not Player:StealthUp(true, true) and LongestRtBRemains() <= 7.5 and (S.ShadowDance:CooldownRemains() <= 1 or S.Vanish:CooldownRemains() <= 1)) then
+    if RtB_Reroll() or RtB_Buffs() == 0 or (LongestRtBRemains() <= 2.5 or RtB_Buffs() <= 3 and LongestRtBRemains() <= 9 and Player:BuffUp(S.LoadedDiceBuff)) and Player:HasTier(31, 4) and not Player:StealthUp(true, true) or (not Player:StealthUp(true, true) and LongestRtBRemains() <= 7.5 and (S.ShadowDance:CooldownRemains() <= 1 or S.Vanish:CooldownRemains() <= 1)) then
       if HR.Cast(S.RolltheBones, Settings.Outlaw.GCDasOffGCD.RolltheBones) then return "Cast Roll the Bones" end
     end
   end
