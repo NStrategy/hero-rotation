@@ -339,7 +339,7 @@ local function CDs ()
   -- actions.cds+=/roll_the_bones,if=variable.rtb_reroll|rtb_buffs=0|(rtb_buffs.max_remains<=2|rtb_buffs<=3&rtb_buffs.max_remains<=9&buff.loaded_dice.up)&set_bonus.tier31_4pc&!stealthed.all|(!stealthed.all&rtb_buffs.max_remains<=7&(cooldown.shadow_dance.remains<=1|cooldown.vanish.remains<=1))
   if S.RolltheBones:IsCastable() then
     local no_crackshot_stealth = not Player:BuffUp(S.SubterfugeBuff) or not Player:BuffUp(S.ShadowDanceBuff) or not Player:BuffUp(S.VanishBuff) or not Player:BuffUp(S.VanishBuff2) or not Player:BuffUp(S.Stealth) or not Player:BuffUp(S.Stealth2) -- testing
-    if RtB_Reroll() or RtB_Buffs() == 0 or (LongestRtBRemains() <= 2.5 or RtB_Buffs() <= 3 and LongestRtBRemains() <= 9 and Player:BuffUp(S.LoadedDiceBuff)) and Player:HasTier(31, 4) and not Player:StealthUp(true, true) or (not Player:StealthUp(true, true) and LongestRtBRemains() <= 7.5 and (S.ShadowDance:CooldownRemains() <= 1 or S.Vanish:CooldownRemains() <= 1)) then
+    if RtB_Reroll() or RtB_Buffs() == 0 or (LongestRtBRemains() <= 2.5 or (RtB_Buffs() <= 3 and LongestRtBRemains() <= 9 and Player:BuffUp(S.LoadedDiceBuff) and not Player:BuffUp(S.TrueBearing) and not Player:BuffUp(S.Broadside))) and Player:HasTier(31, 4) and not Player:StealthUp(true, true) or (not Player:StealthUp(true, true) and LongestRtBRemains() <= 7.5 and (S.ShadowDance:CooldownRemains() <= 1 or S.Vanish:CooldownRemains() <= 1)) then
       if HR.Cast(S.RolltheBones, Settings.Outlaw.GCDasOffGCD.RolltheBones) then return "Cast Roll the Bones" end
     end
   end
