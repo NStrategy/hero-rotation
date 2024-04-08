@@ -75,7 +75,7 @@ local ShouldReturn; -- Used to get the return string
 local BladeFlurryRange = 6
 local EffectiveComboPoints, ComboPoints, ComboPointsDeficit
 local Energy, EnergyRegen, EnergyDeficit, EnergyTimeToMax, EnergyMaxOffset
-local DungeonSlice = Player:IsInParty() and Player:IsInDungeonArea() and not Player:IsInRaid()
+local DungeonSlice
 local Interrupts = {
   { S.Blind, "Cast Blind (Interrupt)", function () return true end },
 }
@@ -218,7 +218,7 @@ local function RtB_Reroll ()
           end
           if RtB_Buffs() == 6 then
             Cache.APLVar.RtB_Reroll = false
-          elseif allBuffsBelowThreshold and RtB_Buffs() < 6 and (not Player:StealthUp(true, true) or (DungeonSlice and not Player:AffectingCombat() and EnemiesBFCount == 0)) and Player:BuffUp(S.LoadedDiceBuff) then
+          elseif allBuffsBelowThreshold and RtB_Buffs() < 6 and not Player:StealthUp(true, true) and Player:BuffUp(S.LoadedDiceBuff) then
             Cache.APLVar.RtB_Reroll = true
           end
         end
@@ -594,6 +594,7 @@ local function APL ()
   EnergyTimeToMax = EnergyTimeToMaxStable(EnergyMaxOffset) -- energy.base_time_to_max
   EnergyDeficit = Player:EnergyDeficitPredicted(nil, EnergyMaxOffset) -- energy.base_deficit
   EnergyTrue = Player:Energy()
+  DungeonSlice = Player:IsInParty() and Player:IsInDungeonArea() and not Player:IsInRaid()
 
   -- Unit Update
   if AoEON() then
@@ -634,7 +635,7 @@ local function APL ()
       -- Precombat CDs
       -- actions.precombat+=/roll_the_bones,precombat_seconds=2
       -- Use same extended logic as a normal rotation for between pulls
-      if S.RolltheBones:IsReady() and not Player:DebuffUp(S.Dreadblades) and (RtB_Buffs() == 0 or RtB_Reroll() or (LongestRtBRemains() <= 7.5 and DungeonSlice and EnemiesBFCount == 0 )) then
+      if S.RolltheBones:IsReady() and not Player:DebuffUp(S.Dreadblades) and (RtB_Buffs() == 0 or RtB_Reroll() or (LongestRtBRemains() <= 7.5 and DungeonSlice and EnemiesBFCount == 0)) then
         if HR.Cast(S.RolltheBones) then return "Cast Roll the Bones (Opener)" end
       end
       -- actions.precombat+=/adrenaline_rush,precombat_seconds=3,if=talent.improved_adrenaline_rush
