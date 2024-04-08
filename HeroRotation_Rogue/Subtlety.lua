@@ -58,8 +58,8 @@ local PoolingAbility, PoolingEnergy, PoolingFinisher; -- Used to store an abilit
 local RuptureThreshold, RuptureDMGThreshold
 local EffectiveComboPoints, ComboPoints, ComboPointsDeficit, StealthEnergyRequired
 local PriorityRotation
-local DungeonSlice = Player:IsInParty() and Player:IsInDungeonArea() and not Player:IsInRaid()
-local InRaid = Player:IsInRaid() and not Player:IsInDungeonArea()
+local DungeonSlice
+local InRaid
 
 S.Eviscerate:RegisterDamageFormula(
   -- Eviscerate DMG Formula (Pre-Mitigation):
@@ -915,6 +915,8 @@ local function APL ()
   ComboPointsDeficit = Player:ComboPointsDeficit()
   PriorityRotation = UsePriorityRotation()
   StealthEnergyRequired = Player:EnergyMax() - Stealth_Threshold()
+  DungeonSlice = Player:IsInParty() and Player:IsInDungeonArea() and not Player:IsInRaid()
+  InRaid = Player:IsInRaid() and not Player:IsInDungeonArea()
 
   -- Shuriken Tornado Combo Point Prediction
   if Player:BuffUp(S.ShurikenTornado, nil, true) and ComboPoints < Rogue.CPMaxSpend() then
