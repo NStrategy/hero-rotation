@@ -339,7 +339,7 @@ local function CDs ()
   -- actions.cds+=/roll_the_bones,if=variable.rtb_reroll|rtb_buffs=0|(rtb_buffs.max_remains<=2|rtb_buffs<=3&rtb_buffs.max_remains<=9&buff.loaded_dice.up)&set_bonus.tier31_4pc&!stealthed.all|(!stealthed.all&rtb_buffs.max_remains<=7&(cooldown.shadow_dance.remains<=1|cooldown.vanish.remains<=1))
   if S.RolltheBones:IsCastable() then
     local no_crackshot_stealth = not Player:BuffUp(S.SubterfugeBuff) or not Player:BuffUp(S.ShadowDanceBuff) or not Player:BuffUp(S.VanishBuff) or not Player:BuffUp(S.VanishBuff2) or not Player:BuffUp(S.Stealth) or not Player:BuffUp(S.Stealth2) -- testing
-    if RtB_Reroll() or RtB_Buffs() == 0 or (LongestRtBRemains() <= 2.5 or (RtB_Buffs() <= 3 and LongestRtBRemains() <= 9 and Player:BuffUp(S.LoadedDiceBuff) and not Player:BuffUp(S.TrueBearing) and not Player:BuffUp(S.Broadside))) and Player:HasTier(31, 4) and not Player:StealthUp(true, true) or (not Player:StealthUp(true, true) and LongestRtBRemains() <= 7.5 and (S.ShadowDance:CooldownRemains() <= 1 or S.Vanish:CooldownRemains() <= 1)) then
+    if (RtB_Reroll() and not Player:StealthUp(true, true)) or RtB_Buffs() == 0 or (LongestRtBRemains() <= 2.5 or (RtB_Buffs() <= 3 and LongestRtBRemains() <= 9 and Player:BuffUp(S.LoadedDiceBuff) and not Player:BuffUp(S.TrueBearing) and not Player:BuffUp(S.Broadside))) and Player:HasTier(31, 4) and not Player:StealthUp(true, true) or (not Player:StealthUp(true, true) and LongestRtBRemains() <= 7.5 and (S.ShadowDance:CooldownRemains() <= 1 or S.Vanish:CooldownRemains() <= 1)) then
       if HR.Cast(S.RolltheBones, Settings.Outlaw.GCDasOffGCD.RolltheBones) then return "Cast Roll the Bones" end
     end
   end
@@ -563,7 +563,7 @@ local function Build ()
 
 	-- # With Fan the Hammer, consume Opportunity if it will not overcap CPs, or with 1 CP at minimum NS note: if broadside is active, KIR builds only consume PS at 1cp
 	-- actions.build+=/pistol_shot,if=talent.fan_the_hammer&buff.opportunity.up&(combo_points.deficit>=(1+(talent.quick_draw+buff.broadside.up)*(talent.fan_the_hammer.rank+1))|combo_points<=talent.ruthlessness)
-	if S.FanTheHammer:IsAvailable() and S.KeepItRolling:IsAvailable() and Player:BuffUp(S.Opportunity) and (ComboPointsDeficit >= (1 + (num(S.QuickDraw:IsAvailable()) + num(Player:BuffUp(S.Broadside))) * (S.FanTheHammer:TalentRank() + 1))
+	if S.FanTheHammer:IsAvailable() and Player:BuffUp(S.Opportunity) and (ComboPointsDeficit >= (1 + (num(S.QuickDraw:IsAvailable()) + num(Player:BuffUp(S.Broadside))) * (S.FanTheHammer:TalentRank() + 1))
     or ComboPoints <= num(S.Ruthlessness:IsAvailable())) then
 		if HR.CastPooling(S.PistolShot) then return "Cast Pistol Shot (KiR)" end
 	end
