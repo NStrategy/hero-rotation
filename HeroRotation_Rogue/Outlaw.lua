@@ -414,27 +414,24 @@ local function CDs ()
 
   -- # Default conditions for usable items.
   if Settings.Commons.Enabled.Trinkets then
-    -- actions.cds+=/use_item,name=manic_grieftorch,use_off_gcd=1,if=gcd.remains>gcd.max-0.1&!stealthed.all&buff.between_the_eyes.up|fight_remains<=5
+    -- actions.cds+=/use_item,name=manic_grieftorch,use_off_gcd=1,if=gcd.remains<=action.sinister_strike.gcd%2&(!stealthed.all&buff.between_the_eyes.up|fight_remains<=5)
     if I.ManicGrieftorch:IsEquippedAndReady() then
-      if Player:GCDRemains() > Player:GCD()-0.1 and not Player:StealthUp(true, true) and Player:BuffUp(S.BetweentheEyes) or
-        HL.BossFilteredFightRemains("<=", 5) then
+      if Player:GCDRemains() <= Player:GCD() and (not Player:StealthUp(true, true) and Player:BuffUp(S.BetweentheEyes) or HL.BossFilteredFightRemains("<=", 5)) then
         if HR.Cast(I.ManicGrieftorch, nil, Settings.Commons.DisplayStyle.Trinkets) then return "Manic Grieftorch"; end
       end
     end
 
-    -- actions.cds+=/use_item,name=dragonfire_bomb_dispenser,use_off_gcd=1,if=(!trinket.1.is.dragonfire_bomb_dispenser&trinket.1.cooldown.remains>10
-    -- |trinket.2.cooldown.remains>10)|cooldown.dragonfire_bomb_dispenser.charges>2|fight_remains<20|!trinket.2.has_cooldown|!trinket.1.has_cooldown
+    -- Use Bomb Dispenser on cooldown, but hold if 2nd trinket is nearly off cooldown, unless at max charges or sim duration ends soon
+    -- actions.cds+=/use_item,name=dragonfire_bomb_dispenser,use_off_gcd=1,if=gcd.remains<=action.sinister_strike.gcd%2&((!trinket.1.is.dragonfire_bomb_dispenser&trinket.1.cooldown.remains>10|trinket.2.cooldown.remains>10)|cooldown.dragonfire_bomb_dispenser.charges>2|fight_remains<20|!trinket.2.has_cooldown|!trinket.1.has_cooldown)
     if I.DragonfireBombDispenser:IsEquippedAndReady() then
-      if (not trinket1:ID() == I.DragonfireBombDispenser:ID() and trinket1:CooldownRemains() > 10 or
-        trinket2:CooldownRemains() > 10) or HL.BossFilteredFightRemains("<", 20) or not trinket2:HasCooldown() or not trinket1:HasCooldown() then
+      if Player:GCDRemains() <= Player:GCD() and ((not trinket1:ID() == I.DragonfireBombDispenser:ID() and trinket1:CooldownRemains() > 10 or trinket2:CooldownRemains() > 10) or I.DragonfireBombDispenser:Charges() > 2 or HL.BossFilteredFightRemains("<", 20) or not trinket2:HasCooldown() or not trinket1:HasCooldown()) then
         if HR.Cast(trinket1, nil, Settings.Commons.DisplayStyle.Trinkets) then return "Dragonfire Bomb Dispenser"; end
       end
     end
 
-   -- actions.cds+=/use_item,name=beacon_to_the_beyond,use_off_gcd=1,if=gcd.remains>gcd.max-0.1&!stealthed.all&buff.between_the_eyes.up|fight_remains<=5
+   -- actions.cds+=/use_item,name=beacon_to_the_beyond,use_off_gcd=1,if=gcd.remains<=action.sinister_strike.gcd%2&(!stealthed.all&buff.between_the_eyes.up|fight_remains<=5)
     if I.BeaconToTheBeyond:IsEquippedAndReady() then
-      if not Player:StealthUp(true, true) and Player:BuffUp(S.BetweentheEyes)
-        or HL.BossFilteredFightRemains("<", 5) then
+      if Player:GCDRemains() <= Player:GCD() and (not Player:StealthUp(true, true) and Player:BuffUp(S.BetweentheEyes) or HL.BossFilteredFightRemains("<", 5)) then
         if HR.Cast(I.BeaconToTheBeyond, nil, Settings.Commons.DisplayStyle.Trinkets) then return "Beacon"; end
       end
     end
