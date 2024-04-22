@@ -789,7 +789,7 @@ local function CDs ()
       end
       -- actions.cds+=/use_item,name=mirror_of_fractured_tomorrows,if=buff.shadow_dance.up&(target.time_to_die>=15|equipped.ashes_of_the_embersoul)
       if I.MirrorOfFracturedTomorrows:IsEquippedAndReady() then
-        if Player:BuffUp(S.ShadowDanceBuff) and (Target:FilteredTimeToDie(">=", 15) or I.AshesoftheEmbersoul:IsEquipped()) then
+        if Player:BuffUp(S.ShadowDanceBuff) and (Target:FilteredTimeToDie(">=", 15) or I.AshesoftheEmbersoul:IsEquipped() or I.IrideusFragment:IsEquipped()) then
           if HR.Cast(I.MirrorOfFracturedTomorrows, nil, Settings.Commons.DisplayStyle.Trinkets) then return "Mirror Of Fractured Tomorrows"; end
         end
       end
@@ -812,7 +812,7 @@ local function CDs ()
         end
       end
       -- actions.cds+=/use_items,if=!stealthed.all&(!trinket.mirror_of_fractured_tomorrows.cooldown.ready|!equipped.mirror_of_fractured_tomorrows)&(!trinket.ashes_of_the_embersoul.cooldown.ready|!equipped.ashes_of_the_embersoul)|fight_remains<10
-      if not Player:StealthUp(true, true) and (not I.MirrorOfFracturedTomorrows:IsReady() or not I.MirrorOfFracturedTomorrows:IsEquipped()) and (not I.AshesoftheEmbersoul:IsReady() or not I.AshesoftheEmbersoul:IsEquipped())
+      if not Player:StealthUp(true, true) and (not I.MirrorOfFracturedTomorrows:IsReady() or not I.MirrorOfFracturedTomorrows:IsEquipped()) and (not I.AshesoftheEmbersoul:IsReady() or not I.AshesoftheEmbersoul:IsEquipped()) and (not I.IrideusFragment:IsReady() or not I.IrideusFragment:IsEquipped())
         or HL.BossFilteredFightRemains("<", 10) then
         local TrinketToUse = Player:GetUseableItems(OnUseExcludes)
         if TrinketToUse then
