@@ -273,6 +273,8 @@ Spell.Rogue.Subtlety = MergeTableByKey(Spell.Rogue.Commons, {
   TheRottenBuff           = Spell(394203),
   Weaponmaster            = Spell(193537),
   -- PvP
+  -- Set Bonuses
+  ShadowRupture           = Spell(424493),
 })
 
 -- Items
@@ -281,7 +283,8 @@ Item.Rogue.Assassination = {
   -- Trinkets
   AlgetharPuzzleBox       = Item(193701, {13, 14}),
   MirrorOfFracturedTomorrows = Item(207581, {13, 14}),
-  AshesoftheEmbersoul        = Item(207167, {13, 14}), 
+  AshesoftheEmbersoul        = Item(207167, {13, 14}),
+  IrideusFragment            = Item(193743, {13, 14}),
   WitherbarksBranch          = Item(109999, {13, 14}),
 }
 
@@ -301,7 +304,8 @@ Item.Rogue.Subtlety = {
   StormEatersBoon            = Item(194302, {13, 14}),
   BeaconToTheBeyond          = Item(203963, {13, 14}),
   MirrorOfFracturedTomorrows = Item(207581, {13, 14}),
-  AshesoftheEmbersoul        = Item(207167, {13, 14}), 
+  AshesoftheEmbersoul        = Item(207167, {13, 14}),
+  IrideusFragment            = Item(193743, {13, 14}),
   WitherbarksBranch          = Item(109999, {13, 14}),
   BandolierOfTwistedBlades   = Item(207165, {13, 14}),
   BattleReadyGoggles         = Item(198326,{1}),
