@@ -414,9 +414,9 @@ local function CDs ()
 
   -- # Default conditions for usable items.
   if Settings.Commons.Enabled.Trinkets then
-    -- actions.cds+=/use_item,name=manic_grieftorch,use_off_gcd=1,if=gcd.remains<=action.sinister_strike.gcd%2&(!stealthed.all&buff.between_the_eyes.up|fight_remains<=5)
+    -- actions.cds+=/use_item,name=manic_grieftorch,if=!stealthed.all&buff.between_the_eyes.up|fight_remains<=5
     if I.ManicGrieftorch:IsEquippedAndReady() then
-      if Player:GCDRemains() <= Player:GCD() and (not Player:StealthUp(true, true) and Player:BuffUp(S.BetweentheEyes) or HL.BossFilteredFightRemains("<=", 5)) then
+      if not Player:StealthUp(true, true) and Player:BuffUp(S.BetweentheEyes) or HL.BossFilteredFightRemains("<=", 5) then
         if HR.Cast(I.ManicGrieftorch, nil, Settings.Commons.DisplayStyle.Trinkets) then return "Manic Grieftorch"; end
       end
     end
@@ -429,9 +429,9 @@ local function CDs ()
       end
     end
 
-   -- actions.cds+=/use_item,name=beacon_to_the_beyond,use_off_gcd=1,if=gcd.remains<=action.sinister_strike.gcd%2&(!stealthed.all&buff.between_the_eyes.up|fight_remains<=5)
+   -- actions.cds+=/use_item,name=beacon_to_the_beyond,if=!stealthed.all&buff.between_the_eyes.up|fight_remains<=5
     if I.BeaconToTheBeyond:IsEquippedAndReady() then
-      if Player:GCDRemains() <= Player:GCD() and (not Player:StealthUp(true, true) and Player:BuffUp(S.BetweentheEyes) or HL.BossFilteredFightRemains("<", 5)) then
+      if not Player:StealthUp(true, true) and Player:BuffUp(S.BetweentheEyes) or HL.BossFilteredFightRemains("<", 5) then
         if HR.Cast(I.BeaconToTheBeyond, nil, Settings.Commons.DisplayStyle.Trinkets) then return "Beacon"; end
       end
     end
