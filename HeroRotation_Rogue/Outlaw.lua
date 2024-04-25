@@ -76,6 +76,7 @@ local BladeFlurryRange = 6
 local EffectiveComboPoints, ComboPoints, ComboPointsDeficit
 local Energy, EnergyRegen, EnergyDeficit, EnergyTimeToMax, EnergyMaxOffset
 local DungeonSlice
+local InRaid
 local Interrupts = {
   { S.Blind, "Cast Blind (Interrupt)", function () return true end },
 }
@@ -274,8 +275,8 @@ local function StealthCDs ()
   end
 
   -- # Crackshot builds use Dance at finish condition. NS note:  Dance into BtE on cooldown at 6+ CPs with BtE ready -- here maybe add default 10 seconds as it sims close to my condtion, will see.
-  -- actions.stealth_cds+=/shadow_dance,if=talent.crackshot&cooldown.vanish.remains>=(cp_max_spend*(1+(buff.true_bearing.up*0.5)))&(variable.finish_condition|(buff.adrenaline_rush.up&buff.adrenaline_rush.remains<2&!cooldown.vanish.ready))
-  if S.ShadowDance:IsAvailable() and not Player:BuffUp(S.SubterfugeBuff) and S.BetweentheEyes:IsCastable() and S.ShadowDance:IsCastable() and S.Vanish:CooldownRemains() >= (Rogue.CPMaxSpend() * (1 + (Player:BuffUp(S.TrueBearing) and 0.5 or 0))) and S.Crackshot:IsAvailable() and (Finish_Condition() or (Player:BuffUp(S.AdrenalineRush) and Player:BuffRemains(S.AdrenalineRush) < 2 and not S.Vanish:IsReady())) then 
+  -- actions.stealth_cds+=/shadow_dance,if=talent.crackshot&cooldown.vanish.remains>=(7*(1+(buff.true_bearing.up*0.5)))&(variable.finish_condition|(buff.adrenaline_rush.up&buff.adrenaline_rush.remains<2&!cooldown.vanish.ready))
+  if S.ShadowDance:IsAvailable() and not Player:BuffUp(S.SubterfugeBuff) and S.BetweentheEyes:IsCastable() and S.ShadowDance:IsCastable() and S.Vanish:CooldownRemains() >= (7 * (1 + (Player:BuffUp(S.TrueBearing) and 0.5 or 0))) and S.Crackshot:IsAvailable() and (Finish_Condition() or (Player:BuffUp(S.AdrenalineRush) and Player:BuffRemains(S.AdrenalineRush) < 2 and not S.Vanish:IsReady())) then 
     if HR.Cast(S.ShadowDance, Settings.Commons.OffGCDasOffGCD.ShadowDance) then return "Cast Shadow Dance (Finish or Extend)" end
   end
   -- # Hidden Opportunity builds without Crackshot use Dance if Audacity and Opportunity are not active
@@ -307,9 +308,9 @@ local function CDs ()
   -- # Use Adrenaline Rush if it is not active and the finisher condition is not met, but Crackshot builds can refresh it with 2cp or lower inside stealth
   -- actions.cds+=/adrenaline_rush,if=(!buff.adrenaline_rush.up&(!variable.finish_condition|!talent.improved_adrenaline_rush))|(stealthed.all&talent.crackshot&talent.improved_adrenaline_rush&combo_points<=2)
   if CDsON() and S.AdrenalineRush:IsCastable() then
-    if  (not Player:BuffUp(S.AdrenalineRush) and (not Finish_Condition() or not S.ImprovedAdrenalineRush:IsAvailable()))
-        or (Player:StealthUp(true, true) and S.Crackshot:IsAvailable() and S.ImprovedAdrenalineRush:IsAvailable() and ComboPoints <= 2) then
-        if HR.Cast(S.AdrenalineRush, Settings.Outlaw.OffGCDasOffGCD.AdrenalineRush) then return "Cast Adrenaline Rush" end
+    if (not Player:BuffUp(S.AdrenalineRush) and (not Finish_Condition() or not S.ImprovedAdrenalineRush:IsAvailable()))
+       or (Player:StealthUp(true, true) and S.Crackshot:IsAvailable() and S.ImprovedAdrenalineRush:IsAvailable() and ComboPoints <= 2) then
+       if HR.Cast(S.AdrenalineRush, Settings.Outlaw.OffGCDasOffGCD.AdrenalineRush) then return "Cast Adrenaline Rush" end
     end
   end
 
@@ -336,7 +337,7 @@ local function CDs ()
   
 
   -- # Use Roll the Bones if reroll conditions are met, or with no buffs, or 2s before buffs expire with T31, or 7s before buffs expire with Vanish/Dance ready Maybe add: bs in st, gm in aoe?
-  -- actions.cds+=/roll_the_bones,if=variable.rtb_reroll|rtb_buffs=0|(rtb_buffs.max_remains<=2|rtb_buffs<=3&rtb_buffs.max_remains<=9&buff.loaded_dice.up)&set_bonus.tier31_4pc&!stealthed.all|(!stealthed.all&rtb_buffs.max_remains<=7&(cooldown.shadow_dance.remains<=1|cooldown.vanish.remains<=1))
+  -- actions.cds+=/roll_the_bones,if=(variable.rtb_reroll&!stealthed.all)|rtb_buffs=0|(rtb_buffs.max_remains<=2|(rtb_buffs<=3&rtb_buffs.max_remains<=9&buff.loaded_dice.up&!buff.true_bearing.up&!buff.broadside.up))&set_bonus.tier31_4pc&!stealthed.all|(!stealthed.all&rtb_buffs.max_remains<=7&(cooldown.shadow_dance.remains<=1|cooldown.vanish.remains<=1))
   if S.RolltheBones:IsCastable() then
     local no_crackshot_stealth = not Player:BuffUp(S.SubterfugeBuff) or not Player:BuffUp(S.ShadowDanceBuff) or not Player:BuffUp(S.VanishBuff) or not Player:BuffUp(S.VanishBuff2) or not Player:BuffUp(S.Stealth) or not Player:BuffUp(S.Stealth2) -- testing
     if (RtB_Reroll() and not Player:StealthUp(true, true)) or RtB_Buffs() == 0 or (LongestRtBRemains() <= 2.5 or (RtB_Buffs() <= 3 and LongestRtBRemains() <= 9 and Player:BuffUp(S.LoadedDiceBuff) and not Player:BuffUp(S.TrueBearing) and not Player:BuffUp(S.Broadside))) and Player:HasTier(31, 4) and not Player:StealthUp(true, true) or (not Player:StealthUp(true, true) and LongestRtBRemains() <= 7.5 and (S.ShadowDance:CooldownRemains() <= 1 or S.Vanish:CooldownRemains() <= 1)) then
@@ -363,6 +364,22 @@ local function CDs ()
     if S.Crackshot:IsAvailable() and S.BetweentheEyes:IsReady() and Finish_Condition() and not Player:StealthUp(true, true)
       or not S.Crackshot:IsAvailable() and Target:FilteredTimeToDie(">", 11) and Player:BuffUp(S.BetweentheEyes) or HL.BossFilteredFightRemains("<", 11) then
       if HR.Cast(S.Sepsis, Settings.Outlaw.GCDasOffGCD.Sepsis) then return "Cast Sepsis" end
+    end
+  end
+
+  -- # Manic Grieftorch and Beacon to the Beyond should not be used during stealth and have higher priority than stealth cooldowns
+  if Settings.Commons.Enabled.Trinkets then
+    -- actions.cds+=/use_item,name=manic_grieftorch,if=!stealthed.all&buff.between_the_eyes.up|fight_remains<=5
+    if I.ManicGrieftorch:IsEquippedAndReady() then
+      if not Player:StealthUp(true, true) and Player:BuffUp(S.BetweentheEyes) or (InRaid and HL.BossFilteredFightRemains("<=", 5)) then
+        if HR.Cast(I.ManicGrieftorch, nil, Settings.Commons.DisplayStyle.Trinkets) then return "Manic Grieftorch"; end
+      end
+    end
+    -- actions.cds+=/use_item,name=beacon_to_the_beyond,if=!stealthed.all&buff.between_the_eyes.up|fight_remains<=5
+    if I.BeaconToTheBeyond:IsEquippedAndReady() then
+      if not Player:StealthUp(true, true) and Player:BuffUp(S.BetweentheEyes) or (InRaid and HL.BossFilteredFightRemains("<", 5)) then
+        if HR.Cast(I.BeaconToTheBeyond, nil, Settings.Commons.DisplayStyle.Trinkets) then return "Beacon"; end
+      end
     end
   end
 
@@ -414,13 +431,6 @@ local function CDs ()
 
   -- # Default conditions for usable items.
   if Settings.Commons.Enabled.Trinkets then
-    -- actions.cds+=/use_item,name=manic_grieftorch,if=!stealthed.all&buff.between_the_eyes.up|fight_remains<=5
-    if I.ManicGrieftorch:IsEquippedAndReady() then
-      if not Player:StealthUp(true, true) and Player:BuffUp(S.BetweentheEyes) or HL.BossFilteredFightRemains("<=", 5) then
-        if HR.Cast(I.ManicGrieftorch, nil, Settings.Commons.DisplayStyle.Trinkets) then return "Manic Grieftorch"; end
-      end
-    end
-
     -- Use Bomb Dispenser on cooldown, but hold if 2nd trinket is nearly off cooldown, unless at max charges or sim duration ends soon
     -- actions.cds+=/use_item,name=dragonfire_bomb_dispenser,use_off_gcd=1,if=gcd.remains<=action.sinister_strike.gcd%2&((!trinket.1.is.dragonfire_bomb_dispenser&trinket.1.cooldown.remains>10|trinket.2.cooldown.remains>10)|cooldown.dragonfire_bomb_dispenser.charges>2|fight_remains<20|!trinket.2.has_cooldown|!trinket.1.has_cooldown)
     if I.DragonfireBombDispenser:IsEquippedAndReady() then
@@ -428,14 +438,6 @@ local function CDs ()
         if HR.Cast(trinket1, nil, Settings.Commons.DisplayStyle.Trinkets) then return "Dragonfire Bomb Dispenser"; end
       end
     end
-
-   -- actions.cds+=/use_item,name=beacon_to_the_beyond,if=!stealthed.all&buff.between_the_eyes.up|fight_remains<=5
-    if I.BeaconToTheBeyond:IsEquippedAndReady() then
-      if not Player:StealthUp(true, true) and Player:BuffUp(S.BetweentheEyes) or HL.BossFilteredFightRemains("<", 5) then
-        if HR.Cast(I.BeaconToTheBeyond, nil, Settings.Commons.DisplayStyle.Trinkets) then return "Beacon"; end
-      end
-    end
-
     -- actions.cds+=/use_items,slots=trinket1,if=debuff.between_the_eyes.up|trinket.1.has_stat.any_dps|fight_remains<=20
     -- actions.cds+=/use_items,slots=trinket2,if=debuff.between_the_eyes.up|trinket.2.has_stat.any_dps|fight_remains<=20
     local TrinketToUse = Player:GetUseableItems(OnUseExcludes, 13) or Player:GetUseableItems(OnUseExcludes, 14)
@@ -470,6 +472,9 @@ local function Stealth()
 	if S.ColdBlood:IsCastable() and Player:BuffDown(S.ColdBlood) and Target:IsSpellInRange(S.Dispatch) and Finish_Condition() then
 		if HR.Cast(S.ColdBlood, Settings.Commons.OffGCDasOffGCD.ColdBlood) then return "Cast Cold Blood" end
 	end
+
+  -- # Ensure Crackshot BtE is not skipped because of low energy
+  -- actions.stealth+=/pool_resource,for_next=1
 
   -- # High priority Between the Eyes for Crackshot, except not directly out of Shadowmeld
 	-- actions.stealth+=/between_the_eyes,if=variable.finish_condition&talent.crackshot&(!buff.shadowmeld.up|stealthed.rogue)
@@ -507,9 +512,8 @@ local function Finish ()
 	end
 
 	-- #Crackshot builds use Between the Eyes outside of Stealth if Vanish or Dance will not come off cooldown within the next cast
-	-- actions.finish+=/between_the_eyes,if=talent.crackshot&(cooldown.vanish.remains>45&cooldown.shadow_dance.remains>8) NS note: seems like 15 is too much, 8 sims best
-	if S.BetweentheEyes:IsCastable() and Target:IsSpellInRange(S.BetweentheEyes) and S.Crackshot:IsAvailable()
-		and (S.Vanish:CooldownRemains() > 45 and S.ShadowDance:CooldownRemains() > 8) then
+	-- actions.finish+=/between_the_eyes,if=talent.crackshot&cooldown.vanish.remains>45&cooldown.shadow_dance.remains>12&(raid_event.adds.remains>8|raid_event.adds.in<raid_event.adds.remains|!raid_event.adds.up)
+	if S.BetweentheEyes:IsCastable() and Target:IsSpellInRange(S.BetweentheEyes) and S.Crackshot:IsAvailable() and S.Vanish:CooldownRemains() > 45 and S.ShadowDance:CooldownRemains() > 12 then
 		if HR.CastPooling(S.BetweentheEyes) then return "Cast Between the Eyes" end
 	end
 
@@ -592,6 +596,7 @@ local function APL ()
   EnergyDeficit = Player:EnergyDeficitPredicted(nil, EnergyMaxOffset) -- energy.base_deficit
   EnergyTrue = Player:Energy()
   DungeonSlice = Player:IsInParty() and Player:IsInDungeonArea() and not Player:IsInRaid()
+  InRaid = Player:IsInRaid() and not Player:IsInDungeonArea()
 
   -- Unit Update
   if AoEON() then
