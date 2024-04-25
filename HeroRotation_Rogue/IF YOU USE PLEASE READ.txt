@@ -28,11 +28,16 @@ Added functional KiR condition (aligns with the Rogue Discord FAQ.)
 Subtlety.lua:
 Working.
 Homebrew:
-Secret use from 2 to 3.1
-Excluded multiple NPC ids to prevent Rupture suggestions on targets that die quickly
-Deleted Premed Condition as it isnt used in the sim
-Preventing Slice and Dice in Shadowdance
-Added certain Priority Targets
+Custom Stealth-Helper condition to make Darkbrew work.
+Enhanced "trinket_conditions" to include more checks.
+Added that Flag will be sugggest either when Symbols has 3 or less seconds on cd or if the Symbols buff is up for longer than 3 seconds. Will also not check for if the fight will end in less than 28 seconds (still included for sim reasons).
+Added a check for Symbols to be used even when snd isnt up but in dance. Added a check for Symbols to be used if Flags CD is less than 2 seconds and its only 1 enemy.
+Deleted the Snd condition of Blades. Included a check for less than 2 dance charges, achieving the use of Blade AFTER going into the first dance of an encounter.
+Included a check for Ashes and Fragment to check for either Blades or either of the Flag buffs to be up to sync it to the Secret Technique.
+Added a check for Dance that forces Dance to be synced to Symbols or any of the CD's unless there are more than 5 targets, in which case it would pool up to the Dance threshold - only works in M+ - in Raid it will ALWAYS sync with Symbols.
+Changed the Condition for Dance to be used if Blades is up for longer than 10 seconds, preventing weird extra dances.
+Changed the condition for Dance to sync with Secret from 10 to 11 seconds, making it more consistent.
+
 
 Settings.lua:
 Added Flag as OffGCD for Sub
@@ -118,8 +123,12 @@ actions.cds+=/shuriken_tornado,if=variable.snd_condition&!buff.shadow_dance.up&!
 actions.cds+=/shadow_dance,if=!buff.shadow_dance.up&fight_remains<=8+talent.subterfuge.enabled
 # Goremaws Bite during Shadow Dance if possible.
 actions.cds+=/goremaws_bite,if=variable.snd_condition&combo_points.deficit>=3&(!cooldown.shadow_dance.up|talent.shadow_dance&buff.shadow_dance.up&!talent.invigorating_shadowdust|spell_targets.shuriken_storm<4&!talent.invigorating_shadowdust|talent.the_rotten|raid_event.adds.up)
-# Thistle Tea during Shadow Dance when close to max stacks, default use is for energy.
-actions.cds+=/thistle_tea,if=(cooldown.symbols_of_death.remains>=3|buff.symbols_of_death.up)&!buff.thistle_tea.up&(energy.deficit>=(100)&(combo_points.deficit>=2|spell_targets.shuriken_storm>=3)|(cooldown.thistle_tea.charges_fractional>=(2.75-0.15*talent.invigorating_shadowdust.rank&cooldown.vanish.up))&buff.shadow_dance.up&dot.rupture.ticking&spell_targets.shuriken_storm<3)|buff.shadow_dance.remains>=4&!buff.thistle_tea.up&spell_targets.shuriken_storm>=3|!buff.thistle_tea.up&fight_remains<=(6*cooldown.thistle_tea.charges)
+# Thistle Tea during Shadow Dance when close to max stacks.
+actions.cds+=/thistle_tea,if=!buff.thistle_tea.up&cooldown.thistle_tea.charges_fractional>=2.5&buff.shadow_dance.remains>=4
+# Thistle Tea during Shadow Dance when secret techniques is up.
+actions.cds+=/thistle_tea,if=!buff.thistle_tea.up&buff.shadow_dance.remains>=4&cooldown.secret_technique.remains<=10
+# Thistle Tea for energy
+actions.cds+=/thistle_tea,if=!buff.thistle_tea.up&(energy.deficit>=(100)|!buff.thistle_tea.up&fight_remains<=(6*cooldown.thistle_tea.charges))&(cooldown.symbols_of_death.remains>=3|buff.symbols_of_death.up)&combo_points.deficit>=2
 actions.cds+=/potion,if=buff.bloodlust.react|fight_remains<30|buff.symbols_of_death.up&(buff.shadow_blades.up|cooldown.shadow_blades.remains<=10)
 actions.cds+=/variable,name=racial_sync,value=buff.shadow_blades.up|!talent.shadow_blades&buff.symbols_of_death.up|fight_remains<20
 actions.cds+=/blood_fury,if=variable.racial_sync
@@ -127,17 +136,18 @@ actions.cds+=/berserking,if=variable.racial_sync
 actions.cds+=/fireblood,if=variable.racial_sync
 actions.cds+=/ancestral_call,if=variable.racial_sync
 # Sync specific trinkets to Flagellation or Shadow Dance.
+actions.cds+=/use_item,name=irideus_fragment,if=(buff.shadow_blades.up|buff.flagellation_buff.up|buff.flagellation_persist.up)&(buff.cold_blood.up|(!talent.danse_macabre&buff.shadow_dance.up|buff.danse_macabre.stack>=3)&!talent.cold_blood)|fight_remains<10
 actions.cds+=/use_item,name=ashes_of_the_embersoul,if=(buff.shadow_blades.up|buff.flagellation_buff.up|buff.flagellation_persist.up)&(buff.cold_blood.up|(!talent.danse_macabre&buff.shadow_dance.up|buff.danse_macabre.stack>=3)&!talent.cold_blood)|fight_remains<10
 actions.cds+=/use_item,name=witherbarks_branch,if=buff.flagellation_buff.up&talent.invigorating_shadowdust|buff.shadow_blades.up|equipped.bandolier_of_twisted_blades&raid_event.adds.up
 actions.cds+=/use_item,name=mirror_of_fractured_tomorrows,if=buff.shadow_dance.up&(target.time_to_die>=15|equipped.ashes_of_the_embersoul)
-actions.cds+=/use_item,name=beacon_to_the_beyond,use_off_gcd=1,if=!stealthed.all&(buff.deeper_daggers.up|!talent.deeper_daggers)&(!raid_event.adds.up|!equipped.stormeaters_boon|trinket.stormeaters_boon.cooldown.remains>20)
+actions.cds+=/use_item,name=beacon_to_the_beyond,if=!stealthed.all&(buff.deeper_daggers.up|!talent.deeper_daggers)&(!raid_event.adds.up|!equipped.stormeaters_boon|trinket.stormeaters_boon.cooldown.remains>20)
 actions.cds+=/use_item,name=manic_grieftorch,use_off_gcd=1,if=!stealthed.all&(!raid_event.adds.up|!equipped.stormeaters_boon|trinket.stormeaters_boon.cooldown.remains>20)
 # Default fallback for usable items: Use outside of Stealth/Shadow Dance.
 actions.cds+=/use_items,if=!stealthed.all&(!trinket.mirror_of_fractured_tomorrows.cooldown.ready|!equipped.mirror_of_fractured_tomorrows)&(!trinket.ashes_of_the_embersoul.cooldown.ready|!equipped.ashes_of_the_embersoul)|fight_remains<10
 
 # Finisher
 # Defines what abilitis need to be used for DM stacks before casting Secret Tchnique.
-actions.finish=variable,name=secret_condition,value=(action.shadowstrike.used_for_danse|action.shuriken_storm.used_for_danse)&(action.eviscerate.used_for_danse|action.black_powder.used_for_danse|action.rupture.used_for_danse)|!talent.danse_macabre
+actions.finish=variable,name=secret_condition,value=(action.gloomblade.used_for_danse|action.shadowstrike.used_for_danse|action.backstab.used_for_danse|action.shuriken_storm.used_for_danse)&(action.eviscerate.used_for_danse|action.black_powder.used_for_danse|action.rupture.used_for_danse)|!talent.danse_macabre
 # Apply Rupture if its not up.
 actions.finish+=/rupture,if=!dot.rupture.ticking&target.time_to_die-remains>6
 actions.finish+=/variable,name=premed_snd_condition,value=talent.premeditation.enabled&spell_targets.shuriken_storm<5
@@ -168,7 +178,7 @@ actions.stealth_cds+=/pool_resource,for_next=1,extra_amount=40,if=race.night_elf
 actions.stealth_cds+=/shadowmeld,if=energy>=40&energy.deficit>=10&!variable.shd_threshold&combo_points.deficit>4
 actions.stealth_cds+=/variable,name=shd_combo_points,value=combo_points.deficit>=3
 # Shadow dance when Rupture is up and syncronize depending on talent choice.
-actions.stealth_cds+=/shadow_dance,if=(dot.rupture.ticking|talent.invigorating_shadowdust)&variable.rotten_cb&(!talent.the_first_dance|combo_points.deficit>=4|buff.shadow_blades.up)&(variable.shd_combo_points&(variable.shd_threshold&spell_targets>=3)|(buff.shadow_blades.remains>10|cooldown.symbols_of_death.up&!talent.sepsis|buff.symbols_of_death.remains>=4&!set_bonus.tier30_2pc|!buff.symbols_of_death.remains&set_bonus.tier30_2pc)&cooldown.secret_technique.remains<11+12*(!talent.invigorating_shadowdust|set_bonus.tier30_2pc))
+actions.stealth_cds+=/shadow_dance,if=(dot.rupture.ticking|talent.invigorating_shadowdust)&variable.rotten_cb&(!talent.the_first_dance|combo_points.deficit>=4|buff.shadow_blades.up)&(variable.shd_combo_points&(variable.shd_threshold&spell_targets>=5)|(buff.shadow_blades.remains>10|cooldown.symbols_of_death.up&!talent.sepsis|buff.symbols_of_death.remains>=4&!set_bonus.tier30_2pc|!buff.symbols_of_death.remains&set_bonus.tier30_2pc)&cooldown.secret_technique.remains<11+12*(!talent.invigorating_shadowdust|set_bonus.tier30_2pc))
 
 # Stealthed Rotation
 # Always Strike fro Stealth
