@@ -574,7 +574,7 @@ local function CDs ()
       if HR.Cast(S.Sepsis) then return "Cast Sepsis" end
      end
     end
-    -- actions.cds+=/flagellation,target_if=max:target.time_to_die,if=variable.snd_condition&combo_points>=5&target.time_to_die>10&(cooldown.symbols_of_death.remains<=3|buff.symbols_of_death.remains>3)&(variable.trinket_conditions&cooldown.shadow_blades.remains<=3|cooldown.shadow_blades.remains>=14&talent.invigorating_shadowdust&talent.shadow_dance)&(!talent.invigorating_shadowdust|talent.sepsis|!talent.shadow_dance|talent.invigorating_shadowdust.rank=2&spell_targets.shuriken_storm>=2|cooldown.symbols_of_death.remains<=3|buff.symbols_of_death.remains>3)
+    -- actions.cds+=/flagellation,target_if=max:target.time_to_die,if=variable.snd_condition&combo_points>=5&target.time_to_die>10&(cooldown.symbols_of_death.remains<=3|buff.symbols_of_death.remains>3)&(variable.trinket_conditions&cooldown.shadow_blades.remains<=3|fight_remains<=28|cooldown.shadow_blades.remains>=14&talent.invigorating_shadowdust&talent.shadow_dance)&(!talent.invigorating_shadowdust|talent.sepsis|!talent.shadow_dance|talent.invigorating_shadowdust.rank=2&spell_targets.shuriken_storm>=2|cooldown.symbols_of_death.remains<=3|buff.symbols_of_death.remains>3)
     if HR.CDsON() and (S.Flagellation:IsCastable() and not DungeonSlice or (S.Flagellation:IsCastable() and DungeonSlice and ((S.ShadowBlades:CooldownRemains() <= 35 and ((S.Vanish:IsCastable() and S.InvigoratingShadowdust:IsAvailable()) or S.ShadowBlades:CooldownRemains() <= 3)) or S.ShadowBlades:TimeSinceLastCast() < 7))) and SnDCondition and ComboPoints >= 5 and Target:FilteredTimeToDie(">", 10) and (S.SymbolsofDeath:CooldownRemains() <= 3 or Player:BuffRemains(S.SymbolsofDeath) > 3)
        and (Trinket_Conditions() and S.ShadowBlades:CooldownRemains() <= 3 or S.ShadowBlades:CooldownRemains() >= 14 and S.InvigoratingShadowdust:IsAvailable() and S.ShadowDanceTalent:IsAvailable())
        and (not S.InvigoratingShadowdust:IsAvailable() or S.Sepsis:IsAvailable() or not S.ShadowDanceTalent:IsAvailable()
@@ -768,16 +768,16 @@ local function CDs ()
       
 
     if Settings.Commons.Enabled.Trinkets then
-      -- actions.cds+=/use_item,name=ashes_of_the_embersoul,if=(buff.shadow_blades.up|buff.flagellation_buff.up|buff.flagellation_persist.up)&(buff.cold_blood.up|(!talent.danse_macabre&buff.shadow_dance.up|buff.danse_macabre.stack>=3)&!talent.cold_blood)|fight_remains<10
-      if I.AshesoftheEmbersoul:IsEquippedAndReady() then
-        if (Player:BuffUp(S.ShadowBlades) or Player:BuffUp(S.Flagellation) or Player:BuffUp(S.FlagellationPersistBuff)) and ((((S.ColdBlood:IsCastable() and ComboPoints >= 5 and S.SecretTechnique:IsCastable() and Secret_Condition()) or Player:BuffUp(S.ColdBlood)) and Player:BuffStack(S.DanseMacabreBuff) >= 3) or (not S.DanseMacabre:IsAvailable() and Player:BuffUp(S.ShadowDanceBuff) or Player:BuffStack(S.DanseMacabreBuff) >= 3) and not S.ColdBlood:IsAvailable()) or (InRaid and HL.BossFilteredFightRemains("<", 10)) then
-           if HR.Cast(I.AshesoftheEmbersoul, nil, Settings.Commons.DisplayStyle.Trinkets) then return "Ashes Of the Embersoul"; end
-        end
-      end
       -- actions.cds+=/use_item,name=irideus_fragment,if=(buff.shadow_blades.up|buff.flagellation_buff.up|buff.flagellation_persist.up)&(buff.cold_blood.up|(!talent.danse_macabre&buff.shadow_dance.up|buff.danse_macabre.stack>=3)&!talent.cold_blood)|fight_remains<10
       if I.IrideusFragment:IsEquippedAndReady() then
         if (Player:BuffUp(S.ShadowBlades) or Player:BuffUp(S.Flagellation) or Player:BuffUp(S.FlagellationPersistBuff)) and ((((S.ColdBlood:IsCastable() and ComboPoints >= 5 and S.SecretTechnique:IsCastable() and Secret_Condition()) or Player:BuffUp(S.ColdBlood)) and Player:BuffStack(S.DanseMacabreBuff) >= 3) or (not S.DanseMacabre:IsAvailable() and Player:BuffUp(S.ShadowDanceBuff) or Player:BuffStack(S.DanseMacabreBuff) >= 3) and not S.ColdBlood:IsAvailable()) or (InRaid and HL.BossFilteredFightRemains("<", 10)) then
            if HR.Cast(I.IrideusFragment, nil, Settings.Commons.DisplayStyle.Trinkets) then return "Irideus Fragment"; end
+        end
+      end
+      -- actions.cds+=/use_item,name=ashes_of_the_embersoul,if=(buff.shadow_blades.up|buff.flagellation_buff.up|buff.flagellation_persist.up)&(buff.cold_blood.up|(!talent.danse_macabre&buff.shadow_dance.up|buff.danse_macabre.stack>=3)&!talent.cold_blood)|fight_remains<10
+      if I.AshesoftheEmbersoul:IsEquippedAndReady() then
+        if (Player:BuffUp(S.ShadowBlades) or Player:BuffUp(S.Flagellation) or Player:BuffUp(S.FlagellationPersistBuff)) and ((((S.ColdBlood:IsCastable() and ComboPoints >= 5 and S.SecretTechnique:IsCastable() and Secret_Condition()) or Player:BuffUp(S.ColdBlood)) and Player:BuffStack(S.DanseMacabreBuff) >= 3) or (not S.DanseMacabre:IsAvailable() and Player:BuffUp(S.ShadowDanceBuff) or Player:BuffStack(S.DanseMacabreBuff) >= 3) and not S.ColdBlood:IsAvailable()) or (InRaid and HL.BossFilteredFightRemains("<", 10)) then
+           if HR.Cast(I.AshesoftheEmbersoul, nil, Settings.Commons.DisplayStyle.Trinkets) then return "Ashes Of the Embersoul"; end
         end
       end
       -- actions.cds+=/use_item,name=witherbarks_branch,if=buff.flagellation_buff.up&talent.invigorating_shadowdust|buff.shadow_blades.up|equipped.bandolier_of_twisted_blades&raid_event.adds.up
@@ -793,12 +793,12 @@ local function CDs ()
           if HR.Cast(I.MirrorOfFracturedTomorrows, nil, Settings.Commons.DisplayStyle.Trinkets) then return "Mirror Of Fractured Tomorrows"; end
         end
       end
-      -- actions.cds+=/use_item,name=manic_grieftorch,use_off_gcd=1,if=!stealthed.all&(!raid_event.adds.up|!equipped.stormeaters_boon|trinket.stormeaters_boon.cooldown.remains>20)
+      -- actions.cds+=/use_item,name=manic_grieftorch,if=!buff.shadow_blades.up&!buff.shadow_dance.up&(!trinket.mirror_of_fractured_tomorrows.cooldown.ready|!equipped.mirror_of_fractured_tomorrows)&(!trinket.ashes_of_the_embersoul.cooldown.ready|!equipped.ashes_of_the_embersoul)&(!trinket.irideus_fragment.cooldown.ready|!equipped.irideus_fragment)|fight_remains<10
       if I.ManicGrieftorch:IsEquippedAndReady() then
-        if (not Player:StealthUp(true, true)
-            and (not I.StormEatersBoon:IsEquipped()
-                or I.StormEatersBoon:CooldownRemains() > 20)) then
+        if not Player:BuffUp(S.ShadowBlades) and not Player:BuffUp(S.ShadowDanceBuff) then
+          if (not I.MirrorOfFracturedTomorrows:IsEquipped() or not I.MirrorOfFracturedTomorrows:IsReady()) and (not I.AshesOfTheEmbersoul:IsEquipped() or not I.AshesOfTheEmbersoul:IsReady()) and (not I.IrideusFragment:IsEquipped() or not I.IrideusFragment:IsReady()) or (InRaid and HL.BossFilteredFightRemains("<", 10)) then
             if HR.Cast(I.ManicGrieftorch, nil, Settings.Commons.DisplayStyle.Trinkets) then return "Manic Grieftorch" end
+          end
         end
       end
       -- actions.cds+=/use_item,name=beacon_to_the_beyond,use_off_gcd=1,if=!stealthed.all&(buff.deeper_daggers.up|!talent.deeper_daggers)&(!raid_event.adds.up|!equipped.stormeaters_boon|trinket.stormeaters_boon.cooldown.remains>20)
@@ -812,8 +812,7 @@ local function CDs ()
         end
       end
       -- actions.cds+=/use_items,if=!stealthed.all&(!trinket.mirror_of_fractured_tomorrows.cooldown.ready|!equipped.mirror_of_fractured_tomorrows)&(!trinket.ashes_of_the_embersoul.cooldown.ready|!equipped.ashes_of_the_embersoul)|fight_remains<10
-      if not Player:StealthUp(true, true) and (not I.MirrorOfFracturedTomorrows:IsReady() or not I.MirrorOfFracturedTomorrows:IsEquipped()) and (not I.AshesoftheEmbersoul:IsReady() or not I.AshesoftheEmbersoul:IsEquipped()) and (not I.IrideusFragment:IsReady() or not I.IrideusFragment:IsEquipped())
-        or HL.BossFilteredFightRemains("<", 10) then
+      if not Player:StealthUp(true, true) and (not I.MirrorOfFracturedTomorrows:IsEquipped() or not I.MirrorOfFracturedTomorrows:IsReady()) and (not I.AshesOfTheEmbersoul:IsEquipped() or not I.AshesOfTheEmbersoul:IsReady()) and (not I.IrideusFragment:IsEquipped() or not I.IrideusFragment:IsReady()) or (InRaid and HL.BossFilteredFightRemains("<", 10)) then
         local TrinketToUse = Player:GetUseableItems(OnUseExcludes)
         if TrinketToUse then
             if HR.Cast(TrinketToUse, nil, Settings.Commons.DisplayStyle.Trinkets) then
@@ -850,10 +849,10 @@ local function Stealth_CDs (EnergyThreshold)
     end
   end
   if TargetInMeleeRange and S.ShadowDance:IsCastable() and HR.CDsON() then
-    -- actions.stealth_cds+=/shadow_dance,if=(dot.rupture.ticking|talent.invigorating_shadowdust)&variable.rotten_cb&(!talent.the_first_dance|combo_points.deficit>=4|buff.shadow_blades.up)&(variable.shd_combo_points&(variable.shd_threshold&spell_targets>=4)|(buff.shadow_blades.remains>10|cooldown.symbols_of_death.up&!talent.sepsis|buff.symbols_of_death.remains>=4&!set_bonus.tier30_2pc|!buff.symbols_of_death.remains&set_bonus.tier30_2pc)&cooldown.secret_technique.remains<10+12*(!talent.invigorating_shadowdust|set_bonus.tier30_2pc))
+    -- actions.stealth_cds+=/shadow_dance,if=(dot.rupture.ticking|talent.invigorating_shadowdust)&variable.rotten_cb&(!talent.the_first_dance|combo_points.deficit>=4|buff.shadow_blades.up)&(variable.shd_combo_points&(variable.shd_threshold&spell_targets>=5)|(buff.shadow_blades.remains>10|cooldown.symbols_of_death.up&!talent.sepsis|buff.symbols_of_death.remains>=4&!set_bonus.tier30_2pc|!buff.symbols_of_death.remains&set_bonus.tier30_2pc)&cooldown.secret_technique.remains<11+12*(!talent.invigorating_shadowdust|set_bonus.tier30_2pc))
     -- NOTE: |buff.flagellation.up is a dead operation in SimC due to a typo, since the buff we use in-game is buff.flagellation_buff.up, ignoring
     if  (Target:DebuffUp(S.Rupture) or S.InvigoratingShadowdust:IsAvailable()) and Rotten_CB() and 
-        (not S.TheFirstDance:IsAvailable() or ComboPointsDeficit >= 4 or Player:BuffUp(S.ShadowBlades)) and (ShD_Combo_Points() and (ShD_Threshold() and MeleeEnemies10yCount >= 4) or
+        (not S.TheFirstDance:IsAvailable() or ComboPointsDeficit >= 4 or Player:BuffUp(S.ShadowBlades)) and (ShD_Combo_Points() and (ShD_Threshold() and MeleeEnemies10yCount >= 5 and DungeonSlice) or
         (Player:BuffRemains(S.ShadowBlades) > 10 or S.SymbolsofDeath:IsCastable() and not S.Sepsis:IsAvailable() or Player:BuffRemains(S.SymbolsofDeath) >= 4 and not Player:HasTier(30, 2) or 
         not Player:BuffUp(S.SymbolsofDeath) and Player:HasTier(30, 2)) and S.SecretTechnique:CooldownRemains() < 11 + 12 * num(not S.InvigoratingShadowdust:IsAvailable() or Player:HasTier(30, 2))) then
         ShouldReturn = StealthMacro(S.ShadowDance, EnergyThreshold)
