@@ -37,7 +37,7 @@ Added that Flag will be sugggest either when Symbols has 3 or less seconds on cd
 Added a check for Symbols to be used even when snd isnt up but in dance. Added a check for Symbols to be used if Flags CD is less than 2 seconds and its only 1 enemy.
 Deleted the Snd condition of Blades. Included a check for less than 2 dance charges, achieving the use of Blade AFTER going into the first dance of an encounter.
 Included a check for Ashes and Fragment to check for either Blades or either of the Flag buffs to be up to sync it to the Secret Technique.
-Added a check for Dance that forces Dance to be synced to Symbols or any of the CD's unless there are more than 5 targets, in which case it would pool up to the Dance threshold and only be used if either Symbols has more than 12 seconds of CD or if Symbols has less than 2 seconds on CD (or is ready)
+Added a check for Dance that forces Dance to be synced to Symbols or any of the CD's unless there are more than 5 targets, in which case it would pool up to the Dance threshold and only be used if either Symbols has more than 14 seconds of CD or if Symbols has less than 3 seconds on CD (or is ready)
 Changed the Condition for Dance to be used if Blades is up for longer than 10 seconds, preventing weird extra dances.
 Changed the condition for Dance to sync with Secret from 10 to 11 seconds, making it more consistent.
 A lot of custom Condition for bosses (currently mainly Amidrassil - Gnarlroot, Nymue, Smolderon, Tindral and Fyrakk)
@@ -188,7 +188,7 @@ actions.stealth_cds+=/pool_resource,for_next=1,extra_amount=40,if=race.night_elf
 actions.stealth_cds+=/shadowmeld,if=energy>=40&energy.deficit>=10&!variable.shd_threshold&combo_points.deficit>4
 actions.stealth_cds+=/variable,name=shd_combo_points,value=combo_points.deficit>=3
 # Shadow dance when Rupture is up and syncronize depending on talent choice.
-actions.stealth_cds+=/shadow_dance,if=(dot.rupture.ticking|talent.invigorating_shadowdust)&variable.rotten_cb&(!talent.the_first_dance|combo_points.deficit>=4|buff.shadow_blades.up)&(variable.shd_combo_points&(variable.shd_threshold&spell_targets>=5)|(buff.shadow_blades.remains>10|cooldown.symbols_of_death.up&!talent.sepsis|buff.symbols_of_death.remains>=4&!set_bonus.tier30_2pc|!buff.symbols_of_death.remains&set_bonus.tier30_2pc)&cooldown.secret_technique.remains<11+12*(!talent.invigorating_shadowdust|set_bonus.tier30_2pc))
+actions.stealth_cds+=/shadow_dance,if=(dot.rupture.ticking|talent.invigorating_shadowdust)&variable.rotten_cb&(!talent.the_first_dance|combo_points.deficit>=4|buff.shadow_blades.up)&(variable.shd_combo_points&(variable.shd_threshold&spell_targets>=5&(cooldown.symbols_of_death.remains>=14|cooldown.symbols_of_death.remains<=3))|(buff.shadow_blades.remains>10|cooldown.symbols_of_death.up&!talent.sepsis|buff.symbols_of_death.remains>=4&!set_bonus.tier30_2pc|!buff.symbols_of_death.remains&set_bonus.tier30_2pc)&cooldown.secret_technique.remains<11+12*(!talent.invigorating_shadowdust|set_bonus.tier30_2pc))
 
 # Stealthed Rotation
 # Always Strike fro Stealth
