@@ -37,9 +37,12 @@ Added that Flag will be sugggest either when Symbols has 3 or less seconds on cd
 Added a check for Symbols to be used even when snd isnt up but in dance. Added a check for Symbols to be used if Flags CD is less than 2 seconds and its only 1 enemy.
 Deleted the Snd condition of Blades. Included a check for less than 2 dance charges, achieving the use of Blade AFTER going into the first dance of an encounter.
 Included a check for Ashes and Fragment to check for either Blades or either of the Flag buffs to be up to sync it to the Secret Technique.
-Added a check for Dance that forces Dance to be synced to Symbols or any of the CD's unless there are more than 5 targets, in which case it would pool up to the Dance threshold - only works in M+ - in Raid it will ALWAYS sync with Symbols.
+Added a check for Dance that forces Dance to be synced to Symbols or any of the CD's unless there are more than 5 targets, in which case it would pool up to the Dance threshold and only be used if either Symbols has more than 12 seconds of CD or if Symbols has less than 2 seconds on CD (or is ready)
 Changed the Condition for Dance to be used if Blades is up for longer than 10 seconds, preventing weird extra dances.
 Changed the condition for Dance to sync with Secret from 10 to 11 seconds, making it more consistent.
+A lot of custom Condition for bosses (currently mainly Amidrassil - Gnarlroot, Nymue, Smolderon, Tindral and Fyrakk)
+Extra checks for Flag use in M+ - tries to sync Flag to blades with vanish, never Solo-Flags with Vanish - Only in Dungeonslice
+
 ST Damage increase of: 1.2%
 
 
@@ -47,6 +50,9 @@ Settings.lua:
 Added Flag as OffGCD for Sub
 Added RtB as OffGCD for Outlaw
 Added Dance as OffGCD for Assa
+Added Combat Options for Fyrakk
+Added Funnel Option for Tindral
+Added Option to Vanish after Secret
 
 
 
