@@ -656,7 +656,7 @@ local function APL ()
           if HR.Cast(S.GhostlyStrike, Settings.Outlaw.OffGCDasOffGCD.GhostlyStrike) then return "Cast Ghostly Strike KiR (Opener)" end
         end
         if S.KeepItRolling:IsAvailable() and S.EchoingReprimand:IsReady() and S.EchoingReprimand:IsAvailable() then
-          if Cast(S.EchoingReprimand, Settings.Commons.GCDasOffGCD.EchoingReprimand, nil, not Target:IsSpellInRange(S.EchoingReprimand)) then return "Cast Echoing Reprimand (Opener)" end
+          if Cast(S.EchoingReprimand, Settings.CommonsOGCD.GCDasOffGCD.EchoingReprimand, nil, not Target:IsSpellInRange(S.EchoingReprimand)) then return "Cast Echoing Reprimand (Opener)" end
         end
         if S.HiddenOpportunity:IsAvailable() and S.Ambush:IsCastable() then
           if HR.Cast(S.Ambush) then return "Cast Ambush (Opener)" end

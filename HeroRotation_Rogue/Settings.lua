@@ -37,7 +37,7 @@ HR.GUISettings.APL.Rogue = {
       Interrupts = "Cooldown",
       Items = "Suggested",
       Potions = "Suggested",
-      Signature = "Suggested",
+      Signature = "Main Icon",
       Trinkets = "Suggested",
       -- Class Specific
       Stealth = "Main Icon",
@@ -45,13 +45,14 @@ HR.GUISettings.APL.Rogue = {
   },
   CommonsOGCD = {
     GCDasOffGCD = {
-      EchoingReprimand = true,
+      Blind = true,
+      EchoingReprimand = false,
       CrimsonVial = true,
       Feint = true,
     },
     OffGCDasOffGCD = {
       Racials = true,
-      Vanish = true,
+      Vanish = false,
       ShadowDance = true,
       ThistleTea = true,
       ColdBlood = true,
