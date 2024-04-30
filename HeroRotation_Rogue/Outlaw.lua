@@ -326,8 +326,8 @@ local function CDs ()
       end
     end
     -- # With Deft Maneuvers, use Blade Flurry on cooldown at 5+ targets, or at 3-4 targets if missing combo points equal to the amount given
-    -- actions.cds+=/blade_flurry,if=talent.deft_maneuvers&!variable.finish_condition&(spell_targets>=3&combo_points.deficit=spell_targets+buff.broadside.up|spell_targets>=5)
-    if S.DeftManeuvers:IsAvailable() and not Finish_Condition() and ((EnemiesBFCount >= 3 and ComboPointsDeficit == EnemiesBFCount + num(Player:BuffUp(S.Broadside))) or EnemiesBFCount >= 5) then
+    -- actions.cds+=/blade_flurry,if=talent.deft_maneuvers&!variable.finish_condition&((spell_targets=3&(combo_points=3|combo_points=4))|(spell_targets=4&(combo_points=2|combo_points=3))|spell_targets>=5)
+    if S.DeftManeuvers:IsAvailable() and not Finish_Condition() and ((EnemiesBFCount == 3 and (ComboPoints == 3 or ComboPoints == 4)) or (EnemiesBFCount == 4 and (ComboPoints == 2 or ComboPoints == 3)) or EnemiesBFCount >= 5) then
         if Settings.Outlaw.GCDasOffGCD.BladeFlurry then
           HR.CastSuggested(S.BladeFlurry)
         else
@@ -449,19 +449,21 @@ local function CDs ()
 end
 
 local function Stealth()
-  -- w/e the offical version did - does not change the damage in sims in any way when copied and changed for Stealth actions.
+  -- # Stealth
   if S.BladeFlurry:IsReady() then
-    if S.DeftManeuvers:IsAvailable() and not Finish_Condition() and (EnemiesBFCount >= 3 and ComboPointsDeficit == EnemiesBFCount + num(Player:BuffUp(S.Broadside)) or EnemiesBFCount >= 5) then
-      if Settings.Outlaw.GCDasOffGCD.BladeFlurry then
-        HR.CastSuggested(S.BladeFlurry)
-      else
-        if HR.Cast(S.BladeFlurry) then return "Cast Blade Flurry (3 or 4 Target Filler or 5+ Targets)" end
-      end
+    -- # With Deft Maneuvers, use Blade Flurry on cooldown at 5+ targets, or at 3-4 targets if missing combo points equal to the amount given
+    -- actions.cds+=/blade_flurry,if=talent.deft_maneuvers&!variable.finish_condition&((spell_targets=3&(combo_points=3|combo_points=4))|(spell_targets=4&(combo_points=2|combo_points=3))|spell_targets>=5)
+    if S.DeftManeuvers:IsAvailable() and not Finish_Condition() and ((EnemiesBFCount == 3 and (ComboPoints == 3 or ComboPoints == 4)) or (EnemiesBFCount == 4 and (ComboPoints == 2 or ComboPoints == 3)) or EnemiesBFCount >= 5) then
+        if Settings.Outlaw.GCDasOffGCD.BladeFlurry then
+          HR.CastSuggested(S.BladeFlurry)
+        else
+          if HR.Cast(S.BladeFlurry) then return "Stealth Cast Blade Flurry (3 or 4 Target Filler or 5+ Targets)" end
+        end
     end
   end
 	-- actions.stealth=blade_flurry,if=talent.subterfuge&talent.hidden_opportunity&spell_targets>=2&buff.blade_flurry.remains<gcd
 	if S.BladeFlurry:IsCastable() and AoEON() and S.Subterfuge:IsAvailable() and S.HiddenOpportunity:IsAvailable() and EnemiesBFCount >= 2
-		and Player:BuffRemains(S.BladeFlurry) <= Player:GCD() then
+		and Player:BuffRemains(S.BladeFlurry) < Player:GCD() then
 		if Settings.Outlaw.GCDasOffGCD.BladeFlurry then
 		  HR.CastSuggested(S.BladeFlurry)
 		else
