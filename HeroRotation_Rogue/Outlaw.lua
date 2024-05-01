@@ -306,6 +306,21 @@ end
 
 local function CDs ()
   -- # Cooldowns
+  -- # Manic Grieftorch and Beacon to the Beyond should not be used during stealth and have higher priority than stealth cooldowns
+  if Settings.Commons.Enabled.Trinkets then
+    -- actions.cds+=/use_item,name=manic_grieftorch,if=!stealthed.all&buff.between_the_eyes.up|fight_remains<=5
+    if I.ManicGrieftorch:IsEquipped() and I.ManicGrieftorch:IsUsable() and (I.ManicGrieftorch:CooldownRemains() <= 0.7 or I.ManicGrieftorch:CooldownUp()) then
+      if not Player:StealthUp(true, true) and Player:BuffUp(S.BetweentheEyes) or (InRaid and HL.BossFilteredFightRemains("<=", 5)) then
+        if HR.Cast(I.ManicGrieftorch, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Manic Grieftorch"; end
+      end
+    end
+    -- actions.cds+=/use_item,name=beacon_to_the_beyond,if=!stealthed.all&buff.between_the_eyes.up|fight_remains<=5
+    if I.BeaconToTheBeyond:IsEquipped() and I.BeaconToTheBeyond:IsUsable() and (I.BeaconToTheBeyond:CooldownRemains() <= 0.7 or I.BeaconToTheBeyond:CooldownUp()) then
+      if not Player:StealthUp(true, true) and Player:BuffUp(S.BetweentheEyes) or (InRaid and HL.BossFilteredFightRemains("<", 5)) then
+        if HR.Cast(I.BeaconToTheBeyond, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Beacon"; end
+      end
+    end
+  end
   -- # Use Adrenaline Rush if it is not active and the finisher condition is not met, but Crackshot builds can refresh it with 2cp or lower inside stealth
   -- actions.cds+=/adrenaline_rush,if=(!buff.adrenaline_rush.up&(!variable.finish_condition|!talent.improved_adrenaline_rush))|(stealthed.all&talent.crackshot&talent.improved_adrenaline_rush&combo_points<=2)
   if CDsON() and S.AdrenalineRush:IsCastable() then
@@ -368,22 +383,6 @@ local function CDs ()
     end
   end
 
-  -- # Manic Grieftorch and Beacon to the Beyond should not be used during stealth and have higher priority than stealth cooldowns
-  if Settings.Commons.Enabled.Trinkets then
-    -- actions.cds+=/use_item,name=manic_grieftorch,if=!stealthed.all&buff.between_the_eyes.up|fight_remains<=5
-    if I.ManicGrieftorch:IsEquippedAndReady() then
-      if not Player:StealthUp(true, true) and Player:BuffUp(S.BetweentheEyes) or (InRaid and HL.BossFilteredFightRemains("<=", 5)) then
-        if HR.Cast(I.ManicGrieftorch, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Manic Grieftorch"; end
-      end
-    end
-    -- actions.cds+=/use_item,name=beacon_to_the_beyond,if=!stealthed.all&buff.between_the_eyes.up|fight_remains<=5
-    if I.BeaconToTheBeyond:IsEquippedAndReady() then
-      if not Player:StealthUp(true, true) and Player:BuffUp(S.BetweentheEyes) or (InRaid and HL.BossFilteredFightRemains("<", 5)) then
-        if HR.Cast(I.BeaconToTheBeyond, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Beacon"; end
-      end
-    end
-  end
-
   -- actions.cds+=/call_action_list,name=stealth_cds,if=!stealthed.all&(!talent.crackshot|cooldown.between_the_eyes.ready)
   if not Player:StealthUp(true, true) and (not S.Crackshot:IsAvailable() or S.BetweentheEyes:IsCastable()) then
     ShouldReturn = StealthCDs()
@@ -439,7 +438,7 @@ local function CDs ()
         if HR.Cast(trinket1, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Dragonfire Bomb Dispenser"; end
       end
     end
-    -- actions.cds+=/use_items,slots=trinket1,if=debuff.between_the_eyes.up|trinket.1.has_stat.any_dps|fight_remains<=20
+    -- actions.cds+=/use_items,slots=trinket1,if=debuff.between_the_eyes.up|trinket.1.has_stat.any_dps|fight_remains<=20 -- maybe add that generic trinket will not be suggested till Torch is on cd?
     -- actions.cds+=/use_items,slots=trinket2,if=debuff.between_the_eyes.up|trinket.2.has_stat.any_dps|fight_remains<=20
     local TrinketToUse = Player:GetUseableItems(OnUseExcludes, 13) or Player:GetUseableItems(OnUseExcludes, 14)
     if TrinketToUse and (Player:BuffUp(S.BetweentheEyes) or HL.BossFilteredFightRemains("<", 20) or TrinketToUse:HasStatAnyDps()) then
