@@ -249,8 +249,8 @@ local function Skip_Rupture_NPC () -- Homebrew exclude for certain NPCs
 end
 
 local function Rotten_CB ()
-  -- actions.stealth_cds+=/variable,name=rotten_cb,value=(!buff.the_rotten.up|!set_bonus.tier30_2pc)&(!talent.cold_blood|cooldown.cold_blood.remains<4|cooldown.cold_blood.remains>10)
-  return (not Player:BuffUp(S.TheRottenBuff) or not Player:HasTier(30, 2)) and (not S.ColdBlood:IsAvailable() or S.ColdBlood:CooldownRemains() < 4 or S.ColdBlood:CooldownRemains() > 10)
+  -- actions.stealth_cds+=/variable,name=rotten_cb,value=(!buff.the_rotten.up|!set_bonus.tier30_2pc)&(!talent.cold_blood|cooldown.cold_blood.remains<4.5|cooldown.cold_blood.remains>10)
+  return (not Player:BuffUp(S.TheRottenBuff) or not Player:HasTier(30, 2)) and (not S.ColdBlood:IsAvailable() or S.ColdBlood:CooldownRemains() < 4.5 or S.ColdBlood:CooldownRemains() > 10)
 end
 local function Used_For_Danse(Spell)
   return Player:BuffUp(S.ShadowDanceBuff) and Spell:TimeSinceLastCast() < S.ShadowDance:TimeSinceLastCast()
@@ -795,7 +795,7 @@ local function CDs ()
         end
       end
       -- actions.cds+=/use_item,name=manic_grieftorch,if=!buff.shadow_blades.up&!buff.shadow_dance.up&(!trinket.mirror_of_fractured_tomorrows.cooldown.ready|!equipped.mirror_of_fractured_tomorrows)&(!trinket.ashes_of_the_embersoul.cooldown.ready|!equipped.ashes_of_the_embersoul)&(!trinket.irideus_fragment.cooldown.ready|!equipped.irideus_fragment)|fight_remains<10
-      if I.ManicGrieftorch:IsEquipped() and I.ManicGrieftorch:IsUsable() and (I.ManicGrieftorch:CooldownRemains() <= 0.4 or I.ManicGrieftorch:CooldownUp()) then
+      if I.ManicGrieftorch:IsEquippedAndReady() then
         if not Player:BuffUp(S.ShadowBlades) and not Player:BuffUp(S.ShadowDanceBuff) then
           if (not I.MirrorOfFracturedTomorrows:IsEquipped() or not I.MirrorOfFracturedTomorrows:IsReady()) and (not I.AshesoftheEmbersoul:IsEquipped() or not I.AshesoftheEmbersoul:IsReady()) and (not I.IrideusFragment:IsEquipped() or not I.IrideusFragment:IsReady()) or (InRaid and HL.BossFilteredFightRemains("<", 10)) then
             if HR.Cast(I.ManicGrieftorch, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Manic Grieftorch" end

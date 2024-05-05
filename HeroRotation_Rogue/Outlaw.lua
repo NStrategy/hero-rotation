@@ -309,13 +309,13 @@ local function CDs ()
   -- # Manic Grieftorch and Beacon to the Beyond should not be used during stealth and have higher priority than stealth cooldowns
   if Settings.Commons.Enabled.Trinkets then
     -- actions.cds+=/use_item,name=manic_grieftorch,if=!stealthed.all&buff.between_the_eyes.up|fight_remains<=5
-    if I.ManicGrieftorch:IsEquipped() and I.ManicGrieftorch:IsUsable() and (I.ManicGrieftorch:CooldownRemains() <= 0.7 or I.ManicGrieftorch:CooldownUp()) then
+    if I.ManicGrieftorch:IsEquippedAndReady() then
       if not Player:StealthUp(true, true) and Player:BuffUp(S.BetweentheEyes) or (InRaid and HL.BossFilteredFightRemains("<=", 5)) then
         if HR.Cast(I.ManicGrieftorch, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Manic Grieftorch"; end
       end
     end
     -- actions.cds+=/use_item,name=beacon_to_the_beyond,if=!stealthed.all&buff.between_the_eyes.up|fight_remains<=5
-    if I.BeaconToTheBeyond:IsEquipped() and I.BeaconToTheBeyond:IsUsable() and (I.BeaconToTheBeyond:CooldownRemains() <= 0.7 or I.BeaconToTheBeyond:CooldownUp()) then
+    if I.BeaconToTheBeyond:IsEquippedAndReady() then
       if not Player:StealthUp(true, true) and Player:BuffUp(S.BetweentheEyes) or (InRaid and HL.BossFilteredFightRemains("<", 5)) then
         if HR.Cast(I.BeaconToTheBeyond, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Beacon"; end
       end
