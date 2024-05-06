@@ -245,7 +245,7 @@ local function Skip_Rupture_NPC () -- Homebrew exclude for certain NPCs
    -- Affixes
       or Target:NPCID() == 204560 or Target:NPCID() == 174773
    -- Raid
-      or Target:NPCID() == 210231 or Target:NPCID() == 207341 or Target:NPCID() == 208459 or Target:NPCID() == 208461 or Target:NPCID() == 214441 or Target:NPCID() == 211306 or Target:NPCID() == 214608
+      or Target:NPCID() == 210231 or Target:NPCID() == 207341 or Target:NPCID() == 208459 or Target:NPCID() == 208461 or Target:NPCID() == 214441 or Target:NPCID() == 211306 or Target:NPCID() == 214608 or Target:NPCID() == 202969 or Target:NPCID() == 202971 or Target:NPCID() == 194991 or Target:NPCID() == 194990 or Target:NPCID() == 191714 or Target:NPCID() == 194647 or Target:NPCID() == 189233 or Target:NPCID() == 187638 or Target:NPCID() == 191510
 end
 
 local function Rotten_CB ()
