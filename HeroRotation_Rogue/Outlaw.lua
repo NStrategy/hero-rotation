@@ -480,13 +480,12 @@ local function Stealth()
 
   -- # High priority Between the Eyes for Crackshot, except not directly out of Shadowmeld
 	-- actions.stealth+=/between_the_eyes,if=variable.finish_condition&talent.crackshot&(!buff.shadowmeld.up|stealthed.rogue)
-	if S.BetweentheEyes:IsCastable() and Target:IsSpellInRange(S.BetweentheEyes) and (not Player:BuffUp(S.Shadowmeld) or Player:BuffUp(S.SubterfugeBuff) or Player:BuffUp(S.ShadowDanceBuff) or Player:BuffUp(S.VanishBuff) or Player:BuffUp(S.VanishBuff2) or Player:BuffUp(S.Stealth) or Player:BuffUp(S.Stealth2))
-    and Finish_Condition() and S.Crackshot:IsAvailable() then
+	if S.BetweentheEyes:IsCastable() and Target:IsSpellInRange(S.BetweentheEyes) and Finish_Condition() and S.Crackshot:IsAvailable() and (not Player:BuffUp(S.Shadowmeld) or Player:StealthUp(true, false)) then
     if HR.CastPooling(S.BetweentheEyes) then return "Cast Between the Eyes" end
    end
 
 	-- actions.stealth+=/dispatch,if=variable.finish_condition
-	if S.Dispatch:IsCastable() and Target:IsSpellInRange(S.Dispatch) and Finish_Condition() then
+	if S.Dispatch:IsCastable() and Target:IsSpellInRange(S.Dispatch) and Finish_Condition() and not S.BetweentheEyes:IsCastable() then
 		if HR.CastPooling(S.Dispatch) then return "Cast Dispatch" end
 	end
 
