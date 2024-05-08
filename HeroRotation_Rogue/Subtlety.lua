@@ -226,26 +226,27 @@ local function Skip_Rupture (ShadowDanceBuff)
     or ShadowDanceBuff and (MeleeEnemies10yCount == 1 or Target:DebuffUp(S.Rupture) and MeleeEnemies10yCount >= 2)
 end
 local function Skip_Rupture_NPC () -- Homebrew exclude for certain NPCs
+  local NPCID = Target:NPCID() 
    -- Rise
-  return Target:NPCID() == 206351 or Target:NPCID() == 206352 or Target:NPCID() == 203763 or Target:NPCID() == 203799 or Target:NPCID() == 203857 or Target:NPCID() == 203688 or Target:NPCID() == 205265
+  return NPCID == 206351 or NPCID == 206352 or NPCID == 203763 or NPCID == 203799 or NPCID == 203857 or NPCID == 203688 or NPCID == 205265
    -- Fall 
-      or Target:NPCID() == 204536 or Target:NPCID() == 204918
+      or NPCID == 204536 or NPCID == 204918
    -- WM
-      or Target:NPCID() == 135052 or Target:NPCID() == 134024 or Target:NPCID() == 136330 or Target:NPCID() == 133361 or Target:NPCID() == 131669
+      or NPCID == 135052 or NPCID == 134024 or NPCID == 136330 or NPCID == 133361 or NPCID == 131669
    -- BRH
-      or Target:NPCID() == 99664 or Target:NPCID() == 98677 or Target:NPCID() == 102781 or Target:NPCID() == 102781
+      or NPCID == 99664 or NPCID == 98677 or NPCID == 102781
    -- AD
-      or Target:NPCID() == 128435 or Target:NPCID() == 127315 or Target:NPCID() == 259205 or Target:NPCID() == 125828
+      or NPCID == 128435 or NPCID == 127315 or NPCID == 259205 or NPCID == 125828
    -- EB
-      or Target:NPCID() == 81638
+      or NPCID == 81638
    -- DHT
-      or Target:NPCID() == 109908 or Target:NPCID() == 107288 or Target:NPCID() == 100529 or Target:NPCID() == 101074
+      or NPCID == 109908 or NPCID == 107288 or NPCID == 100529 or NPCID == 101074
    -- ToT
-      or Target:NPCID() == 429037 or Target:NPCID() == 39960 or Target:NPCID() == 213607 or Target:NPCID() == 213219 or Target:NPCID() == 40923
+      or NPCID == 429037 or NPCID == 39960 or NPCID == 213607 or NPCID == 213219 or NPCID == 40923
    -- Affixes
-      or Target:NPCID() == 204560 or Target:NPCID() == 174773
+      or NPCID == 204560 or NPCID == 174773
    -- Raid
-      or Target:NPCID() == 210231 or Target:NPCID() == 207341 or Target:NPCID() == 208459 or Target:NPCID() == 208461 or Target:NPCID() == 214441 or Target:NPCID() == 211306 or Target:NPCID() == 214608 or Target:NPCID() == 202969 or Target:NPCID() == 202971 or Target:NPCID() == 194991 or Target:NPCID() == 194990 or Target:NPCID() == 191714 or Target:NPCID() == 194647 or Target:NPCID() == 189233 or Target:NPCID() == 187638 or Target:NPCID() == 191510
+      or NPCID == 210231 or NPCID == 207341 or NPCID == 208459 or NPCID == 208461 or NPCID == 214441 or NPCID == 211306 or NPCID == 214608 or NPCID == 202969 or NPCID == 202971 or NPCID == 194991 or NPCID == 194990 or NPCID == 191714 or NPCID == 194647 or NPCID == 189233 or NPCID == 187638 or NPCID == 191510
 end
 
 local function Rotten_CB ()
