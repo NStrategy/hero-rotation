@@ -204,6 +204,7 @@ actions.stealthed+=/gloomblade,if=!buff.premeditation.up&buff.shadow_dance.remai
 # Shadow Strike for Danse Macabre stack generation during Shadowblades.
 actions.stealthed+=/shadowstrike,if=!used_for_danse&buff.shadow_blades.up
 actions.stealthed+=/shuriken_storm,if=!buff.premeditation.up&spell_targets>=4
+actions.stealthed+=/vanish,if=buff.danse_macabre.stack>3&(cooldown.secret_technique.remains>=30|!talent.secret_technique)&cooldown.vanish.charges>1
 actions.stealthed+=/shadowstrike
 
 Outlaw:
