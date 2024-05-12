@@ -151,7 +151,7 @@ actions.cds+=/use_item,name=ashes_of_the_embersoul,if=(buff.shadow_blades.up|buf
 actions.cds+=/use_item,name=witherbarks_branch,if=buff.flagellation_buff.up&talent.invigorating_shadowdust|buff.shadow_blades.up|equipped.bandolier_of_twisted_blades&raid_event.adds.up
 actions.cds+=/use_item,name=mirror_of_fractured_tomorrows,if=buff.shadow_dance.up&(target.time_to_die>=15|equipped.ashes_of_the_embersoul)
 actions.cds+=/use_item,name=beacon_to_the_beyond,if=!stealthed.all&(buff.deeper_daggers.up|!talent.deeper_daggers)&(!raid_event.adds.up|!equipped.stormeaters_boon|trinket.stormeaters_boon.cooldown.remains>20)
-actions.cds+=/use_item,name=manic_grieftorch,use_off_gcd=1,if=!stealthed.all&(!raid_event.adds.up|!equipped.stormeaters_boon|trinket.stormeaters_boon.cooldown.remains>20)
+actions.cds+=/use_item,name=manic_grieftorch,if=!buff.shadow_blades.up&!buff.shadow_dance.up&(!trinket.mirror_of_fractured_tomorrows.cooldown.ready|!equipped.mirror_of_fractured_tomorrows)&(!trinket.ashes_of_the_embersoul.cooldown.ready|!equipped.ashes_of_the_embersoul)&(!trinket.irideus_fragment.cooldown.ready|!equipped.irideus_fragment)|fight_remains<10
 # Default fallback for usable items: Use outside of Stealth/Shadow Dance.
 actions.cds+=/use_items,if=!stealthed.all&(!trinket.mirror_of_fractured_tomorrows.cooldown.ready|!equipped.mirror_of_fractured_tomorrows)&(!trinket.ashes_of_the_embersoul.cooldown.ready|!equipped.ashes_of_the_embersoul)|fight_remains<10
 
@@ -188,7 +188,7 @@ actions.stealth_cds+=/pool_resource,for_next=1,extra_amount=40,if=race.night_elf
 actions.stealth_cds+=/shadowmeld,if=energy>=40&energy.deficit>=10&!variable.shd_threshold&combo_points.deficit>4
 actions.stealth_cds+=/variable,name=shd_combo_points,value=combo_points.deficit>=3
 # Shadow dance when Rupture is up and syncronize depending on talent choice.
-actions.stealth_cds+=/shadow_dance,if=(dot.rupture.ticking|talent.invigorating_shadowdust)&variable.rotten_cb&(!talent.the_first_dance|combo_points.deficit>=4|buff.shadow_blades.up)&(variable.shd_combo_points&(variable.shd_threshold&spell_targets>=5&(cooldown.symbols_of_death.remains>=14|cooldown.symbols_of_death.remains<=3))|(buff.shadow_blades.remains>10|cooldown.symbols_of_death.up&!talent.sepsis|buff.symbols_of_death.remains>=4&!set_bonus.tier30_2pc|!buff.symbols_of_death.remains&set_bonus.tier30_2pc)&cooldown.secret_technique.remains<11+12*(!talent.invigorating_shadowdust|set_bonus.tier30_2pc))
+actions.stealth_cds+=/shadow_dance,if=(dot.rupture.ticking|talent.invigorating_shadowdust)&variable.rotten_cb&(!talent.the_first_dance|combo_points.deficit>=4|buff.shadow_blades.up)&(variable.shd_combo_points&(variable.shd_threshold&spell_targets>=5&(cooldown.symbols_of_death.remains>=14|cooldown.symbols_of_death.remains<=3))|(buff.shadow_blades.remains>10|cooldown.symbols_of_death.up&!talent.sepsis|buff.symbols_of_death.remains>=4&!set_bonus.tier30_2pc|!buff.symbols_of_death.remains&set_bonus.tier30_2pc)&cooldown.secret_technique.remains<11+12*(!talent.invigorating_shadowdust|set_bonus.tier30_2pc)) 
 
 # Stealthed Rotation
 # Always Strike fro Stealth
