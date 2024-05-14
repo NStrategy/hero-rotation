@@ -286,7 +286,6 @@ local function Finish (ReturnSpellOnly, StealthSpell)
   local SymbolsCDRemains = S.SymbolsofDeath:CooldownRemains()
 
   -- State changes based on predicted Stealth casts
-  local PremeditationBuff = Player:BuffUp(S.PremeditationBuff) or (StealthSpell and S.Premeditation:IsAvailable())
   if StealthSpell and StealthSpell:ID() == S.ShadowDance:ID() then
     ShadowDanceBuff = true
     ShadowDanceBuffRemains = 6 + (S.ImprovedShadowDance:IsAvailable() and 2 or 0)
@@ -412,7 +411,6 @@ local function Stealthed (ReturnSpellOnly, StealthSpell)
   
   -- State changes based on predicted Stealth casts
   local PremeditationBuff = Player:BuffUp(S.PremeditationBuff) or (StealthSpell and S.Premeditation:IsAvailable())
-  local SilentStormBuff = Player:BuffUp(S.SilentStormBuff) or (StealthSpell and S.SilentStorm:IsAvailable())
   local StealthBuff = Player:BuffUp(Rogue.StealthSpell()) or (StealthSpell and StealthSpell:ID() == Rogue.StealthSpell():ID())
   local VanishBuffCheck = Player:BuffUp(Rogue.VanishBuffSpell()) or (StealthSpell and StealthSpell:ID() == S.Vanish:ID())
   if StealthSpell and StealthSpell:ID() == S.ShadowDance:ID() then
@@ -552,16 +550,22 @@ local function StealthMacro (StealthSpell, EnergyThreshold)
 end
 
 -- # Cooldowns
-local function CDs ()
+local function CDs (EnergyThreshold)
 
   local SnDCondition = SnD_Condition()
-  -- testing sb condtions to make it more like the logs
+  local PremeditationBuff = Player:BuffUp(S.PremeditationBuff) or (StealthSpell and S.Premeditation:IsAvailable())
   -- actions.cds+=/vanish,if=!variable.shd_threshold&(cooldown.flagellation.remains>=60|!talent.flagellation)&(cooldown.symbols_of_death.remains>3|!set_bonus.tier30_2pc)&(cooldown.secret_technique.remains>=10|!talent.secret_technique)
   if Settings.Subtlety.VanishafterSecret and not S.DarkBrew:IsAvailable() and S.Vanish:IsCastable()
     and ((S.Flagellation:CooldownRemains() >= 60 and not ((Target:NPCID() == 189632 and HL.CombatTime() < 465) or (Target:NPCID() == 204931 and HL.CombatTime() < 465) or Target:NPCID() == 207796 or Target:NPCID() == 214012 or Target:NPCID() == 214608)) or not S.Flagellation:IsAvailable()) and (S.SymbolsofDeath:CooldownRemains() > 3 or not Player:HasTier(30, 2))
     and ((S.SecretTechnique:TimeSinceLastCast() < 5 and not (S.Vanish:TimeSinceLastCast() < 5)) or not S.SecretTechnique:IsAvailable()) then
     ShouldReturn = StealthMacro(S.Vanish, EnergyThreshold)
     if ShouldReturn then return "Vanish Macro " .. ShouldReturn end
+  end
+
+  -- actions.stealthed+=/vanish,if=buff.danse_macabre.stack>3&combo_points<=2&cooldown.flagellation.remains>=60&(cooldown.secret_technique.remains>=30|!talent.secret_technique)&cooldown.vanish.charges>1 - From TC-Channel, added extra Flag check for situations in which you might hold Flag, resulting in having more than 2 vanish charges again - this always is a damage gain.
+  if S.Vanish:IsCastable() and Player:BuffStack(S.DanseMacabreBuff) > 3 and Player:ComboPoints() <= 2 and S.Flagellation:CooldownRemains() >= 60 and Player:BuffStack(S.ShadowTechniques) < 7 and (S.SecretTechnique:CooldownRemains() >= 30 or not S.SecretTechnique:IsAvailable()) and S.Vanish:Charges() > 1 then
+     ShouldReturn = StealthMacro(S.Vanish, EnergyThreshold)
+     if ShouldReturn then return "Vanish Macro " .. ShouldReturn end
   end
 
   -- actions.cds+=/cold_blood,if=!talent.secret_technique&combo_points>=5
