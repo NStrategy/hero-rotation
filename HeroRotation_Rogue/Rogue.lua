@@ -161,6 +161,7 @@ Spell.Rogue.Assassination = MergeTableByKey(Spell.Rogue.Commons, {
   ShivDebuff              = Spell(319504),
   ShroudedSuffocation     = Spell(385478),
   VenomRush               = Spell(152152),
+  ZoldyckRecipe           = Spell(381798),
   -- PvP
 })
 
@@ -269,6 +270,7 @@ Spell.Rogue.Subtlety = MergeTableByKey(Spell.Rogue.Commons, {
   ShurikenTornado         = Spell(277925),
   SilentStorm             = Spell(385722),
   SilentStormBuff         = Spell(385727),
+  SwiftDeath              = Spell(394309),
   TheFirstDance           = Spell(382505),
   TheRotten               = Spell(382015),
   TheRottenBuff           = Spell(394203),
