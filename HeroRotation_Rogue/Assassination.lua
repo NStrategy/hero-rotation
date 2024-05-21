@@ -78,9 +78,9 @@ local TrinketItem2 = Equipment[14] and Item(Equipment[14]) or Item(0)
 local function SetTrinketVariables ()
   -- actions.precombat+=/variable,name=trinket_sync_slot,value=1,if=trinket.1.has_stat.any_dps&(!trinket.2.has_stat.any_dps|trinket.1.cooldown.duration>=trinket.2.cooldown.duration)
   -- actions.precombat+=/variable,name=trinket_sync_slot,value=2,if=trinket.2.has_stat.any_dps&(!trinket.1.has_stat.any_dps|trinket.2.cooldown.duration>trinket.1.cooldown.duration)
-  if TrinketItem1:HasStatAnyDps() and (not TrinketItem2:HasStatAnyDps() or TrinketItem1:Cooldown() >= TrinketItem2:Cooldown()) then
+  if TrinketItem1:HasStatAnyDps() and (not TrinketItem2:HasStatAnyDps() or TrinketItem1:Cooldown() >= TrinketItem2:Cooldown()) and TrinketItem2:ID() ~= I.WitherbarksBranch:ID() or TrinketItem1:ID() == I.WitherbarksBranch:ID() then
     TrinketSyncSlot = 1
-  elseif TrinketItem2:HasStatAnyDps() and (not TrinketItem1:HasStatAnyDps() or TrinketItem2:Cooldown() > TrinketItem1:Cooldown()) then
+  elseif TrinketItem2:HasStatAnyDps() and (not TrinketItem1:HasStatAnyDps() or TrinketItem2:Cooldown() > TrinketItem1:Cooldown()) and TrinketItem1:ID() ~= I.WitherbarksBranch:ID() or TrinketItem2:ID() == I.WitherbarksBranch:ID() then
     TrinketSyncSlot = 2
   else
     TrinketSyncSlot = 0
@@ -435,15 +435,10 @@ local function UsableItems ()
   if not Settings.Commons.Enabled.Trinkets then
     return
   end
-
-  if not Player:StealthUp(true, false) then
-    return
-  end
-
   -- actions.items+=/use_item,name=ashes_of_the_embersoul,use_off_gcd=1,if=(dot.kingsbane.ticking&dot.kingsbane.remains<=11)|fight_remains<=22
   -- actions.items+=/use_item,name=algethar_puzzle_box,use_off_gcd=1,if=dot.rupture.ticking&cooldown.deathmark.remains<2|fight_remains<=22
   if I.AshesoftheEmbersoul:IsEquippedAndReady() and (Target:DebuffUp(S.Kingsbane) and Target:DebuffRemains(S.Kingsbane) <= 11 or HL.BossFilteredFightRemains("<", 22)) then
-    if HR.Cast(I.AshesoftheEmbersoul, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Ashes of the 1Embersoul"; end
+    if HR.Cast(I.AshesoftheEmbersoul, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Ashes of the Embersoul"; end
   end
   if I.AlgetharPuzzleBox:IsEquippedAndReady() and (Target:DebuffUp(S.Rupture) and S.Deathmark:CooldownRemains() <= 2 or HL.BossFilteredFightRemains("<", 22)) then
     if HR.Cast(I.AlgetharPuzzleBox, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Algethar Puzzle Box"; end
@@ -455,10 +450,65 @@ local function UsableItems ()
     and (TrinketSyncSlot == 1 and (S.Deathmark:AnyDebuffUp() or HL.BossFilteredFightRemains("<", 20))
       or (TrinketSyncSlot == 2 and (not TrinketItem2:IsReady() or not S.Deathmark:AnyDebuffUp() and S.Deathmark:CooldownRemains() > 20)) or TrinketSyncSlot == 0) then
     if Cast(TrinketItem1, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Trinket 1"; end
-  elseif TrinketItem2:IsReady() and not Player:IsItemBlacklisted(TrinketItem2) and not ValueIsInArray(OnUseExcludeTrinkets, TrinketItem2:ID())
+  end
+  if TrinketItem2:IsReady() and not Player:IsItemBlacklisted(TrinketItem2) and not ValueIsInArray(OnUseExcludeTrinkets, TrinketItem2:ID())
     and (TrinketSyncSlot == 2 and (S.Deathmark:AnyDebuffUp() or HL.BossFilteredFightRemains("<", 20))
       or (TrinketSyncSlot == 1 and (not TrinketItem1:IsReady() or not S.Deathmark:AnyDebuffUp() and S.Deathmark:CooldownRemains() > 20)) or TrinketSyncSlot == 0) then
     if Cast(TrinketItem2, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Trinket 2"; end
+  end
+end
+
+local function ShivUsage ()
+  -- # Shiv if talented into Kingsbane; Always sync, or prioritize the last 8 seconds
+  -- actions.shiv=shiv,if=(talent.kingsbane&buff.envenom.up&!debuff.shiv.up&((dot.kingsbane.ticking&dot.kingsbane.remains<8)|cooldown.kingsbane.up&target.time_to_die>5|(dot.kingsbane.ticking&charges>1)|dot.deathmark.ticking)&dot.garrote.ticking&dot.rupture.ticking)|(fight_remains<=charges*8&!debuff.shiv.up)|(fight_remains<=10&cooldown.kingsbane.up&!debuff.shiv.up)|(fight_remains<=18&!debuff.shiv.up)
+  -- # Shiv if talented into Arterial Precision during Deathmark
+  -- actions.shiv+=/shiv,if=talent.arterial_precision&!debuff.shiv.up&dot.garrote.ticking&dot.rupture.ticking&debuff.deathmark.up|fight_remains<=charges*8
+  -- # Shiv with Sepsis if we have no other priority talents to sync with
+  -- actions.shiv+=/shiv,if=talent.sepsis&!talent.kingsbane&!talent.arterial_precision&!debuff.shiv.up&dot.garrote.ticking&dot.rupture.ticking&((cooldown.shiv.charges_fractional>0.9+talent.lightweight_shiv.enabled&variable.sepsis_sync_remains>5)|dot.sepsis.ticking|dot.deathmark.ticking|fight_remains<=charges*8)
+  -- # Shiv fallback condition if no special cases apply
+  -- actions.shiv+=/shiv,if=!talent.kingsbane&!talent.arterial_precision&!talent.sepsis&!debuff.shiv.up&dot.garrote.ticking&dot.rupture.ticking&(!talent.crimson_tempest.enabled|variable.single_target|dot.crimson_tempest.ticking)|fight_remains<=charges*8  if S.Shiv:IsReady() and not Target:DebuffUp(S.ShivDebuff) and Target:DebuffUp(S.Garrote) and Target:DebuffUp(S.Rupture) then
+  if S.Shiv:IsReady() and not Target:DebuffUp(S.ShivDebuff) and Target:DebuffUp(S.Garrote) and Target:DebuffUp(S.Rupture) then
+    local FightRemains = HL.BossFilteredFightRemains("<=", S.Shiv:Charges() * 8)
+    if FightRemains or (HL.BossFilteredFightRemains("<=", 10) and S.Kingsbane:IsReady()) or (HL.BossFilteredFightRemains("<=", 18)) then
+      if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv (End of Fight)" end
+    end
+    if S.Kingsbane:IsAvailable() and Player:BuffUp(S.Envenom) then
+      if ((Target:DebuffUp(S.Kingsbane) and Target:DebuffRemains(S.Kingsbane) < 8) or (S.Kingsbane:CooldownUp() and Target:TimeToDie() > 5) or (Target:DebuffUp(S.Kingsbane) and S.Shiv:Charges() > 1) or Target:DebuffUp(S.Deathmark)) then
+        if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv (Kingsbane)" end
+      end
+    end
+    if S.ArterialPrecision:IsAvailable() and S.Deathmark:AnyDebuffUp() then
+      if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv (Arterial Precision)" end
+    end
+    if S.Sepsis:IsAvailable() and not S.Kingsbane:IsAvailable() and not S.ArterialPrecision:IsAvailable() then
+      if (S.Shiv:ChargesFractional() > 0.9 + BoolToInt(S.LightweightShiv:IsAvailable()) and SepsisSyncRemains > 5) or Target:DebuffUp(S.Sepsis) or Target:DebuffUp(S.Deathmark) then
+        if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv (Sepsis)" end
+      end
+    end
+    if not S.Kingsbane:IsAvailable() and not S.ArterialPrecision:IsAvailable() and not S.Sepsis:IsAvailable() then
+      if not S.CrimsonTempest:IsAvailable() or SingleTarget or Target:DebuffUp(S.CrimsonTempest) then
+        if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv" end
+      end
+    end
+  end
+end
+
+local function MiscCDs ()
+  -- actions.misc_cds=potion,if=buff.bloodlust.react|fight_remains<30|debuff.deathmark.up
+  if Settings.Commons.Enabled.Potions then
+    local PotionSelected = Everyone.PotionSelected()
+    if PotionSelected and PotionSelected:IsReady() and (Player:BloodlustUp() or HL.BossFilteredFightRemains("<", 30) or S.Deathmark:AnyDebuffUp()) then
+      if Cast(PotionSelected, nil, Settings.CommonsDS.DisplayStyle.Potions) then return "Cast Potion"; end
+    end
+  end
+
+  -- Racials
+  if S.Deathmark:AnyDebuffUp() and (not ShouldReturn or Settings.CommonsOGCD.OffGCDasOffGCD.Racials) then
+    if ShouldReturn then
+      Racials()
+    else
+      ShouldReturn = Racials()
+    end
   end
 end
 
@@ -498,37 +548,11 @@ local function CDs ()
     if Cast(S.Deathmark, Settings.Assassination.OffGCDasOffGCD.Deathmark) then return "Cast Deathmark" end
   end
 
-  -- # Shiv if talented into Kingsbane; Always sync, or prioritize the last 8 seconds
-  -- actions.shiv=shiv,if=(talent.kingsbane&buff.envenom.up&!debuff.shiv.up&((dot.kingsbane.ticking&dot.kingsbane.remains<8)|cooldown.kingsbane.up&target.time_to_die>5|(dot.kingsbane.ticking&charges>1)|dot.deathmark.ticking)&dot.garrote.ticking&dot.rupture.ticking)|(fight_remains<=charges*8&!debuff.shiv.up)|(fight_remains<=10&cooldown.kingsbane.up&!debuff.shiv.up)|(fight_remains<=18&!debuff.shiv.up)
-  -- # Shiv if talented into Arterial Precision during Deathmark
-  -- actions.shiv+=/shiv,if=talent.arterial_precision&!debuff.shiv.up&dot.garrote.ticking&dot.rupture.ticking&debuff.deathmark.up|fight_remains<=charges*8
-  -- # Shiv with Sepsis if we have no other priority talents to sync with
-  -- actions.shiv+=/shiv,if=talent.sepsis&!talent.kingsbane&!talent.arterial_precision&!debuff.shiv.up&dot.garrote.ticking&dot.rupture.ticking&((cooldown.shiv.charges_fractional>0.9+talent.lightweight_shiv.enabled&variable.sepsis_sync_remains>5)|dot.sepsis.ticking|dot.deathmark.ticking|fight_remains<=charges*8)
-  -- # Shiv fallback condition if no special cases apply
-  -- actions.shiv+=/shiv,if=!talent.kingsbane&!talent.arterial_precision&!talent.sepsis&!debuff.shiv.up&dot.garrote.ticking&dot.rupture.ticking&(!talent.crimson_tempest.enabled|variable.single_target|dot.crimson_tempest.ticking)|fight_remains<=charges*8  if S.Shiv:IsReady() and not Target:DebuffUp(S.ShivDebuff) and Target:DebuffUp(S.Garrote) and Target:DebuffUp(S.Rupture) then
-  if S.Shiv:IsReady() and not Target:DebuffUp(S.ShivDebuff) and Target:DebuffUp(S.Garrote) and Target:DebuffUp(S.Rupture) then
-    local FightRemains = HL.BossFilteredFightRemains("<=", S.Shiv:Charges() * 8)
-    if FightRemains or (HL.BossFilteredFightRemains("<=", 10) and S.Kingsbane:IsReady()) or (HL.BossFilteredFightRemains("<=", 18)) then
-      if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv (End of Fight)" end
-    end
-    if S.Kingsbane:IsAvailable() and Player:BuffUp(S.Envenom) then
-      if ((Target:DebuffUp(S.Kingsbane) and Target:DebuffRemains(S.Kingsbane) < 8) or (S.Kingsbane:CooldownUp() and Target:TimeToDie() > 5) or (Target:DebuffUp(S.Kingsbane) and S.Shiv:Charges() > 1) or Target:DebuffUp(S.Deathmark)) then
-        if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv (Kingsbane)" end
-      end
-    end
-    if S.ArterialPrecision:IsAvailable() and S.Deathmark:AnyDebuffUp() then
-      if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv (Arterial Precision)" end
-    end
-    if S.Sepsis:IsAvailable() and not S.Kingsbane:IsAvailable() and not S.ArterialPrecision:IsAvailable() then
-      if (S.Shiv:ChargesFractional() > 0.9 + BoolToInt(S.LightweightShiv:IsAvailable()) and SepsisSyncRemains > 5) or Target:DebuffUp(S.Sepsis) or Target:DebuffUp(S.Deathmark) then
-        if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv (Sepsis)" end
-      end
-    end
-    if not S.Kingsbane:IsAvailable() and not S.ArterialPrecision:IsAvailable() and not S.Sepsis:IsAvailable() then
-      if not S.CrimsonTempest:IsAvailable() or SingleTarget or Target:DebuffUp(S.CrimsonTempest) then
-        if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv" end
-      end
-    end
+  -- actions.cds+=/call_action_list,name=shiv
+  if ShouldReturn then
+    ShivUsage()
+  else
+    ShouldReturn = ShivUsage()
   end
 
   -- # Special Handling to Sync Shadow Dance to Kingsbane (ST and AOE)
@@ -547,22 +571,11 @@ local function CDs ()
     if HR.Cast(S.ThistleTea, Settings.CommonsOGCD.OffGCDasOffGCD.ThistleTea) then return "Cast Thistle Tea" end
   end
 
-
-  -- actions.cds=potion,if=buff.bloodlust.react|fight_remains<30|debuff.deathmark.up
-  if Settings.Commons.Enabled.Potions then
-    local PotionSelected = Everyone.PotionSelected()
-    if PotionSelected and PotionSelected:IsReady() and (Player:BloodlustUp() or HL.BossFilteredFightRemains("<", 30) or Target:DebuffUp(S.Deathmark)) then
-      if Cast(PotionSelected, nil, Settings.CommonsDS.DisplayStyle.Potions) then return "Cast Potion"; end
-    end
-  end
-
-  -- Racials
-  if S.Deathmark:AnyDebuffUp() and (not ShouldReturn or Settings.CommonsOGCD.OffGCDasOffGCD.Racials) then
-    if ShouldReturn then
-      Racials()
-    else
-      ShouldReturn = Racials()
-    end
+  -- actions.cds+=/call_action_list,name=misc_cds
+  if ShouldReturn then
+    MiscCDs()
+  else
+    ShouldReturn = MiscCDs()
   end
 
   -- actions.cds+=/call_action_list,name=vanish,if=!stealthed.all&master_assassin_remains=0
@@ -946,8 +959,8 @@ local function APL ()
     if ShouldReturn then return ShouldReturn end
     -- Racials
     if HR.CDsON() then
-      -- actions+=/arcane_torrent,if=energy.deficit>=15+variable.energy_regen_combined
-      if S.ArcaneTorrent:IsCastable() and TargetInMeleeRange and Player:EnergyDeficit() > 15 then
+      -- actions+=/arcane_torrent,if=energy.deficit>=15+energy.regen_combined
+      if S.ArcaneTorrent:IsCastable() and TargetInMeleeRange and Player:EnergyDeficit() >= 15 + EnergyRegenCombined then
         if Cast(S.ArcaneTorrent, Settings.CommonsOGCD.OffGCDasOffGCD.Racials) then return "Cast Arcane Torrent" end
       end
       -- actions+=/arcane_pulse
@@ -1058,3 +1071,96 @@ HR.SetAPL(259, APL, Init)
 -- actions.direct+=/pool_resource,if=energy<(50*(1-buff.blindside.up))&!variable.caustic_spatter_up&dot.rupture.ticking&variable.use_filler&!variable.single_target
 -- actions.direct+=/ambush,if=!variable.caustic_spatter_up&!dot.kingsbane.ticking&dot.rupture.ticking&variable.use_filler&!variable.single_target&(buff.blindside.up|buff.sepsis_buff.remains<=1|stealthed.rogue|buff.subterfuge.up|buff.shadow_dance.up)
 -- actions.direct+=/mutilate,if=!variable.caustic_spatter_up&dot.rupture.ticking&variable.use_filler&!variable.single_target
+-- # Apply SBS to all targets without a debuff as priority, preferring targets dying sooner after the primary target
+-- actions.direct+=/serrated_bone_spike,if=variable.use_filler&!dot.serrated_bone_spike_dot.ticking
+-- actions.direct+=/serrated_bone_spike,target_if=min:target.time_to_die+(dot.serrated_bone_spike_dot.ticking*600),if=variable.use_filler&!dot.serrated_bone_spike_dot.ticking
+-- # Keep from capping charges or burn at the end of fights
+-- actions.direct+=/serrated_bone_spike,if=variable.use_filler&master_assassin_remains<0.8&(fight_remains<=5|cooldown.serrated_bone_spike.max_charges-charges_fractional<=0.25)
+-- # When MA is not at high duration, sync with Shiv
+-- actions.direct+=/serrated_bone_spike,if=variable.use_filler&master_assassin_remains<0.8&!variable.single_target&debuff.shiv.up
+-- actions.direct+=/echoing_reprimand,if=variable.use_filler|fight_remains<20
+-- # Fan of Knives at 2+ targets or 3+ with DTB
+-- actions.direct+=/fan_of_knives,if=variable.use_filler&!priority_rotation&spell_targets.fan_of_knives>=3
+-- # Fan of Knives to apply poisons if inactive on any target (or any bleeding targets with priority rotation) at 3T
+-- actions.direct+=/fan_of_knives,target_if=!dot.deadly_poison_dot.ticking&(!priority_rotation|dot.garrote.ticking|dot.rupture.ticking),if=variable.use_filler&spell_targets.fan_of_knives>=3
+-- # Ambush on Blindside/Shadow Dance, or a last resort usage of Sepsis. Do not use Ambush during Kingsbane & Deathmark.
+-- actions.direct+=/ambush,if=variable.use_filler&(buff.blindside.up|buff.sepsis_buff.remains<=1|stealthed.rogue)&(!dot.kingsbane.ticking|(debuff.deathmark.down&variable.single_target&(talent.zoldyck_recipe.rank<2|target.health.pct>35))|buff.blindside.up)
+-- # Blindside Fallback
+-- actions.direct+=/ambush,if=buff.blindside.remains<=1&buff.blindside.up
+-- # Tab-Mutilate to apply Deadly Poison at 2 targets
+-- actions.direct+=/mutilate,target_if=!dot.deadly_poison_dot.ticking&!debuff.amplifying_poison.up,if=variable.use_filler&spell_targets.fan_of_knives=2
+-- # Fallback Mutilate
+-- actions.direct+=/mutilate,if=variable.use_filler
+-- # Damage over time abilities
+-- # Check what the maximum Scent of Blood stacks is currently
+-- actions.dot=variable,name=scent_effective_max_stacks,value=(spell_targets.fan_of_knives*talent.scent_of_blood.rank*2)>?20
+-- # We are Scent Saturated when our stack count is hitting the maximum
+-- actions.dot+=/variable,name=scent_saturation,value=buff.scent_of_blood.stack>=variable.scent_effective_max_stacks
+-- # Garrote upkeep, also uses it in AoE to reach energy saturation
+-- actions.dot+=/garrote,if=combo_points.deficit>=1&(pmultiplier<=1)&refreshable&target.time_to_die-remains>12&cooldown.shadow_dance.remains+1>dot.garrote.remains
+-- actions.dot+=/garrote,cycle_targets=1,if=combo_points.deficit>=1&(pmultiplier<=1)&refreshable&(!variable.regen_saturated|indiscriminate_carnage_remains>0)&spell_targets.fan_of_knives>=2&target.time_to_die-remains>6
+-- # Rupture upkeep ST
+-- actions.dot+=/rupture,if=effective_combo_points>=4&(pmultiplier<=1)&refreshable&target.time_to_die-remains>6&variable.single_target
+-- # Rupture upkeep for CS
+-- actions.dot+=/rupture,if=effective_combo_points>=4&(pmultiplier<=1)&refreshable&!variable.single_target&(target.time_to_die>debuff.caustic_spatter.remains+2)&talent.caustic_spatter
+-- # Rupture upkeep to reach energy saturation
+-- actions.dot+=/rupture,cycle_targets=1,if=effective_combo_points>=4&(pmultiplier<=1)&refreshable&(!variable.regen_saturated|!variable.scent_saturation)&target.time_to_die-remains>20&spell_targets.fan_of_knives<=4&(dot.crimson_tempest.ticking&spell_targets.fan_of_knives==4|!talent.crimson_tempest)
+-- # Crimson Tempest upkeep
+-- actions.dot+=/crimson_tempest,target_if=min:remains,if=spell_targets>=(3+set_bonus.tier31_4pc)&!dot.crimson_tempest.ticking&effective_combo_points>=4&!cooldown.deathmark.ready&target.time_to_die>6
+-- # Garrote as a special generator for the last CP before a finisher for edge case handling
+-- actions.dot+=/garrote,if=refreshable&combo_points.deficit>=1&(pmultiplier<=1|remains<=tick_time&spell_targets.fan_of_knives>=3)&(remains<=tick_time*2&spell_targets.fan_of_knives>=3)&(target.time_to_die-remains)>4&master_assassin_remains=0
+-- # Special Case Trinkets
+-- actions.items=use_item,name=ashes_of_the_embersoul,use_off_gcd=1,if=(dot.kingsbane.ticking&dot.kingsbane.remains<=11)|fight_remains<=22
+-- actions.items+=/use_item,name=algethar_puzzle_box,use_off_gcd=1,if=dot.rupture.ticking&cooldown.deathmark.remains<2|fight_remains<=22
+-- # Fallback case for using stat trinkets
+-- actions.items+=/use_items,slots=trinket1,use_off_gcd=1,if=(variable.trinket_sync_slot=1&(debuff.deathmark.up|fight_remains<=20)|(variable.trinket_sync_slot=2&(!trinket.2.cooldown.ready|!debuff.deathmark.up&cooldown.deathmark.remains>20))|!variable.trinket_sync_slot)
+-- actions.items+=/use_items,slots=trinket2,use_off_gcd=1,if=(variable.trinket_sync_slot=2&(debuff.deathmark.up|fight_remains<=20)|(variable.trinket_sync_slot=1&(!trinket.1.cooldown.ready|!debuff.deathmark.up&cooldown.deathmark.remains>20))|!variable.trinket_sync_slot)
+-- # Miscellaneous Cooldowns Potion
+-- actions.misc_cds=potion,if=buff.bloodlust.react|fight_remains<30|debuff.deathmark.up
+-- # Various special racials to be synced with cooldowns
+-- actions.misc_cds+=/blood_fury,if=debuff.deathmark.up
+-- actions.misc_cds+=/berserking,if=debuff.deathmark.up
+-- actions.misc_cds+=/fireblood,if=debuff.deathmark.up
+-- actions.misc_cds+=/ancestral_call,if=(!talent.kingsbane&debuff.deathmark.up&debuff.shiv.up)|(talent.kingsbane&debuff.deathmark.up&dot.kingsbane.ticking&dot.kingsbane.remains<8)
+-- # Shiv
+-- # Shiv if talented into Kingsbane; Always sync, or prioritize the last 8 seconds
+-- actions.shiv=shiv,if=(talent.kingsbane&buff.envenom.up&!debuff.shiv.up&((dot.kingsbane.ticking&dot.kingsbane.remains<8)|cooldown.kingsbane.up&target.time_to_die>5|(dot.kingsbane.ticking&charges>1)|dot.deathmark.ticking)&dot.garrote.ticking&dot.rupture.ticking)|(fight_remains<=charges*8&!debuff.shiv.up)|(fight_remains<=10&cooldown.kingsbane.up&!debuff.shiv.up)|(fight_remains<=18&!debuff.shiv.up)
+-- # Shiv if talented into Arterial Precision during Deathmark
+-- actions.shiv+=/shiv,if=talent.arterial_precision&!debuff.shiv.up&dot.garrote.ticking&dot.rupture.ticking&debuff.deathmark.up|fight_remains<=charges*8
+-- # Shiv with Sepsis if we have no other priority talents to sync with
+-- actions.shiv+=/shiv,if=talent.sepsis&!talent.kingsbane&!talent.arterial_precision&!debuff.shiv.up&dot.garrote.ticking&dot.rupture.ticking&((cooldown.shiv.charges_fractional>0.9+talent.lightweight_shiv.enabled&variable.sepsis_sync_remains>5)|dot.sepsis.ticking|dot.deathmark.ticking|fight_remains<=charges*8)
+-- # Shiv fallback condition if no special cases apply
+-- actions.shiv+=/shiv,if=!talent.kingsbane&!talent.arterial_precision&!talent.sepsis&!debuff.shiv.up&dot.garrote.ticking&dot.rupture.ticking&(!talent.crimson_tempest.enabled|variable.single_target|dot.crimson_tempest.ticking)|fight_remains<=charges*8
+-- # Stealthed Actions
+-- actions.stealthed=pool_resource,for_next=1
+-- # Make sure to have Shiv up during Kingsbane
+-- actions.stealthed+=/shiv,if=talent.kingsbane&(dot.kingsbane.ticking|cooldown.kingsbane.up)&(!debuff.shiv.up&debuff.shiv.remains<1)&((buff.envenom.up&variable.single_target)|(!variable.single_target&cooldown.deathmark.remains>50&!buff.master_assassin_aura.up))
+-- # Shiv/Kingsbane in Shadow Dance for snapshotting Nightstalker
+-- actions.stealthed+=/shiv,if=buff.shadow_dance.up&buff.envenom.up&!debuff.shiv.up&cooldown.kingsbane.up
+-- actions.stealthed+=/kingsbane,if=buff.shadow_dance.remains>=2&buff.envenom.up
+-- # Envenom to maintain the buff during Shadow Dance
+-- actions.stealthed+=/envenom,if=effective_combo_points>=4&dot.kingsbane.ticking&buff.envenom.remains<=3
+-- # Envenom during Master Assassin in single target
+-- actions.stealthed+=/envenom,if=effective_combo_points>=4&buff.master_assassin_aura.up&!buff.shadow_dance.up&variable.single_target
+-- # Crimson Tempest on 4+ targets to snapshot Nightstalker
+-- actions.stealthed+=/crimson_tempest,target_if=min:remains,if=spell_targets>=3+set_bonus.tier31_4pc&refreshable&effective_combo_points>=4&!cooldown.deathmark.ready&target.time_to_die-remains>6
+-- # Improved Garrote: Apply or Refresh with buffed Garrotes, accounting for CS maintenance
+-- actions.stealthed+=/garrote,if=stealthed.improved_garrote&variable.single_target&(pmultiplier<=1|remains<14)&combo_points.deficit>=1+2*talent.shrouded_suffocation&target.time_to_die>12
+-- actions.stealthed+=/garrote,target_if=min:remains,if=stealthed.improved_garrote&!variable.single_target&((remains<=19)|pmultiplier<=1|refreshable)&combo_points.deficit>=1+2*(talent.shrouded_suffocation)&target.time_to_die-remains>5.4&(variable.caustic_spatter_up||buff.subterfuge.up)
+-- # Rupture in Shadow Dance to snapshot Nightstalker as a final resort
+-- actions.stealthed+=/rupture,if=(effective_combo_points>=4&target.time_to_die>20&(pmultiplier<=1)&(buff.shadow_dance.up|(debuff.deathmark.remains>12)))
+-- # Stealth Cooldowns
+-- # Vanish Sync for Improved Garrote with Deathmark
+-- actions.vanish=pool_resource,for_next=1,extra_amount=45
+-- # Shadow Dance for non-Kingsbane setups
+-- actions.vanish+=/shadow_dance,if=!talent.kingsbane&talent.improved_garrote&cooldown.garrote.up&(dot.garrote.pmultiplier<=1|dot.garrote.refreshable)&(debuff.deathmark.up|cooldown.deathmark.remains<12|cooldown.deathmark.remains>60)&combo_points.deficit>=(spell_targets.fan_of_knives>?4)
+-- actions.vanish+=/shadow_dance,if=!talent.kingsbane&!talent.improved_garrote&talent.master_assassin&!dot.rupture.refreshable&dot.garrote.remains>3&(debuff.deathmark.up|cooldown.deathmark.remains>60)&(debuff.shiv.up|debuff.deathmark.remains<4|dot.sepsis.ticking)&dot.sepsis.remains<3
+-- # Vanish to spread Garrote during Deathmark
+-- actions.vanish+=/vanish,if=!talent.master_assassin&talent.improved_garrote&cooldown.garrote.up&(dot.garrote.pmultiplier<=1|dot.garrote.refreshable)&(debuff.deathmark.up|cooldown.deathmark.remains<4)&combo_points.deficit>=(spell_targets.fan_of_knives>?4)
+-- actions.vanish+=/pool_resource,for_next=1,extra_amount=45
+-- # Vanish for cleaving Garrotes with Indiscriminate Carnage
+-- actions.vanish+=/vanish,if=!talent.master_assassin&talent.improved_garrote&cooldown.garrote.up&(dot.garrote.pmultiplier<=1|dot.garrote.refreshable)&spell_targets.fan_of_knives>(3-talent.indiscriminate_carnage)
+-- # Vanish for Master Assassin during Kingsbane
+-- actions.vanish+=/vanish,if=talent.master_assassin&talent.kingsbane&(dot.kingsbane.remains<=3|target.time_to_die<=3)&dot.kingsbane.ticking|(!dot.kingsbane.ticking&cooldown.deathmark.remains>120-2-14+3)
+-- # Vanish fallback for Master Assassin
+-- actions.vanish+=/vanish,if=!talent.improved_garrote&talent.master_assassin&!dot.rupture.refreshable&dot.garrote.remains>3&debuff.deathmark.up&(debuff.shiv.up|debuff.deathmark.remains<4|dot.sepsis.ticking)&dot.sepsis.remains<3
