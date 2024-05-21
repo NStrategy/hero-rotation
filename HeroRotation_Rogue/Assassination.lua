@@ -201,7 +201,7 @@ local function IsDebuffRefreshable(TargetUnit, Spell, PandemicThreshold)
 end
 
 -- actions+=/variable,name=not_pooling,value=(cooldown.kingsbane.remains<=2|dot.deathmark.ticking|dot.kingsbane.ticking|buff.shadow_dance.up|debuff.shiv.up|cooldown.thistle_tea.full_recharge_time<5)|(buff.envenom.up&buff.envenom.remains<=2)|energy.pct>=(80)|fight_remains<=20
-local function NotPoolingVar() -- note: probably reduce the max energy needed for pooling till about 10 seconds before CDs, will need to check for Tea tho
+local function NotPoolingVar() -- note: probably reduce the max energy needed for pooling till about 10 seconds before CDs, will need to check for Tea tho; actions+=/variable,name=not_pooling,value=(dot.deathmark.ticking|dot.kingsbane.ticking|buff.shadow_dance.up|debuff.shiv.up|cooldown.thistle_tea.full_recharge_time<5)|(buff.envenom.up&buff.envenom.remains<=2)|(energy.pct>=(50)&cooldown.kingsbane.remains>=10)|energy.pct>=(80)|(combo_points.deficit=0&!dot.garrote.ticking)|fight_remains<=20
   if (S.Kingsbane:CooldownRemains() <= 2 or Target:DebuffUp(S.Deathmark) or Target:DebuffUp(S.Kingsbane) or Player:BuffUp(S.ShadowDanceBuff) or Target:DebuffUp(S.ShivDebuff)
     or S.ThistleTea:FullRechargeTime() < 5) or Player:EnergyPercentage() >= 80 or (ComboPointsDeficit == 0 and not Target:DebuffUp(S.Garrote) and S.Garrote:IsCastable() and SingleTarget) or ((Player:BuffUp(S.Envenom) and Player:BuffRemains(S.Envenom) <= 2) 
     or HL.BossFilteredFightRemains("<=", 20)) then
@@ -419,7 +419,7 @@ local function Vanish ()
     end
     -- actions.vanish+=/vanish,if=talent.master_assassin&talent.kingsbane&(dot.kingsbane.remains<=3|target.time_to_die<=3)&dot.kingsbane.ticking|(!dot.kingsbane.ticking&cooldown.deathmark.remains>120-2-14+3)
     if S.MasterAssassin:IsAvailable() and S.Kingsbane:IsAvailable() and not S.ShadowDance:IsCastable() then
-      if (Target:DebuffUp(S.Kingsbane) and (Target:DebuffRemains(S.Kingsbane) <= 3 or Target:TimeToDie() <= 3)) or (not Target:DebuffUp(S.Kingsbane) and S.Deathmark:CooldownRemains() > (120 - 2 - 14 + 3)) then
+      if (Target:DebuffUp(S.Kingsbane) and (Target:DebuffRemains(S.Kingsbane) <= 3 or Target:FilteredTimeToDie("<", 3))) or (not Target:DebuffUp(S.Kingsbane) and S.Deathmark:CooldownRemains() > (120 - 2 - 14 + 3)) then
         if Cast(S.Vanish, Settings.CommonsOGCD.OffGCDasOffGCD.Vanish) then return "Cast Vanish (Kingsbane)" end
       end
     end
@@ -473,7 +473,7 @@ local function ShivUsage ()
       if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv (End of Fight)" end
     end
     if S.Kingsbane:IsAvailable() and Player:BuffUp(S.Envenom) then
-      if ((Target:DebuffUp(S.Kingsbane) and Target:DebuffRemains(S.Kingsbane) < 8) or (S.Kingsbane:CooldownUp() and Target:TimeToDie() > 5) or (Target:DebuffUp(S.Kingsbane) and S.Shiv:Charges() > 1) or Target:DebuffUp(S.Deathmark)) then
+      if ((Target:DebuffUp(S.Kingsbane) and Target:DebuffRemains(S.Kingsbane) < 8) or (S.Kingsbane:CooldownUp() and Target:FilteredTimeToDie(">", 5)) or (Target:DebuffUp(S.Kingsbane) and S.Shiv:Charges() > 1) or Target:DebuffUp(S.Deathmark)) then
         if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv (Kingsbane)" end
       end
     end
@@ -564,10 +564,10 @@ local function CDs ()
   if S.ShadowDance:IsCastable() and ((S.Kingsbane:IsAvailable() and S.Kingsbane:CooldownRemains() <= 2 and Player:BuffUp(S.Envenom) and not SingleTarget and Target:DebuffUp(S.Garrote) and Target:DebuffUp(S.Rupture)) or HL.BossFilteredFightRemains("<=", 15)) then
     if Cast(S.ShadowDance, Settings.CommonsOGCD.OffGCDasOffGCD.ShadowDance) then return "Cast Shadow Dance (Kingsbane Sync AOE or Fight End)" end
   end
-  -- # Avoid overcapped energy, or use a charge during cooldowns when capped on charges note: maybe change to "energy.deficit>=100+energy.regen_combined" (currently damage loss)
+  -- # Avoid overcapped energy, or use a charge during cooldowns when capped on charges note: maybe change to "energy.deficit>=100+energy.regen_combined" (currently damage loss); actions.cds+=/thistle_tea,if=(!buff.thistle_tea.up)&(energy.deficit>=200+2*energy.regen_combined&(!talent.kingsbane|charges>=2)|(dot.kingsbane.ticking&(dot.kingsbane.remains<6|target.time_to_die<6|energy.pct<50)|!talent.kingsbane&dot.deathmark.ticking)|fight_remains<charges*6)
   -- actions.cds+=/thistle_tea,if=(!buff.thistle_tea.up)&(energy.pct<50&energy.deficit>=100+2*energy.regen_combined&(!talent.kingsbane|charges>=2)|(dot.kingsbane.ticking&(dot.kingsbane.remains<6|target.time_to_die<6|energy.pct<50)|!talent.kingsbane&dot.deathmark.ticking)|fight_remains<charges*6)
-  if S.ThistleTea:IsCastable() and (not Player:BuffUp(S.ThistleTea)) and ((Player:EnergyPercentage() < 50 and Player:EnergyDeficit() >= 100 + 2 * EnergyRegenCombined and (not S.Kingsbane:IsAvailable() or S.ThistleTea:Charges() >= 2)) or 
-    (Target:DebuffUp(S.Kingsbane) and (Target:DebuffRemains(S.Kingsbane) < 6 or Target:TimeToDie() < 6) or Player:EnergyPercentage() < 50) or (not S.Kingsbane:IsAvailable() and Target:DebuffUp(S.Deathmark)) or HL.BossFilteredFightRemains("<", S.ThistleTea:Charges() * 6)) then
+  if S.ThistleTea:IsCastable() and (not Player:BuffUp(S.ThistleTea)) and (Player:EnergyPercentage() < 50 and Player:EnergyDeficit() >= 100 + 2 * EnergyRegenCombined and (not S.Kingsbane:IsAvailable() or S.ThistleTea:Charges() >= 2) or 
+    (Target:DebuffUp(S.Kingsbane) and (Target:DebuffRemains(S.Kingsbane) < 6 or Target:FilteredTimeToDie("<", 6) or Player:EnergyPercentage() < 50) or (not S.Kingsbane:IsAvailable() and Target:DebuffUp(S.Deathmark))) or HL.BossFilteredFightRemains("<", S.ThistleTea:Charges() * 6)) then
     if HR.Cast(S.ThistleTea, Settings.CommonsOGCD.OffGCDasOffGCD.ThistleTea) then return "Cast Thistle Tea" end
   end
 
@@ -650,7 +650,7 @@ local function Stealthed ()
            Rogue.CanDoTUnit(TargetUnit, GarroteDMGThreshold)
     end
     -- Improved Garrote: Apply or Refresh with buffed Garrotes, accounting for CS maintenance
-    if SingleTarget and (Target:PMultiplier(S.Garrote) <= 1 or Target:DebuffRemains(S.Garrote) < 14) and ComboPointsDeficit >= 1 + 2 * num(S.ShroudedSuffocation:IsAvailable()) and Target:TimeToDie() > 12 then
+    if SingleTarget and (Target:PMultiplier(S.Garrote) <= 1 or Target:DebuffRemains(S.Garrote) < 14) and ComboPointsDeficit >= 1 + 2 * num(S.ShroudedSuffocation:IsAvailable()) and Target:FilteredTimeToDie(">", 12) then
       if Cast(S.Garrote, nil, nil, not TargetInMeleeRange) then return "Cast Garrote (Improved Garrote ST)" end
     end
     -- Garrote for AoE
@@ -666,7 +666,7 @@ local function Stealthed ()
     end
   end
   -- actions.stealthed+=/rupture,if=(effective_combo_points>=4&target.time_to_die>20&(pmultiplier<=1)&(buff.shadow_dance.up|(debuff.deathmark.remains>12)))
-  if ComboPoints >= 4 and Target:TimeToDie() > 20 and Target:PMultiplier(S.Rupture) <= 1 and (Player:BuffUp(S.ShadowDanceBuff) or Target:DebuffRemains(S.Deathmark) > 12) then
+  if ComboPoints >= 4 and Target:FilteredTimeToDie(">", 20) and Target:PMultiplier(S.Rupture) <= 1 and (Player:BuffUp(S.ShadowDanceBuff) or Target:DebuffRemains(S.Deathmark) > 12) then
     if Cast(S.Rupture, nil, nil, not TargetInMeleeRange) then return "Cast Rupture (Nightstalker)" end
   end
 end
