@@ -61,6 +61,7 @@ HR.GUISettings.APL.Rogue = {
   Assassination = {
     EnvenomDMGOffset = 3,
     MutilateDMGOffset = 3,
+    Envat50 = false,
     UsePriorityRotation = "Never", -- Only for Assassination / Subtlety
     PotionType = {
       Selected = "Power",
@@ -151,6 +152,7 @@ CreateARPanelOptions(CP_RogueOGCD, "APL.Rogue.CommonsOGCD")
 -- Assassination
 CreatePanelOption("Slider", CP_Assassination, "APL.Rogue.Assassination.EnvenomDMGOffset", {1, 5, 0.25}, "Envenom DMG Offset", "Set the Envenom DMG Offset.")
 CreatePanelOption("Slider", CP_Assassination, "APL.Rogue.Assassination.MutilateDMGOffset", {1, 5, 0.25}, "Mutilate DMG Offset", "Set the Mutilate DMG Offset.")
+CreatePanelOption("CheckButton", CP_Assassination, "APL.Rogue.Assassination.Envat50", "With this setting checked, you will only funnel to 50% Energy and use tea differently", "Check if you want to only funnel to 50% Energy till 10 seconds before CDs (it will try to funnel to 80% or use CDs when they are ready")
 CreatePanelOption("Dropdown", CP_Assassination, "APL.Rogue.Assassination.UsePriorityRotation", {"Never", "On Bosses", "Always", "Auto"}, "Use Priority Rotation", "Select when to show rotation for maximum priority damage (at the cost of overall AoE damage.)\nAuto will function as Never except on specific encounters where AoE is not recommended.")
 CreateARPanelOptions(CP_Assassination, "APL.Rogue.Assassination")
 
