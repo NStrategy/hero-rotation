@@ -657,7 +657,7 @@ local function Stealthed ()
            Rogue.CanDoTUnit(TargetUnit, GarroteDMGThreshold)
     end
     -- Improved Garrote: Apply or Refresh with buffed Garrotes, accounting for CS maintenance
-    if SingleTarget and (Target:PMultiplier(S.Garrote) <= 1 or Target:DebuffRemains(S.Garrote) < 14) and ComboPointsDeficit >= 1 + 2 * num(S.ShroudedSuffocation:IsAvailable()) and Target:FilteredTimeToDie(">", 12) then
+    if SingleTarget and (Target:PMultiplier(S.Garrote) <= 1 or (Target:DebuffRemains(S.Garrote) < 14 and (Player:BuffRemains(S.ShadowDanceBuff) > 0.5 or Player:BuffRemains(S.SubterfugeBuff) > 0.5))) and ComboPointsDeficit >= 1 + 2 * num(S.ShroudedSuffocation:IsAvailable()) and Target:FilteredTimeToDie(">", 12) then
       if Cast(S.Garrote, nil, nil, not TargetInMeleeRange) then return "Cast Garrote (Improved Garrote ST)" end
     end
     -- Garrote for AoE
