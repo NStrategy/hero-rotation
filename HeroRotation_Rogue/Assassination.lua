@@ -201,7 +201,7 @@ local function IsDebuffRefreshable(TargetUnit, Spell, PandemicThreshold)
 end
 
 -- actions+=/variable,name=not_pooling,value=(cooldown.kingsbane.remains<=2|dot.deathmark.ticking|dot.kingsbane.ticking|buff.shadow_dance.up|debuff.shiv.up|cooldown.thistle_tea.full_recharge_time<5)|(buff.envenom.up&buff.envenom.remains<=2)|energy.pct>=(80)|fight_remains<=20
--- actions+=/variable,name=not_pooling,value=(dot.deathmark.ticking|dot.kingsbane.ticking|buff.shadow_dance.up|debuff.shiv.up|cooldown.thistle_tea.full_recharge_time<5)|(buff.envenom.up&buff.envenom.remains<=2)|(energy.pct>=(50)&cooldown.kingsbane.remains>=10)|energy.pct>=(80)|(combo_points.deficit=0&!dot.garrote.ticking)|fight_remains<=20
+-- actions+=/variable,name=not_pooling,value=(cooldown.kingsbane.remains<=2|dot.deathmark.ticking|dot.kingsbane.ticking|buff.shadow_dance.up|debuff.shiv.up|cooldown.thistle_tea.full_recharge_time<5)|(buff.envenom.up&buff.envenom.remains<=2)|(energy.pct>=(50)&cooldown.kingsbane.remains>=10)|energy.pct>=(80)|(combo_points.deficit=0&!dot.garrote.ticking)|fight_remains<=20
 local function NotPoolingVar() 
   if (S.Kingsbane:CooldownRemains() <= 2 or Target:DebuffUp(S.Deathmark) or Target:DebuffUp(S.Kingsbane) or Player:BuffUp(S.ShadowDanceBuff) or Target:DebuffUp(S.ShivDebuff)
     or S.ThistleTea:FullRechargeTime() < 5) or (Player:EnergyPercentage() >= 50 and S.Kingsbane:CooldownRemains() >= 10 and Settings.Assassination.Envat50) or Player:EnergyPercentage() >= 80 or (ComboPointsDeficit == 0 and not Target:DebuffUp(S.Garrote) and S.Garrote:IsCastable() and SingleTarget) or ((Player:BuffUp(S.Envenom) and Player:BuffRemains(S.Envenom) <= 2) 
@@ -573,7 +573,7 @@ local function CDs ()
   end
   -- # Custom Tea usage when setting to 50% energy max in enabled
   -- actions.cds+=/thistle_tea,if=(!buff.thistle_tea.up)&(energy.deficit>=200+2*energy.regen_combined&(!talent.kingsbane|charges>=2)|(dot.kingsbane.ticking&(dot.kingsbane.remains<6|target.time_to_die<6|energy.pct<50)|!talent.kingsbane&dot.deathmark.ticking)|fight_remains<charges*6)
-  if Settings.Assassination.Envat50 and S.ThistleTea:IsCastable() and (not Player:BuffUp(S.ThistleTea)) and (Player:EnergyDeficit() >= 200 + 2 * EnergyRegenCombined and (not S.Kingsbane:IsAvailable() or S.ThistleTea:Charges() >= 2) or 
+  if Settings.Assassination.Envat50 and S.ThistleTea:IsCastable() and (not Player:BuffUp(S.ThistleTea)) and (Player:EnergyDeficit() >= 220 + 2 * EnergyRegenCombined and (not S.Kingsbane:IsAvailable() or S.ThistleTea:Charges() >= 2) or 
     (Target:DebuffUp(S.Kingsbane) and (Target:DebuffRemains(S.Kingsbane) < 6 or Target:FilteredTimeToDie("<", 6) or Player:EnergyPercentage() < 50) or (not S.Kingsbane:IsAvailable() and Target:DebuffUp(S.Deathmark))) or HL.BossFilteredFightRemains("<", S.ThistleTea:Charges() * 6)) then
     if HR.Cast(S.ThistleTea, Settings.CommonsOGCD.OffGCDasOffGCD.ThistleTea) then return "Cast Thistle Tea Custom" end
   end
@@ -703,7 +703,7 @@ local function Dot ()
     end
   end
   -- actions.dot+=/rupture,if=effective_combo_points>=4&(pmultiplier<=1)&refreshable&target.time_to_die-remains>(4+(talent.dashing_scoundrel*5)+(variable.regen_saturated*6))
-  -- actions.dot+=/rupture,cycle_targets=1,if=effective_combo_points>=4&(pmultiplier<=1)&refreshable&(!variable.regen_saturated|!variable.scent_saturation)&target.time_to_die-remains>(4+(talent.dashing_scoundrel*5)+(variable.regen_saturated*6))
+  -- actions.dot+=/rupture,cycle_targets=1,if=effective_combo_points>=4&(pmultiplier<=1)&refreshable&(!variable.regen_saturated|!variable.scent_saturation&(talent.scent_of_blood.rank<2&buff.indiscriminate_carnage.remains>0|talent.scent_of_blood.rank==2))&target.time_to_die-remains>(4+(talent.dashing_scoundrel*5)+(variable.regen_saturated*6))
   if S.Rupture:IsCastable() and ComboPoints >= 4 then
     -- target.time_to_die-remains>(4+(talent.dashing_scoundrel*5)+(talent.doomblade*5)+(variable.regen_saturated*6))
     RuptureDurationThreshold = 4 + BoolToInt(S.DashingScoundrel:IsAvailable()) * 5 + BoolToInt(S.Doomblade:IsAvailable()) * 5 + BoolToInt(EnergyRegenSaturated) * 6
@@ -714,7 +714,7 @@ local function Dot ()
     if Evaluate_Rupture_Target(Target) and Rogue.CanDoTUnit(Target, RuptureDMGThreshold) then
       if Cast(S.Rupture, nil, nil, not TargetInMeleeRange) then return "Cast Rupture" end
     end
-    if HR.AoEON() and (not EnergyRegenSaturated or not ScentSaturated) then
+    if HR.AoEON() and (not EnergyRegenSaturated or not ScentSaturated and (S.ScentOfBlood:TalentRank() < 2 and Player:BuffRemains(S.IndiscriminateCarnageBuff) > 0 or S.ScentOfBlood:TalentRank() == 2)) then
       SuggestCycleDoT(S.Rupture, Evaluate_Rupture_Target, RuptureDurationThreshold, MeleeEnemies5y)
     end
   end
@@ -756,7 +756,7 @@ local function Direct ()
   -- # Maintain Caustic Spatter
   -- actions.direct+=/pool_resource,if=energy<(50*(1-buff.blindside.up))&!variable.caustic_spatter_up&dot.rupture.ticking&variable.use_filler&!variable.single_target
   -- actions.direct+=/ambush,if=!variable.caustic_spatter_up&!dot.kingsbane.ticking&dot.rupture.ticking&variable.use_filler&!variable.single_target&(buff.blindside.up|buff.sepsis_buff.remains<=1|stealthed.rogue|buff.subterfuge.up|buff.shadow_dance.up)
-  -- actions.direct+=/mutilate,if=!variable.caustic_spatter_up&dot.rupture.ticking&variable.use_filler&!variable.single_target
+  -- actions.direct+=/mutilate,if=talent.caustic_spatter&dot.rupture.ticking&(!debuff.caustic_spatter.up|debuff.caustic_spatter.remains<=2)&(variable.use_filler&(buff.indiscriminate_carnage.remains<=1|buff.indiscriminate_carnage.remains>1&variable.scent_saturation))&!variable.single_target
   if not SingleTarget and not CausticSpatterUp and Target:DebuffUp(S.Rupture) then
     -- Pool resources if energy is below threshold
     if Player:Energy() < (50 * (1 - num(Player:BuffUp(S.BlindsideBuff)))) then
@@ -769,7 +769,7 @@ local function Direct ()
       end
     end
     -- Cast Mutilate
-    if S.Mutilate:IsCastable() then
+    if S.Mutilate:IsCastable() and S.CausticSpatter:IsAvailable() and (not Target:DebuffUp(S.CausticSpatterDebuff) or Target:DebuffRemains(S.CausticSpatterDebuff) <= 2) and (Player:BuffRemains(S.IndiscriminateCarnageBuff) <= 1 or Player:BuffRemains(S.IndiscriminateCarnageBuff) > 1 and ScentSaturated) then
       if Cast(S.Mutilate, nil, nil, not TargetInMeleeRange) then return "Cast Mutilate (Caustic)" end
     end
   end
@@ -936,9 +936,9 @@ local function APL ()
     ShouldReturn = CDs()
     if ShouldReturn then return ShouldReturn end
     -- # Put SnD up initially for Cut to the Chase, refresh with Envenom if at low duration
-    -- actions+=/slice_and_dice,if=!buff.slice_and_dice.up&dot.rupture.ticking&combo_points>=2|!talent.cut_to_the_chase&refreshable&combo_points>=4
+    -- actions+=/slice_and_dice,if=!buff.slice_and_dice.up&dot.rupture.ticking&combo_points>=2&(!buff.indiscriminate_carnage.up|buff.indiscriminate_carnage.remains>0&variable.scent_saturation)|!talent.cut_to_the_chase&refreshable&combo_points>=4
     if not Player:BuffUp(S.SliceandDice) then
-      if S.SliceandDice:IsCastable() and Player:ComboPoints() >= 2 and Target:DebuffUp(S.Rupture)
+      if S.SliceandDice:IsCastable() and Player:ComboPoints() >= 2 and Target:DebuffUp(S.Rupture) and (not Player:BuffUp(S.IndiscriminateCarnageBuff) or Player:BuffRemains(S.IndiscriminateCarnageBuff) > 0 and ScentSaturated)
         or not S.CutToTheChase:IsAvailable() and Player:ComboPoints() >= 4 and Player:BuffRemains(S.SliceandDice) < (1 + Player:ComboPoints()) * 1.8 then
         if Cast(S.SliceandDice) then return "Cast Slice and Dice" end
       end
@@ -1033,7 +1033,7 @@ HR.SetAPL(259, APL, Init)
 -- # Next Sepsis cooldown time based on Deathmark syncing logic and remaining fight duration
 -- actions+=/variable,name=sepsis_sync_remains,op=setif,condition=cooldown.deathmark.remains>cooldown.sepsis.remains&cooldown.deathmark.remains<fight_remains,value=cooldown.deathmark.remains,value_else=cooldown.sepsis.remains
 -- # Put SnD up initially for Cut to the Chase, refresh with Envenom if at low duration
--- actions+=/slice_and_dice,if=!buff.slice_and_dice.up&dot.rupture.ticking&combo_points>=2|!talent.cut_to_the_chase&refreshable&combo_points>=4
+-- actions+=/slice_and_dice,if=!buff.slice_and_dice.up&dot.rupture.ticking&combo_points>=2&(!buff.indiscriminate_carnage.up|buff.indiscriminate_carnage.remains>0&variable.scent_saturation)|!talent.cut_to_the_chase&refreshable&combo_points>=4
 -- actions+=/envenom,if=talent.cut_to_the_chase&buff.slice_and_dice.up&buff.slice_and_dice.remains<5&combo_points>=4
 -- actions+=/call_action_list,name=stealthed,if=stealthed.rogue|stealthed.improved_garrote|buff.master_assassin_aura.up|buff.master_assassin.up|buff.subterfuge.up
 -- actions+=/call_action_list,name=cds
@@ -1076,7 +1076,7 @@ HR.SetAPL(259, APL, Init)
 -- # Maintain Caustic Spatter + Pooling for Mutilate if needed
 -- actions.direct+=/pool_resource,if=energy<(50*(1-buff.blindside.up))&!variable.caustic_spatter_up&dot.rupture.ticking&variable.use_filler&!variable.single_target
 -- actions.direct+=/ambush,if=!variable.caustic_spatter_up&!dot.kingsbane.ticking&dot.rupture.ticking&variable.use_filler&!variable.single_target&(buff.blindside.up|buff.sepsis_buff.remains<=1|stealthed.rogue|buff.subterfuge.up|buff.shadow_dance.up)
--- actions.direct+=/mutilate,if=!variable.caustic_spatter_up&dot.rupture.ticking&variable.use_filler&!variable.single_target
+-- actions.direct+=/mutilate,if=talent.caustic_spatter&dot.rupture.ticking&(!debuff.caustic_spatter.up|debuff.caustic_spatter.remains<=2)&(variable.use_filler&(buff.indiscriminate_carnage.remains<=1|buff.indiscriminate_carnage.remains>1&variable.scent_saturation))&!variable.single_target
 -- # Apply SBS to all targets without a debuff as priority, preferring targets dying sooner after the primary target
 -- actions.direct+=/serrated_bone_spike,if=variable.use_filler&!dot.serrated_bone_spike_dot.ticking
 -- actions.direct+=/serrated_bone_spike,target_if=min:target.time_to_die+(dot.serrated_bone_spike_dot.ticking*600),if=variable.use_filler&!dot.serrated_bone_spike_dot.ticking
@@ -1110,7 +1110,7 @@ HR.SetAPL(259, APL, Init)
 -- # Rupture upkeep for CS
 -- actions.dot+=/rupture,if=effective_combo_points>=4&(pmultiplier<=1)&refreshable&!variable.single_target&(target.time_to_die>debuff.caustic_spatter.remains+2)&talent.caustic_spatter
 -- # Rupture upkeep to reach energy saturation
--- actions.dot+=/rupture,cycle_targets=1,if=effective_combo_points>=4&(pmultiplier<=1)&refreshable&(!variable.regen_saturated|!variable.scent_saturation)&target.time_to_die-remains>20&spell_targets.fan_of_knives<=4&(dot.crimson_tempest.ticking&spell_targets.fan_of_knives==4|!talent.crimson_tempest)
+-- actions.dot+=/rupture,cycle_targets=1,if=effective_combo_points>=4&(pmultiplier<=1)&refreshable&(!variable.regen_saturated|!variable.scent_saturation&(talent.scent_of_blood.rank<2&buff.indiscriminate_carnage.remains>0|talent.scent_of_blood.rank==2))&target.time_to_die-remains>(4+(talent.dashing_scoundrel*5)+(variable.regen_saturated*6))
 -- # Crimson Tempest upkeep
 -- actions.dot+=/crimson_tempest,target_if=min:remains,if=spell_targets>=(3+set_bonus.tier31_4pc)&!dot.crimson_tempest.ticking&effective_combo_points>=4&!cooldown.deathmark.ready&target.time_to_die>6
 -- # Garrote as a special generator for the last CP before a finisher for edge case handling
