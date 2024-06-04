@@ -503,6 +503,14 @@ local function MiscCDs ()
     end
   end
 
+  if Settings.Commons.Enabled.Trinkets then
+    if ShouldReturn then
+      UsableItems()
+    else
+      ShouldReturn = UsableItems()
+    end
+  end
+
   -- Racials
   if S.Deathmark:AnyDebuffUp() and (not ShouldReturn or Settings.CommonsOGCD.OffGCDasOffGCD.Racials) then
     if ShouldReturn then
@@ -528,14 +536,6 @@ local function CDs ()
     or S.ImprovedGarrote:IsAvailable() and S.Garrote:CooldownUp() and Target:PMultiplier(S.Garrote) <= 1)
     and (Target:FilteredTimeToDie(">", 10) or HL.BossFilteredFightRemains("<=", 10)) then
     if Cast(S.Sepsis, nil, true) then return "Cast Sepsis" end
-  end
-
-  if Settings.Commons.Enabled.Trinkets then
-    if ShouldReturn then
-      UsableItems()
-    else
-      ShouldReturn = UsableItems()
-    end
   end
 
   -- actions.cds=variable,name=deathmark_ma_condition,value=!talent.master_assassin.enabled|dot.garrote.ticking
@@ -660,6 +660,10 @@ local function Stealthed ()
     if SingleTarget and (Target:PMultiplier(S.Garrote) <= 1 or (Target:DebuffRemains(S.Garrote) < 14 and (Player:BuffRemains(S.ShadowDanceBuff) > 0.5 or Player:BuffRemains(S.SubterfugeBuff) > 0.5))) and ComboPointsDeficit >= 1 + 2 * num(S.ShroudedSuffocation:IsAvailable()) and Target:FilteredTimeToDie(">", 12) then
       if Cast(S.Garrote, nil, nil, not TargetInMeleeRange) then return "Cast Garrote (Improved Garrote ST)" end
     end
+    -- actions.stealthed+=/garrote,target_if=min:remains,if=stealthed.improved_garrote&!variable.single_target&buff.indiscriminate_carnage.remains>0&((remains<=26)|pmultiplier<=1|refreshable)&combo_points.deficit>=1&(variable.caustic_spatter_up||buff.subterfuge.up|buff.shadow_dance.up)
+    if S.IndiscriminateCarnage:IsAvailable() and not SingleTarget and Player:BuffRemains(S.IndiscriminateCarnageBuff) > 0 and (Target:DebuffRemains(S.Garrote) <= 26 or Target:PMultiplier(S.Garrote) <= 1) and ComboPointsDeficit >= 1 and Rogue.CanDoTUnit(Target, GarroteDMGThreshold) and (CausticSpatterUp or Player:BuffRemains(S.ShadowDanceBuff) > 0.5 or Player:BuffRemains(S.SubterfugeBuff) > 0.5) then
+      if Cast(S.Garrote, nil, nil, not TargetInMeleeRange) then return "Cast Garrote (Improved Garrote AOE on ST)" end
+    end
     -- Garrote for AoE
     if HR.AoEON() then
       local TargetIfUnit = CheckTargetIfTarget("min", GarroteTargetIfFunc, GarroteIfFunc)
@@ -675,6 +679,10 @@ local function Stealthed ()
   -- actions.stealthed+=/rupture,if=(effective_combo_points>=4&target.time_to_die>20&(pmultiplier<=1)&(buff.shadow_dance.up|(debuff.deathmark.remains>12)))
   if ComboPoints >= 4 and Target:FilteredTimeToDie(">", 20) and Target:PMultiplier(S.Rupture) <= 1 and (Player:BuffUp(S.ShadowDanceBuff) or Target:DebuffRemains(S.Deathmark) > 12) then
     if Cast(S.Rupture, nil, nil, not TargetInMeleeRange) then return "Cast Rupture (Nightstalker)" end
+  end
+  -- actions.stealthed+=/rupture,if=(effective_combo_points>=4&buff.indiscriminate_carnage.remains>0&!variable.single_target&target.time_to_die>20&(buff.shadow_dance.up|buff.subterfuge.up|(debuff.deathmark.remains>12)))
+  if S.IndiscriminateCarnage:IsAvailable() and Player:BuffRemains(S.IndiscriminateCarnageBuff) > 0 and  ComboPoints >= 4 and not SingleTarget and Target:FilteredTimeToDie(">", 20) and (Player:BuffRemains(S.ShadowDanceBuff) > 0.5 or Player:BuffRemains(S.SubterfugeBuff) > 0.5 or Target:DebuffRemains(S.Deathmark) > 12) then
+    if Cast(S.Rupture, nil, nil, not TargetInMeleeRange) then return "Cast Rupture (Nightstalker AOE on ST)" end
   end
 end
 
@@ -801,8 +809,8 @@ local function Direct ()
     if Cast(S.EchoingReprimand, Settings.CommonsOGCD.GCDasOffGCD.EchoingReprimand, nil, not TargetInMeleeRange) then return "Cast Echoing Reprimand" end
   end
   if S.FanofKnives:IsCastable() then
-    -- actions.direct+=/fan_of_knives,if=variable.use_filler&!priority_rotation&spell_targets.fan_of_knives>=3
-    if HR.AoEON() and MeleeEnemies10yCount >= 3 and not PriorityRotation then
+    -- actions.direct+=/fan_of_knives,if=variable.use_filler&!priority_rotation&spell_targets.fan_of_knives>=3&(!talent.indiscriminate_carnage|(talent.indiscriminate_carnage&(!buff.shadow_dance.up&!buff.subterfuge.up)))
+    if HR.AoEON() and MeleeEnemies10yCount >= 3 and not PriorityRotation and (not S.IndiscriminateCarnage:IsAvailable() or (S.IndiscriminateCarnage:IsAvailable() and (Player:BuffRemains(S.ShadowDanceBuff) < 0.5 and Player:BuffRemains(S.SubterfugeBuff) < 0.5))) then
       if CastPooling(S.FanofKnives) then return "Cast Fan of Knives" end
     end
     -- actions.direct+=/fan_of_knives,target_if=!dot.deadly_poison_dot.ticking&(!priority_rotation|dot.garrote.ticking|dot.rupture.ticking),if=variable.use_filler&spell_targets.fan_of_knives>=3
