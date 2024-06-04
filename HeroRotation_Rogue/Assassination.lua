@@ -502,7 +502,7 @@ local function MiscCDs ()
       if Cast(PotionSelected, nil, Settings.CommonsDS.DisplayStyle.Potions) then return "Cast Potion"; end
     end
   end
-
+  -- Trinkets
   if Settings.Commons.Enabled.Trinkets then
     if ShouldReturn then
       UsableItems()
@@ -510,7 +510,6 @@ local function MiscCDs ()
       ShouldReturn = UsableItems()
     end
   end
-
   -- Racials
   if S.Deathmark:AnyDebuffUp() and (not ShouldReturn or Settings.CommonsOGCD.OffGCDasOffGCD.Racials) then
     if ShouldReturn then
@@ -523,8 +522,12 @@ end
 
 -- # Cooldowns
 local function CDs ()
-  if not TargetInAoERange then
-    return
+
+  -- actions.cds+=/call_action_list,name=misc_cds
+  if ShouldReturn then
+    MiscCDs()
+  else
+    ShouldReturn = MiscCDs()
   end
 
   if not HR.CDsON() then
@@ -578,13 +581,6 @@ local function CDs ()
     if HR.Cast(S.ThistleTea, Settings.CommonsOGCD.OffGCDasOffGCD.ThistleTea) then return "Cast Thistle Tea Custom" end
   end
 
-  -- actions.cds+=/call_action_list,name=misc_cds
-  if ShouldReturn then
-    MiscCDs()
-  else
-    ShouldReturn = MiscCDs()
-  end
-
   -- actions.cds+=/call_action_list,name=vanish,if=!stealthed.all&master_assassin_remains=0
   if not Player:StealthUp(true, true) and ImprovedGarroteRemains() <= 0 and MasterAssassinRemains() <= 0 then
     if ShouldReturn then
@@ -624,6 +620,10 @@ local function Stealthed ()
       end
     end
   end
+  -- actions.items+=/use_item,name=ashes_of_the_embersoul,use_off_gcd=1,if=(dot.kingsbane.ticking&dot.kingsbane.remains<=11)|fight_remains<=22
+  if I.AshesoftheEmbersoul:IsEquippedAndReady() and (Target:DebuffUp(S.Kingsbane) and Target:DebuffRemains(S.Kingsbane) <= 11 or HL.BossFilteredFightRemains("<", 22)) then
+    if HR.Cast(I.AshesoftheEmbersoul, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Ashes of the Embersoul"; end
+  end
   -- actions.stealthed+=/envenom,if=effective_combo_points>=4&dot.kingsbane.ticking&buff.envenom.remains<=3
   -- actions.stealthed+=/envenom,if=effective_combo_points>=4&buff.master_assassin_aura.up&!buff.shadow_dance.up&variable.single_target
   if ComboPoints >= 4 then
@@ -635,7 +635,7 @@ local function Stealthed ()
     end
   end
   -- actions.stealthed+=/crimson_tempest,target_if=min:remains,if=spell_targets>=3+set_bonus.tier31_4pc&refreshable&effective_combo_points>=4&!cooldown.deathmark.ready&target.time_to_die-remains>6
-  if HR.AoEON() and S.CrimsonTempest:IsCastable() and S.Nightstalker:IsAvailable() and MeleeEnemies10yCount >= (3 + (Player:HasTier(31, 4) and 1 or 0)) and ComboPoints >= 4 and not S.Deathmark:IsReady() then
+  if HR.AoEON() and S.CrimsonTempest:IsCastable() and MeleeEnemies10yCount >= (3 + (Player:HasTier(31, 4) and 1 or 0)) and ComboPoints >= 4 and not S.Deathmark:IsReady() then
     for _, CycleUnit in pairs(MeleeEnemies10y) do
       if IsDebuffRefreshable(CycleUnit, S.CrimsonTempest, CrimsonTempestThreshold) and CycleUnit:FilteredTimeToDie(">", 6, -CycleUnit:DebuffRemains(S.CrimsonTempest)) then
         if Cast(S.CrimsonTempest) then return "Cast Crimson Tempest (Stealth)" end
@@ -665,7 +665,7 @@ local function Stealthed ()
       if Cast(S.Garrote, nil, nil, not TargetInMeleeRange) then return "Cast Garrote (Improved Garrote AOE on ST)" end
     end
     -- Garrote for AoE
-    if HR.AoEON() then
+    if HR.AoEON() and S.Kingsbane:CooldownRemains() < 46 and S.Deathmark:CooldownRemains() < 108 then
       local TargetIfUnit = CheckTargetIfTarget("min", GarroteTargetIfFunc, GarroteIfFunc)
       if TargetIfUnit and TargetIfUnit:GUID() ~= Target:GUID() then
         CastLeftNameplate(TargetIfUnit, S.Garrote)
@@ -706,7 +706,7 @@ local function Dot ()
       -- actions.dot+=/pool_resource,for_next=1
       if CastPooling(S.Garrote, nil, not TargetInMeleeRange) then return "Pool for Garrote (ST)" end
     end
-    if HR.AoEON() and (not EnergyRegenSaturated or Player:BuffUp(S.IndiscriminateCarnageBuff)) and MeleeEnemies10yCount >= 2 then
+    if HR.AoEON() and (not EnergyRegenSaturated or Player:BuffRemains(S.IndiscriminateCarnageBuff) > 0) and MeleeEnemies10yCount >= 2 and S.Kingsbane:CooldownRemains() < 46 and S.Deathmark:CooldownRemains() < 108 then
       SuggestCycleDoT(S.Garrote, Evaluate_Garrote_Target, 6, MeleeEnemies5y)
     end
   end
@@ -722,7 +722,7 @@ local function Dot ()
     if Evaluate_Rupture_Target(Target) and Rogue.CanDoTUnit(Target, RuptureDMGThreshold) then
       if Cast(S.Rupture, nil, nil, not TargetInMeleeRange) then return "Cast Rupture" end
     end
-    if HR.AoEON() and (not EnergyRegenSaturated or not ScentSaturated and (S.ScentOfBlood:TalentRank() < 2 and Player:BuffRemains(S.IndiscriminateCarnageBuff) > 0 or S.ScentOfBlood:TalentRank() == 2)) then
+    if HR.AoEON() and (not EnergyRegenSaturated or not ScentSaturated and (S.ScentOfBlood:TalentRank() < 2 and Player:BuffRemains(S.IndiscriminateCarnageBuff) > 0 or S.ScentOfBlood:TalentRank() == 2)) and S.Kingsbane:CooldownRemains() < 46 and S.Deathmark:CooldownRemains() < 108 then
       SuggestCycleDoT(S.Rupture, Evaluate_Rupture_Target, RuptureDurationThreshold, MeleeEnemies5y)
     end
   end
