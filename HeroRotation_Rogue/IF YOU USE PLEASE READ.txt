@@ -166,6 +166,8 @@ actions.direct+=/mutilate,if=variable.use_filler
 actions.dot=variable,name=scent_effective_max_stacks,value=(spell_targets.fan_of_knives*talent.scent_of_blood.rank*2)>?20
 # We are Scent Saturated when our stack count is hitting the maximum
 actions.dot+=/variable,name=scent_saturation,value=buff.scent_of_blood.stack>=variable.scent_effective_max_stacks
+# Crimson Tempest upkeep
+actions.dot+=/crimson_tempest,target_if=min:remains,if=spell_targets>=(3+set_bonus.tier31_4pc)&!dot.crimson_tempest.ticking&effective_combo_points>=4&target.time_to_die>6 ----
 # Garrote upkeep, also uses it in AoE to reach energy saturation
 actions.dot+=/garrote,if=combo_points.deficit>=1&(pmultiplier<=1)&refreshable&target.time_to_die-remains>12&cooldown.shadow_dance.remains+1>dot.garrote.remains
 actions.dot+=/garrote,cycle_targets=1,if=combo_points.deficit>=1&(pmultiplier<=1)&refreshable&(!variable.regen_saturated|indiscriminate_carnage_remains>0)&spell_targets.fan_of_knives>=2&target.time_to_die-remains>6
@@ -175,10 +177,10 @@ actions.dot+=/rupture,if=effective_combo_points>=4&(pmultiplier<=1)&refreshable&
 actions.dot+=/rupture,if=effective_combo_points>=4&(pmultiplier<=1)&refreshable&!variable.single_target&(target.time_to_die>debuff.caustic_spatter.remains+2)&talent.caustic_spatter
 # Rupture upkeep to reach energy saturation
 actions.dot+=/rupture,cycle_targets=1,if=effective_combo_points>=4&(pmultiplier<=1)&refreshable&(!variable.regen_saturated|!variable.scent_saturation&(talent.scent_of_blood.rank<2&buff.indiscriminate_carnage.remains>0|talent.scent_of_blood.rank==2))&target.time_to_die-remains>(4+(talent.dashing_scoundrel*5)+(variable.regen_saturated*6))
-# Crimson Tempest upkeep
-actions.dot+=/crimson_tempest,target_if=min:remains,if=spell_targets>=(3+set_bonus.tier31_4pc)&!dot.crimson_tempest.ticking&effective_combo_points>=4&!cooldown.deathmark.ready&target.time_to_die>6
 # Garrote as a special generator for the last CP before a finisher for edge case handling
 actions.dot+=/garrote,if=refreshable&combo_points.deficit>=1&(pmultiplier<=1|remains<=tick_time&spell_targets.fan_of_knives>=3)&(remains<=tick_time*2&spell_targets.fan_of_knives>=3)&(target.time_to_die-remains)>4&master_assassin_remains=0
+# Backup-line to Garrote at full CP if Debuff is gone
+actions.dot+=/garrote,if=combo_points.deficit=0&!dot.garrote.ticking&dot.rupture.ticking&variable.single_target&!(buff.envenom.up&buff.envenom.remains<=2)
 
 # Special Case Trinkets
 actions.items=use_item,name=ashes_of_the_embersoul,use_off_gcd=1,if=(dot.kingsbane.ticking&dot.kingsbane.remains<=11)|fight_remains<=22
@@ -218,7 +220,7 @@ actions.stealthed+=/envenom,if=effective_combo_points>=4&dot.kingsbane.ticking&b
 # Envenom during Master Assassin in single target
 actions.stealthed+=/envenom,if=effective_combo_points>=4&buff.master_assassin_aura.up&!buff.shadow_dance.up&variable.single_target
 # Crimson Tempest on 4+ targets to snapshot Nightstalker
-actions.stealthed+=/crimson_tempest,target_if=min:remains,if=spell_targets>=3+set_bonus.tier31_4pc&refreshable&effective_combo_points>=4&!cooldown.deathmark.ready&target.time_to_die-remains>6
+actions.stealthed+=/crimson_tempest,target_if=min:remains,if=spell_targets>=3+set_bonus.tier31_4pc&refreshable&effective_combo_points>=4&target.time_to_die-remains>6
 # Improved Garrote: Apply or Refresh with buffed Garrotes, accounting for CS maintenance
 actions.stealthed+=/garrote,if=stealthed.improved_garrote&variable.single_target&(pmultiplier<=1|(remains<14&(buff.shadow_dance.remains>0.5|buff.subterfuge.remains>0.5)))&combo_points.deficit>=1+2*talent.shrouded_suffocation&target.time_to_die>12
 actions.stealthed+=/garrote,target_if=min:remains,if=stealthed.improved_garrote&!variable.single_target&((remains<=19)|pmultiplier<=1|refreshable)&combo_points.deficit>=1+2*(talent.shrouded_suffocation)&target.time_to_die-remains>5.4&(variable.caustic_spatter_up||buff.subterfuge.up)
