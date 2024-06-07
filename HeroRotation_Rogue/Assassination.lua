@@ -70,6 +70,8 @@ local RuptureThreshold, CrimsonTempestThreshold, RuptureDMGThreshold, GarroteDMG
 local PriorityRotation
 local NotPooling, SepsisSyncRemains, PoisonedBleeds, EnergyRegenCombined, EnergyTimeToMaxCombined, EnergyRegenSaturated, SingleTarget, ScentSaturated, FloatEnergy, CausticSpatterUp
 local TrinketSyncSlot = 0
+local DungeonSlice
+local InRaid
 
 -- Equipment
 local Equipment = Player:GetEquipment()
@@ -418,9 +420,9 @@ local function Vanish ()
       end
       if Cast(S.Vanish, Settings.CommonsOGCD.OffGCDasOffGCD.Vanish) then return "Cast Vanish (Garrote Carnage)" end
     end
-    -- actions.vanish+=/vanish,if=talent.master_assassin&talent.kingsbane&(dot.kingsbane.remains<=3|target.time_to_die<=3)&dot.kingsbane.ticking|(!dot.kingsbane.ticking&cooldown.deathmark.remains>120-2-14+3)
+    -- actions.vanish+=/vanish,if=talent.master_assassin&talent.kingsbane&(dot.kingsbane.remains<=3|target.time_to_die<=3)&dot.kingsbane.ticking|(!dot.kingsbane.ticking&cooldown.deathmark.remains>120-2-14+3) -syncing vanish to DM
     if S.MasterAssassin:IsAvailable() and S.Kingsbane:IsAvailable() and not S.ShadowDance:IsCastable() then
-      if (Target:DebuffUp(S.Kingsbane) and (Target:DebuffRemains(S.Kingsbane) <= 3 or Target:FilteredTimeToDie("<", 3))) or (not Target:DebuffUp(S.Kingsbane) and S.Deathmark:CooldownRemains() > (120 - 2 - 14 + 3)) then
+      if (Target:DebuffUp(S.Kingsbane) and S.Deathmark:CooldownRemains() > 90 and (Target:DebuffRemains(S.Kingsbane) <= 3 or (Target:FilteredTimeToDie("<", 3) and InRaid))) or (not Target:DebuffUp(S.Kingsbane) and S.Deathmark:CooldownRemains() > (120 - 2 - 14 + 3)) then
         if Cast(S.Vanish, Settings.CommonsOGCD.OffGCDasOffGCD.Vanish) then return "Cast Vanish (Kingsbane)" end
       end
     end
@@ -436,24 +438,24 @@ local function UsableItems ()
   if not Settings.Commons.Enabled.Trinkets then
     return
   end
-  -- actions.items+=/use_item,name=ashes_of_the_embersoul,use_off_gcd=1,if=(dot.kingsbane.ticking&dot.kingsbane.remains<=11)|fight_remains<=22
+  -- actions.items+=/use_item,name=ashes_of_the_embersoul,use_off_gcd=1,if=(dot.kingsbane.ticking&dot.kingsbane.remains<=11)|fight_remains<=22 -- force DM sync with Ashes - if not done, causes trouble with M+
   -- actions.items+=/use_item,name=algethar_puzzle_box,use_off_gcd=1,if=dot.rupture.ticking&cooldown.deathmark.remains<2|fight_remains<=22
-  if I.AshesoftheEmbersoul:IsEquippedAndReady() and (Target:DebuffUp(S.Kingsbane) and Target:DebuffRemains(S.Kingsbane) <= 11 or HL.BossFilteredFightRemains("<", 22)) then
+  if I.AshesoftheEmbersoul:IsEquippedAndReady() and (Target:DebuffUp(S.Kingsbane) and S.Deathmark:AnyDebuffUp() and Target:DebuffRemains(S.Kingsbane) <= 11 or (HL.BossFilteredFightRemains("<", 22) and InRaid)) then
     if HR.Cast(I.AshesoftheEmbersoul, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Ashes of the Embersoul"; end
   end
-  if I.AlgetharPuzzleBox:IsEquippedAndReady() and (Target:DebuffUp(S.Rupture) and S.Deathmark:CooldownRemains() <= 2 or HL.BossFilteredFightRemains("<", 22)) then
+  if I.AlgetharPuzzleBox:IsEquippedAndReady() and (Target:DebuffUp(S.Rupture) and S.Deathmark:CooldownRemains() <= 2 or (HL.BossFilteredFightRemains("<", 22) and InRaid)) then
     if HR.Cast(I.AlgetharPuzzleBox, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Algethar Puzzle Box"; end
   end
 
   -- actions.items+=/use_items,slots=trinket1,use_off_gcd=1,if=(variable.trinket_sync_slot=1&(debuff.deathmark.up|fight_remains<=20)|(variable.trinket_sync_slot=2&(!trinket.2.cooldown.ready|!debuff.deathmark.up&cooldown.deathmark.remains>20))|!variable.trinket_sync_slot)
   -- actions.items+=/use_items,slots=trinket2,use_off_gcd=1,if=(variable.trinket_sync_slot=2&(debuff.deathmark.up|fight_remains<=20)|(variable.trinket_sync_slot=1&(!trinket.1.cooldown.ready|!debuff.deathmark.up&cooldown.deathmark.remains>20))|!variable.trinket_sync_slot)
   if TrinketItem1:IsReady() and not Player:IsItemBlacklisted(TrinketItem1) and TrinketItem1:ID() ~= I.AlgetharPuzzleBox:ID() and TrinketItem1:ID() ~= I.AshesoftheEmbersoul:ID()
-    and (TrinketSyncSlot == 1 and (S.Deathmark:AnyDebuffUp() or HL.BossFilteredFightRemains("<", 20))
+    and (TrinketSyncSlot == 1 and (S.Deathmark:AnyDebuffUp() or (HL.BossFilteredFightRemains("<", 20) and InRaid))
       or (TrinketSyncSlot == 2 and (not TrinketItem2:IsReady() or not S.Deathmark:AnyDebuffUp() and S.Deathmark:CooldownRemains() > 20)) or TrinketSyncSlot == 0) then
     if Cast(TrinketItem1, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Trinket 1"; end
   end
   if TrinketItem2:IsReady() and not Player:IsItemBlacklisted(TrinketItem2) and TrinketItem2:ID() ~= I.AlgetharPuzzleBox:ID() and TrinketItem2:ID() ~= I.AshesoftheEmbersoul:ID()
-    and (TrinketSyncSlot == 2 and (S.Deathmark:AnyDebuffUp() or HL.BossFilteredFightRemains("<", 20))
+    and (TrinketSyncSlot == 2 and (S.Deathmark:AnyDebuffUp() or (HL.BossFilteredFightRemains("<", 20) and InRaid))
       or (TrinketSyncSlot == 1 and (not TrinketItem1:IsReady() or not S.Deathmark:AnyDebuffUp() and S.Deathmark:CooldownRemains() > 20)) or TrinketSyncSlot == 0) then
     if Cast(TrinketItem2, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Trinket 2"; end
   end
@@ -470,7 +472,7 @@ local function ShivUsage ()
   -- actions.shiv+=/shiv,if=!talent.kingsbane&!talent.arterial_precision&!talent.sepsis&!debuff.shiv.up&dot.garrote.ticking&dot.rupture.ticking&(!talent.crimson_tempest.enabled|variable.single_target|dot.crimson_tempest.ticking)|fight_remains<=charges*8  if S.Shiv:IsReady() and not Target:DebuffUp(S.ShivDebuff) and Target:DebuffUp(S.Garrote) and Target:DebuffUp(S.Rupture) then
   if S.Shiv:IsCastable() and not Target:DebuffUp(S.ShivDebuff) and Target:DebuffUp(S.Garrote) and Target:DebuffUp(S.Rupture) then
     local FightRemains = HL.BossFilteredFightRemains("<=", S.Shiv:Charges() * 8)
-    if FightRemains or (HL.BossFilteredFightRemains("<=", 10) and S.Kingsbane:IsReady()) or (HL.BossFilteredFightRemains("<=", 18)) then
+    if (FightRemains and InRaid) or (HL.BossFilteredFightRemains("<=", 10) and InRaid and S.Kingsbane:IsReady()) or (HL.BossFilteredFightRemains("<=", 18) and InRaid) then
       if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv (End of Fight)" end
     end
     if S.Kingsbane:IsAvailable() and Player:BuffUp(S.Envenom) then
@@ -537,7 +539,7 @@ local function CDs ()
   -- actions.cds+=/sepsis,if=dot.rupture.remains>20&(!talent.improved_garrote&dot.garrote.ticking|talent.improved_garrote&cooldown.garrote.up&dot.garrote.pmultiplier<=1)&(target.time_to_die>10|fight_remains<10)
   if S.Sepsis:IsReady() and Target:DebuffRemains(S.Rupture) > 20 and (not S.ImprovedGarrote:IsAvailable() and Target:DebuffUp(S.Garrote)
     or S.ImprovedGarrote:IsAvailable() and S.Garrote:CooldownUp() and Target:PMultiplier(S.Garrote) <= 1)
-    and (Target:FilteredTimeToDie(">", 10) or HL.BossFilteredFightRemains("<=", 10)) then
+    and (Target:FilteredTimeToDie(">", 10) or (HL.BossFilteredFightRemains("<=", 10) and InRaid)) then
     if Cast(S.Sepsis, nil, true) then return "Cast Sepsis" end
   end
 
@@ -548,7 +550,7 @@ local function CDs ()
   local DeathmarkCondition = not Player:StealthUp(true, false) and Target:DebuffUp(S.Rupture) and Player:BuffUp(S.Envenom) and not S.Deathmark:AnyDebuffUp()
     and (not S.MasterAssassin:IsAvailable() or Target:DebuffUp(S.Garrote))
     and (not S.Kingsbane:IsAvailable() or (S.Kingsbane:CooldownRemains() <= 2 and Player:BuffUp(S.Envenom)))
-  if S.Deathmark:IsCastable() and ((DeathmarkCondition and Target:FilteredTimeToDie(">", 7) or Target:TimeToDieIsNotValid()) or HL.BossFilteredFightRemains("<=", 20)) then
+  if S.Deathmark:IsCastable() and ((DeathmarkCondition and Target:FilteredTimeToDie(">", 7) or Target:TimeToDieIsNotValid()) or (HL.BossFilteredFightRemains("<=", 20) and InRaid)) then
     if Cast(S.Deathmark, Settings.Assassination.OffGCDasOffGCD.Deathmark) then return "Cast Deathmark" end
   end
 
@@ -561,23 +563,23 @@ local function CDs ()
 
   -- # Special Handling to Sync Shadow Dance to Kingsbane (ST and AOE)
   -- actions.cds+=/shadow_dance,if=(talent.kingsbane&cooldown.kingsbane.remains<=2&buff.envenom.up&(debuff.shiv.up|cooldown.shiv.charges_fractional<2)&variable.single_target)|fight_remains<=15
-  if S.ShadowDance:IsCastable() and ((S.Kingsbane:IsAvailable() and S.Kingsbane:CooldownRemains() <= 2 and Player:BuffUp(S.Envenom) and (Target:DebuffUp(S.ShivDebuff) or S.Shiv:ChargesFractional() < 2) and SingleTarget) or HL.BossFilteredFightRemains("<=", 15)) then
+  if S.ShadowDance:IsCastable() and ((S.Kingsbane:IsAvailable() and S.Kingsbane:CooldownRemains() <= 2 and Player:BuffUp(S.Envenom) and (Target:DebuffUp(S.ShivDebuff) or S.Shiv:ChargesFractional() < 2) and SingleTarget) or (HL.BossFilteredFightRemains("<=", 15) and InRaid)) then
     if Cast(S.ShadowDance, Settings.CommonsOGCD.OffGCDasOffGCD.ShadowDance) then return "Cast Shadow Dance (Kingsbane Sync ST or Fight End)" end
   end
   -- actions.cds+=/shadow_dance,if=(talent.kingsbane&cooldown.kingsbane.remains<=2&buff.envenom.up&!variable.single_target&dot.garrote.ticking&dot.rupture.ticking)|fight_remains<=15
-  if S.ShadowDance:IsCastable() and ((S.Kingsbane:IsAvailable() and S.Kingsbane:CooldownRemains() <= 2 and Player:BuffUp(S.Envenom) and not SingleTarget and Target:DebuffUp(S.Garrote) and Target:DebuffUp(S.Rupture)) or HL.BossFilteredFightRemains("<=", 15)) then
+  if S.ShadowDance:IsCastable() and ((S.Kingsbane:IsAvailable() and S.Kingsbane:CooldownRemains() <= 2 and Player:BuffUp(S.Envenom) and not SingleTarget and Target:DebuffUp(S.Garrote) and Target:DebuffUp(S.Rupture)) or (HL.BossFilteredFightRemains("<=", 15) and InRaid)) then
     if Cast(S.ShadowDance, Settings.CommonsOGCD.OffGCDasOffGCD.ShadowDance) then return "Cast Shadow Dance (Kingsbane Sync AOE or Fight End)" end
   end
   -- # Avoid overcapped energy, or use a charge during cooldowns when capped on charges
   -- actions.cds+=/thistle_tea,if=(!buff.thistle_tea.up)&(energy.pct<50&energy.deficit>=100+2*energy.regen_combined&(!talent.kingsbane|charges>=2)|(dot.kingsbane.ticking&(dot.kingsbane.remains<6|target.time_to_die<6|energy.pct<50)|!talent.kingsbane&dot.deathmark.ticking)|fight_remains<charges*6)
   if not Settings.Assassination.Envat50 and S.ThistleTea:IsCastable() and (not Player:BuffUp(S.ThistleTea)) and (Player:EnergyPercentage() < 50 and Player:EnergyDeficit() >= 100 + 2 * EnergyRegenCombined and (not S.Kingsbane:IsAvailable() or S.ThistleTea:Charges() >= 2) or 
-    (Target:DebuffUp(S.Kingsbane) and (Target:DebuffRemains(S.Kingsbane) < 6 or Target:FilteredTimeToDie("<", 6) or Player:EnergyPercentage() < 50) or (not S.Kingsbane:IsAvailable() and Target:DebuffUp(S.Deathmark))) or HL.BossFilteredFightRemains("<", S.ThistleTea:Charges() * 6)) then
+    (Target:DebuffUp(S.Kingsbane) and (Target:DebuffRemains(S.Kingsbane) < 6 or Target:FilteredTimeToDie("<", 6) or Player:EnergyPercentage() < 50) or (not S.Kingsbane:IsAvailable() and Target:DebuffUp(S.Deathmark))) or (HL.BossFilteredFightRemains("<", S.ThistleTea:Charges() * 6) and InRaid)) then
     if HR.Cast(S.ThistleTea, Settings.CommonsOGCD.OffGCDasOffGCD.ThistleTea) then return "Cast Thistle Tea" end
   end
   -- # Custom Tea usage when setting to 50% energy max in enabled
   -- actions.cds+=/thistle_tea,if=(!buff.thistle_tea.up)&(energy.deficit>=200+2*energy.regen_combined&(!talent.kingsbane|charges>=2)|(dot.kingsbane.ticking&(dot.kingsbane.remains<6|target.time_to_die<6|energy.pct<50)|!talent.kingsbane&dot.deathmark.ticking)|fight_remains<charges*6)
   if Settings.Assassination.Envat50 and S.ThistleTea:IsCastable() and (not Player:BuffUp(S.ThistleTea)) and (Player:EnergyDeficit() >= 220 + 2 * EnergyRegenCombined and (not S.Kingsbane:IsAvailable() or S.ThistleTea:Charges() >= 2) or 
-    (Target:DebuffUp(S.Kingsbane) and (Target:DebuffRemains(S.Kingsbane) < 6 or Target:FilteredTimeToDie("<", 6) or Player:EnergyPercentage() < 50) or (not S.Kingsbane:IsAvailable() and Target:DebuffUp(S.Deathmark))) or HL.BossFilteredFightRemains("<", S.ThistleTea:Charges() * 6)) then
+    (Target:DebuffUp(S.Kingsbane) and (Target:DebuffRemains(S.Kingsbane) < 6 or Target:FilteredTimeToDie("<", 6) or Player:EnergyPercentage() < 50) or (not S.Kingsbane:IsAvailable() and Target:DebuffUp(S.Deathmark))) or (HL.BossFilteredFightRemains("<", S.ThistleTea:Charges() * 6) and InRaid)) then
     if HR.Cast(S.ThistleTea, Settings.CommonsOGCD.OffGCDasOffGCD.ThistleTea) then return "Cast Thistle Tea Custom" end
   end
 
@@ -620,8 +622,8 @@ local function Stealthed ()
       end
     end
   end
-  -- actions.items+=/use_item,name=ashes_of_the_embersoul,use_off_gcd=1,if=(dot.kingsbane.ticking&dot.kingsbane.remains<=11)|fight_remains<=22
-  if I.AshesoftheEmbersoul:IsEquippedAndReady() and (Target:DebuffUp(S.Kingsbane) and Target:DebuffRemains(S.Kingsbane) <= 11 or HL.BossFilteredFightRemains("<", 22)) then
+  -- actions.items+=/use_item,name=ashes_of_the_embersoul,use_off_gcd=1,if=(dot.kingsbane.ticking&dot.kingsbane.remains<=11)|fight_remains<=22 -- force DM sync with Ashes - if not done, causes trouble with M+
+  if I.AshesoftheEmbersoul:IsEquippedAndReady() and (Target:DebuffUp(S.Kingsbane) and S.Deathmark:AnyDebuffUp() and Target:DebuffRemains(S.Kingsbane) <= 11 or (HL.BossFilteredFightRemains("<", 22) and InRaid)) then
     if HR.Cast(I.AshesoftheEmbersoul, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Ashes of the Embersoul"; end
   end
   -- actions.stealthed+=/envenom,if=effective_combo_points>=4&dot.kingsbane.ticking&buff.envenom.remains<=3
@@ -665,7 +667,7 @@ local function Stealthed ()
       if Cast(S.Garrote, nil, nil, not TargetInMeleeRange) then return "Cast Garrote (Improved Garrote AOE on ST)" end
     end
     -- Garrote for AoE
-    if HR.AoEON() and S.Kingsbane:CooldownRemains() < 46 and S.Deathmark:CooldownRemains() < 108 then
+    if HR.AoEON() and S.Kingsbane:CooldownRemains() < 46 and S.Deathmark:CooldownRemains() < 104 then
       local TargetIfUnit = CheckTargetIfTarget("min", GarroteTargetIfFunc, GarroteIfFunc)
       if TargetIfUnit and TargetIfUnit:GUID() ~= Target:GUID() then
         CastLeftNameplate(TargetIfUnit, S.Garrote)
@@ -706,7 +708,7 @@ local function Dot ()
       -- actions.dot+=/pool_resource,for_next=1
       if CastPooling(S.Garrote, nil, not TargetInMeleeRange) then return "Pool for Garrote (ST)" end
     end
-    if HR.AoEON() and (not EnergyRegenSaturated or Player:BuffRemains(S.IndiscriminateCarnageBuff) > 0) and MeleeEnemies10yCount >= 2 and S.Kingsbane:CooldownRemains() < 46 and S.Deathmark:CooldownRemains() < 108 then
+    if HR.AoEON() and (not EnergyRegenSaturated or Player:BuffRemains(S.IndiscriminateCarnageBuff) > 0) and MeleeEnemies10yCount >= 2 and S.Kingsbane:CooldownRemains() < 46 and S.Deathmark:CooldownRemains() < 104 then
       SuggestCycleDoT(S.Garrote, Evaluate_Garrote_Target, 6, MeleeEnemies5y)
     end
   end
@@ -722,7 +724,7 @@ local function Dot ()
     if Evaluate_Rupture_Target(Target) and Rogue.CanDoTUnit(Target, RuptureDMGThreshold) then
       if Cast(S.Rupture, nil, nil, not TargetInMeleeRange) then return "Cast Rupture" end
     end
-    if HR.AoEON() and (not EnergyRegenSaturated or not ScentSaturated and (S.ScentOfBlood:TalentRank() < 2 and Player:BuffRemains(S.IndiscriminateCarnageBuff) > 0 or S.ScentOfBlood:TalentRank() == 2)) and S.Kingsbane:CooldownRemains() < 46 and S.Deathmark:CooldownRemains() < 108 then
+    if HR.AoEON() and (not EnergyRegenSaturated or not ScentSaturated and (S.ScentOfBlood:TalentRank() < 2 and Player:BuffRemains(S.IndiscriminateCarnageBuff) > 0 or S.ScentOfBlood:TalentRank() == 2)) and S.Kingsbane:CooldownRemains() < 46 and S.Deathmark:CooldownRemains() < 104 then
       SuggestCycleDoT(S.Rupture, Evaluate_Rupture_Target, RuptureDurationThreshold, MeleeEnemies5y)
     end
   end
@@ -883,6 +885,8 @@ local function APL ()
   GarroteDMGThreshold = S.Mutilate:Damage() * Settings.Assassination.MutilateDMGOffset; -- Used as TTD Not Valid fallback since it's a generator.
   PriorityRotation = UsePriorityRotation()
   FloatEnergy = FloatEnergyVar()
+  DungeonSlice = Player:IsInParty() and Player:IsInDungeonArea() and not Player:IsInRaid()
+  InRaid = Player:IsInRaid() and not Player:IsInDungeonArea()
 
   -- Defensives
   -- Crimson Vial
