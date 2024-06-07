@@ -636,8 +636,8 @@ local function Stealthed ()
       if Cast(S.Envenom, nil, nil, not TargetInMeleeRange) then return "Cast Envenom (Master Assassin)" end
     end
   end
-  -- actions.stealthed+=/crimson_tempest,target_if=min:remains,if=spell_targets>=3+set_bonus.tier31_4pc&refreshable&effective_combo_points>=4&!cooldown.deathmark.ready&target.time_to_die-remains>6
-  if HR.AoEON() and S.CrimsonTempest:IsCastable() and MeleeEnemies10yCount >= (3 + (Player:HasTier(31, 4) and 1 or 0)) and ComboPoints >= 4 and not S.Deathmark:IsReady() then
+  -- actions.stealthed+=/crimson_tempest,target_if=min:remains,if=spell_targets>=3+set_bonus.tier31_4pc&refreshable&effective_combo_points>=4&target.time_to_die-remains>6
+  if HR.AoEON() and S.CrimsonTempest:IsCastable() and MeleeEnemies10yCount >= (3 + (Player:HasTier(31, 4) and 1 or 0)) and ComboPoints >= 4 then
     for _, CycleUnit in pairs(MeleeEnemies10y) do
       if IsDebuffRefreshable(CycleUnit, S.CrimsonTempest, CrimsonTempestThreshold) and CycleUnit:FilteredTimeToDie(">", 6, -CycleUnit:DebuffRemains(S.CrimsonTempest)) then
         if Cast(S.CrimsonTempest) then return "Cast Crimson Tempest (Stealth)" end
@@ -690,8 +690,8 @@ end
 
 -- # Damage over time abilities
 local function Dot ()
-  -- actions.dot+=/crimson_tempest,target_if=min:remains,if=spell_targets>=(3+set_bonus.tier31_4pc)&!dot.crimson_tempest.ticking&effective_combo_points>=4&!cooldown.deathmark.ready&target.time_to_die>6
-  if HR.AoEON() and S.CrimsonTempest:IsCastable() and MeleeEnemies10yCount >= (3 + (Player:HasTier(31, 4) and 1 or 0)) and ComboPoints >= 4 and not S.Deathmark:IsReady() then
+  -- actions.dot+=/crimson_tempest,target_if=min:remains,if=spell_targets>=(3+set_bonus.tier31_4pc)&!dot.crimson_tempest.ticking&effective_combo_points>=4&target.time_to_die>6
+  if HR.AoEON() and S.CrimsonTempest:IsCastable() and MeleeEnemies10yCount >= (3 + (Player:HasTier(31, 4) and 1 or 0)) and ComboPoints >= 4 then
     for _, CycleUnit in pairs(MeleeEnemies10y) do
       if IsDebuffRefreshable(CycleUnit, S.CrimsonTempest, CrimsonTempestThreshold) and CycleUnit:FilteredTimeToDie(">", 6, -CycleUnit:DebuffRemains(S.CrimsonTempest)) then
         if Cast(S.CrimsonTempest) then return "Cast Crimson Tempest (AoE High Energy)" end
