@@ -8,6 +8,8 @@ If you downloaded my files and there is an issue, please reach out to me directl
 I will keep all Rogue specs up to date/make adjustments as necessary.
 If you have any suggestions or if there are any issues, please reach out to me via comments or message me on Discord. 
 
+TWW Note: I will be updating this fork for TWW. Two weeks before the official season starts will be sufficient to get everything up to date. In the upcoming weeks, I will upload the TWW files for the specs. Initially, I will not update the APL but will remove all content related to Dragonflight to ensure a fresh start. This includes custom timers and settings. Important changes I have made to the addon will remain intact.
+
 ----------------Notes for Specs----------------
 
 Assassination.lua:
