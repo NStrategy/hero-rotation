@@ -422,7 +422,7 @@ local function Vanish ()
     end
     -- actions.vanish+=/vanish,if=talent.master_assassin&talent.kingsbane&(dot.kingsbane.remains<=3|target.time_to_die<=3)&dot.kingsbane.ticking|(!dot.kingsbane.ticking&cooldown.deathmark.remains>120-2-14+3) -syncing vanish to DM
     if S.MasterAssassin:IsAvailable() and S.Kingsbane:IsAvailable() and not S.ShadowDance:IsCastable() then
-      if (Target:DebuffUp(S.Kingsbane) and S.Deathmark:CooldownRemains() > 90 and (Target:DebuffRemains(S.Kingsbane) <= 3 or (Target:FilteredTimeToDie("<", 3) and InRaid))) or (not Target:DebuffUp(S.Kingsbane) and S.Deathmark:CooldownRemains() > (120 - 2 - 14 + 3)) then
+      if (Target:DebuffUp(S.Kingsbane) and S.Deathmark:CooldownRemains() > 90 and (Target:DebuffRemains(S.Kingsbane) <= 3 or (Target:FilteredTimeToDie("<", 3) and InRaid))) or (not Target:DebuffUp(S.Kingsbane) and S.Deathmark:CooldownRemains() > (120 - 2 - 14 + 3) and S.Deathmark:TimeSinceLastCast() > 3) then
         if Cast(S.Vanish, Settings.CommonsOGCD.OffGCDasOffGCD.Vanish) then return "Cast Vanish (Kingsbane)" end
       end
     end
@@ -470,25 +470,25 @@ local function ShivUsage ()
   -- actions.shiv+=/shiv,if=talent.sepsis&!talent.kingsbane&!talent.arterial_precision&!debuff.shiv.up&dot.garrote.ticking&dot.rupture.ticking&((cooldown.shiv.charges_fractional>0.9+talent.lightweight_shiv.enabled&variable.sepsis_sync_remains>5)|dot.sepsis.ticking|dot.deathmark.ticking|fight_remains<=charges*8)
   -- # Shiv fallback condition if no special cases apply
   -- actions.shiv+=/shiv,if=!talent.kingsbane&!talent.arterial_precision&!talent.sepsis&!debuff.shiv.up&dot.garrote.ticking&dot.rupture.ticking&(!talent.crimson_tempest.enabled|variable.single_target|dot.crimson_tempest.ticking)|fight_remains<=charges*8  if S.Shiv:IsReady() and not Target:DebuffUp(S.ShivDebuff) and Target:DebuffUp(S.Garrote) and Target:DebuffUp(S.Rupture) then
-  if S.Shiv:IsCastable() and not Target:DebuffUp(S.ShivDebuff) and Target:DebuffUp(S.Garrote) and Target:DebuffUp(S.Rupture) then
+  if S.Shiv:IsCastable() and Target:DebuffUp(S.Garrote) and Target:DebuffUp(S.Rupture) then
     local FightRemains = HL.BossFilteredFightRemains("<=", S.Shiv:Charges() * 8)
-    if (FightRemains and InRaid) or (HL.BossFilteredFightRemains("<=", 10) and InRaid and S.Kingsbane:IsReady()) or (HL.BossFilteredFightRemains("<=", 18) and InRaid) then
+    if not Target:DebuffUp(S.ShivDebuff) and (FightRemains and InRaid) or (HL.BossFilteredFightRemains("<=", 10) and InRaid and S.Kingsbane:IsReady()) or (HL.BossFilteredFightRemains("<=", 18) and InRaid) then
       if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv (End of Fight)" end
     end
-    if S.Kingsbane:IsAvailable() and Player:BuffUp(S.Envenom) then
+    if S.Kingsbane:IsAvailable() and Player:BuffUp(S.Envenom) and not S.Deathmark:CooldownUp() and (not Target:DebuffUp(S.ShivDebuff) or (Target:DebuffRemains(S.ShivDebuff) < 1 and Target:DebuffUp(S.ShivDebuff))) then
       if ((Target:DebuffUp(S.Kingsbane) and Target:DebuffRemains(S.Kingsbane) < 8) or (S.Kingsbane:CooldownUp() and Target:FilteredTimeToDie(">", 5)) or (Target:DebuffUp(S.Kingsbane) and S.Shiv:Charges() > 1) or Target:DebuffUp(S.Deathmark)) then
         if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv (Kingsbane)" end
       end
     end
-    if S.ArterialPrecision:IsAvailable() and S.Deathmark:AnyDebuffUp() then
+    if S.ArterialPrecision:IsAvailable() and S.Deathmark:AnyDebuffUp() and not Target:DebuffUp(S.ShivDebuff) then
       if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv (Arterial Precision)" end
     end
-    if S.Sepsis:IsAvailable() and not S.Kingsbane:IsAvailable() and not S.ArterialPrecision:IsAvailable() then
+    if S.Sepsis:IsAvailable() and not S.Kingsbane:IsAvailable() and not S.ArterialPrecision:IsAvailable() and not Target:DebuffUp(S.ShivDebuff) then
       if (S.Shiv:ChargesFractional() > 0.9 + BoolToInt(S.LightweightShiv:IsAvailable()) and SepsisSyncRemains > 5) or Target:DebuffUp(S.Sepsis) or Target:DebuffUp(S.Deathmark) then
         if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv (Sepsis)" end
       end
     end
-    if not S.Kingsbane:IsAvailable() and not S.ArterialPrecision:IsAvailable() and not S.Sepsis:IsAvailable() then
+    if not S.Kingsbane:IsAvailable() and not S.ArterialPrecision:IsAvailable() and not S.Sepsis:IsAvailable() and not Target:DebuffUp(S.ShivDebuff) then
       if not S.CrimsonTempest:IsAvailable() or SingleTarget or Target:DebuffUp(S.CrimsonTempest) then
         if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv" end
       end
