@@ -452,7 +452,7 @@ local function Stealthed (ReturnSpellOnly, StealthSpell)
 
   -- # If trickster ignore storm completely on aoe during dance
   -- actions.stealthed+=/shadowstrike,if=talent.unseen_blade&spell_targets>=2
-  if ShadowstrikeIsCastable and S.Unseenblade:IsAvailable() and MeleeEnemies10yCount >= 2
+  if ShadowstrikeIsCastable and S.Unseenblade:IsAvailable() and MeleeEnemies10yCount >= 2 then
     if ReturnSpellOnly then
       return S.Shadowstrike
     else
@@ -821,7 +821,7 @@ local function Stealth_CDs (EnergyThreshold)
   end
   if TargetInMeleeRange and S.ShadowDance:IsCastable() and HR.CDsON() then
     -- actions.stealth_cds+=/shadow_dance,if=dot.rupture.ticking&variable.snd_condition&variable.cb&(buff.symbols_of_death.remains>=6|buff.shadow_blades.up)&cooldown.secret_technique.remains<10+12*!talent.invigorating_shadowdust&(!talent.the_first_dance|(combo_points.deficit>=7&!buff.shadow_blades.up|buff.shadow_blades.up))
-    if  Target:DebuffUp(S.Rupture) and SnD_Condition() and CB() and (Player:BuffRemains(S.SymbolsofDeath) >= 6 or Player:BuffUp(S.ShadowBlades) or S.SymbolsofDeath:IsCastable()) and S.SecretTechnique:CooldownRemains() < 11 + 12 * num((not S.InvigoratingShadowdust:IsAvailable()) and (not S.TheFirstDance:IsAvailable() or (ComboPointsDeficit >= 7 and not Player:BuffUp(S.ShadowBlades) or Player:BuffUp(S.ShadowBlades)))) then
+    if  Target:DebuffUp(S.Rupture) and SnD_Condition() and CB() and (Player:BuffRemains(S.SymbolsofDeath) >= 6 or Player:BuffRemains(S.ShadowBlades) >= 5 or S.SymbolsofDeath:IsCastable()) and S.SecretTechnique:CooldownRemains() < 11 + 12 * num((not S.InvigoratingShadowdust:IsAvailable()) and (not S.TheFirstDance:IsAvailable() or (ComboPointsDeficit >= 7 and not Player:BuffUp(S.ShadowBlades) or Player:BuffUp(S.ShadowBlades)))) then
         ShouldReturn = StealthMacro(S.ShadowDance, EnergyThreshold)
         if ShouldReturn then return "ShadowDance Macro " .. ShouldReturn end
     end
