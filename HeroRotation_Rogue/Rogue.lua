@@ -83,6 +83,7 @@ Spell.Rogue.Commons = {
   FindWeaknessDebuff      = Spell(316220),
   ImprovedAmbush          = Spell(381620),
   MarkedforDeath          = Spell(137619),
+  Nightstalker            = Spell(14062), -- bringing back Nightstalker as PMMultipler causes issues
   ResoundingClarity       = Spell(381622),
   Reverberation           = Spell(394332),
   SealFate                = Spell(14190),
