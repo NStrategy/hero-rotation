@@ -287,7 +287,12 @@ local function Finish (ReturnSpellOnly, StealthSpell)
   if S.Rupture:IsCastable() then
       if not Target:DebuffUp(S.Rupture) and Target:FilteredTimeToDie(">", 6, -Target:DebuffRemains(S.Rupture)) then
           if (MeleeEnemies10yCount <= 2 and (not Skip_Rupture_NPC() or PriorityRotation)) or (MeleeEnemies10yCount >= 3 and (not Skip_Rupture_NPC() or PriorityRotation) and (not Player:BuffUp(S.ShadowDanceBuff) or PriorityRotation)) then
-              if HR.Cast(S.Rupture) then return "Cast Rupture No Rupture" end
+              if ReturnSpellOnly then
+                  return S.Rupture
+              else
+                  if S.Rupture:IsCastable() and HR.Cast(S.Rupture) then return "Cast Rupture Not Up" end
+                  SetPoolingFinisher(S.Rupture)
+              end
           end
       end
   end
@@ -295,10 +300,15 @@ local function Finish (ReturnSpellOnly, StealthSpell)
   -- actions.finish+=/rupture,if=(!variable.skip_rupture|variable.priority_rotation)&target.time_to_die-remains>6&refreshable
   if ((not Player:BuffUp(S.ShadowDanceBuff) and not SkipRupture and not Skip_Rupture_NPC()) or PriorityRotation) and S.Rupture:IsCastable() then
     if TargetInMeleeRange
-       and (Target:FilteredTimeToDie(">", 6, -Target:DebuffRemains(S.Rupture)) or Target:TimeToDieIsNotValid())
-       and Rogue.CanDoTUnit(Target, RuptureDMGThreshold)
-       and Target:DebuffRefreshable(S.Rupture, RuptureThreshold) then
-       if HR.Cast(S.Rupture) then return "Cast Rupture Refresh" end
+      and (Target:FilteredTimeToDie(">", 6, -Target:DebuffRemains(S.Rupture)) or Target:TimeToDieIsNotValid())
+      and Rogue.CanDoTUnit(Target, RuptureDMGThreshold)
+      and Target:DebuffRefreshable(S.Rupture, RuptureThreshold) then
+      if ReturnSpellOnly then
+        return S.Rupture
+      else
+        if S.Rupture:IsCastable() and HR.Cast(S.Rupture) then return "Cast Rupture Refresh" end
+        SetPoolingFinisher(S.Rupture)
+      end
     end
   end
 
@@ -331,9 +341,14 @@ local function Finish (ReturnSpellOnly, StealthSpell)
     end
   end
   -- actions.finish+=/rupture,if=!variable.skip_rupture&buff.finality_rupture.up&(cooldown.symbols_of_death.remains<=3|buff.symbols_of_death.up) note: rupture is not longer inside of shadow dance is because Nightstalker got removed
-  if S.Rupture:IsCastable() and not Player:BuffUp(S.ShadowDanceBuff) and Player:BuffUp(S.FinalityRuptureBuff) and not SkipRupture and not Skip_Rupture_NPC() and (S.SymbolsofDeath:CooldownRemains() <= 3 or Player:BuffUp(S.SymbolsofDeath)) then
+  if S.Rupture:IsCastable() and not Player:BuffUp(S.VanishBuff) and not Player:BuffUp(S.ShadowDanceBuff) and Player:BuffUp(S.FinalityRuptureBuff) and not SkipRupture and not Skip_Rupture_NPC() and (S.SymbolsofDeath:CooldownRemains() <= 3 or Player:BuffUp(S.SymbolsofDeath)) then
     if TargetInMeleeRange then
-      if HR.Cast(S.Rupture) then return "Cast Rupture Finality" end
+      if ReturnSpellOnly then
+        return S.Rupture
+      else
+        if S.Rupture:IsCastable() and HR.Cast(S.Rupture) then return "Cast Rupture (Finality)" end
+        SetPoolingFinisher(S.Rupture)
+      end
     end
   end
   -- # DS BP
@@ -534,17 +549,17 @@ local function CDs (EnergyThreshold)
 
   if TargetInMeleeRange then
     -- actions.cds+=/sepsis,if=variable.snd_condition&(cooldown.shadow_blades.remains<=3|fight_remains<=12|cooldown.shadow_blades.remains>=14&talent.invigorating_shadowdust) TODO: Settings.Subtlety.OffGCDasOffGCD.Sepsis
-    if S.Sepsis:IsCastable() and S.Sepsis:IsAvailable() and not Player:BuffUp(S.ShadowDanceBuff) and SnDCondition and (S.ShadowBlades:CooldownRemains() <= 3 or S.ShadowBlades:CooldownRemains() >= 14 and S.InvigoratingShadowdust:IsAvailable()) then
+    if S.Sepsis:IsCastable() and S.Sepsis:IsAvailable() and not Player:BuffUp(S.ShadowDanceBuff) and SnDCondition and ((S.ShadowBlades:CooldownRemains() <= 3 and S.SymbolsofDeath:CooldownRemains() <= 3) or S.ShadowBlades:CooldownRemains() >= 14 and S.InvigoratingShadowdust:IsAvailable()) then
       if HR.Cast(S.Sepsis, Settings.Subtlety.OffGCDasOffGCD.Sepsis) then return "Cast Sepsis" end
     end
     -- actions.cds+=/flagellation,target_if=max:target.time_to_die,if=variable.snd_condition&combo_points>=6&target.time_to_die>10&(variable.trinket_conditions&cooldown.shadow_blades.remains<=3|fight_remains<=28|cooldown.shadow_blades.remains>=14&talent.invigorating_shadowdust&talent.double_dance)&(!talent.invigorating_shadowdust|!talent.double_dance|talent.invigorating_shadowdust.rank=2&spell_targets.shuriken_storm>=2|cooldown.symbols_of_death.remains<=3|buff.symbols_of_death.remains>3)
-    if HR.CDsON() and S.Flagellation:IsCastable() and SnDCondition and ComboPoints >= 6 and Target:FilteredTimeToDie(">", 10) and (Trinket_Conditions() and S.ShadowBlades:CooldownRemains() <= 3 or S.ShadowBlades:CooldownRemains() >= 14 and S.InvigoratingShadowdust:IsAvailable() and S.DoubleDance:IsAvailable()) and (not S.InvigoratingShadowdust:IsAvailable() or not S.DoubleDance:IsAvailable() or S.InvigoratingShadowdust:TalentRank() == 2 and MeleeEnemies10yCount >= 2 or S.SymbolsofDeath:CooldownRemains() <= 3 or Player:BuffRemains(S.SymbolsofDeath) > 3) then
+    if HR.CDsON() and S.Flagellation:IsCastable() and SnDCondition and ComboPoints >= 6 and Target:FilteredTimeToDie(">", 10) and (Trinket_Conditions() and (S.ShadowBlades:CooldownRemains() <= 3 and S.SymbolsofDeath:CooldownRemains()) or S.ShadowBlades:CooldownRemains() >= 14 and S.InvigoratingShadowdust:IsAvailable() and S.DoubleDance:IsAvailable()) and (not S.InvigoratingShadowdust:IsAvailable() or not S.DoubleDance:IsAvailable() or S.InvigoratingShadowdust:TalentRank() == 2 and MeleeEnemies10yCount >= 2 or S.SymbolsofDeath:CooldownRemains() <= 3 or Player:BuffRemains(S.SymbolsofDeath) > 3) then
         if HR.Cast(S.Flagellation, Settings.Subtlety.OffGCDasOffGCD.Flagellation) then return "Cast Flagellation" end
     end
   end 
 
   -- #No Dust Symbols
-  -- actions.cds+=/symbols_of_death,if=!talent.invigorating_shadowdust&variable.snd_condition&(buff.shadow_blades.up|cooldown.shadow_blades.remains>20)
+  -- actions.cds+=/symbols_of_death,if=!talent.invigorating_shadowdust&variable.snd_condition&(buff.shadow_blades.up|cooldown.shadow_blades.remains>20) -- extra code for if you want to hold sepsis and flag -  or (S.Sepsis:IsCastable() and S.Flagellation:IsCastable() and Player:BuffUp(S.ShadowDanceBuff))
   if S.SymbolsofDeath:IsCastable() and not S.InvigoratingShadowdust:IsAvailable() and (SnDCondition or (not SnDCondition and Player:BuffUp(S.ShadowDanceBuff))) and (Player:BuffUp(S.ShadowBlades) or S.ShadowBlades:CooldownRemains() > 20) then
     if HR.Cast(S.SymbolsofDeath, Settings.Subtlety.OffGCDasOffGCD.SymbolsofDeath) then return "Cast Symbols of Death No Dust" end
   end
