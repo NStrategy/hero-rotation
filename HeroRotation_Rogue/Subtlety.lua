@@ -534,7 +534,7 @@ local function CDs (EnergyThreshold)
 
   if TargetInMeleeRange then
     -- actions.cds+=/sepsis,if=variable.snd_condition&(cooldown.shadow_blades.remains<=3|fight_remains<=12|cooldown.shadow_blades.remains>=14&talent.invigorating_shadowdust) TODO: Settings.Subtlety.OffGCDasOffGCD.Sepsis
-    if S.Sepsis:IsCastable() and S.Sepsis:IsAvailable() and SnDCondition and (S.ShadowBlades:CooldownRemains() <= 3 or S.ShadowBlades:CooldownRemains() >= 14 and S.InvigoratingShadowdust:IsAvailable()) then
+    if S.Sepsis:IsCastable() and S.Sepsis:IsAvailable() and not Player:BuffUp(S.ShadowDanceBuff) and SnDCondition and (S.ShadowBlades:CooldownRemains() <= 3 or S.ShadowBlades:CooldownRemains() >= 14 and S.InvigoratingShadowdust:IsAvailable()) then
       if HR.Cast(S.Sepsis, Settings.Subtlety.OffGCDasOffGCD.Sepsis) then return "Cast Sepsis" end
     end
     -- actions.cds+=/flagellation,target_if=max:target.time_to_die,if=variable.snd_condition&combo_points>=6&target.time_to_die>10&(variable.trinket_conditions&cooldown.shadow_blades.remains<=3|fight_remains<=28|cooldown.shadow_blades.remains>=14&talent.invigorating_shadowdust&talent.double_dance)&(!talent.invigorating_shadowdust|!talent.double_dance|talent.invigorating_shadowdust.rank=2&spell_targets.shuriken_storm>=2|cooldown.symbols_of_death.remains<=3|buff.symbols_of_death.remains>3)
@@ -775,7 +775,7 @@ local function Stealth_CDs (EnergyThreshold)
   end
   if TargetInMeleeRange and S.ShadowDance:IsCastable() and HR.CDsON() then
     -- actions.stealth_cds+=/shadow_dance,if=dot.rupture.ticking&variable.snd_condition&variable.cb&(buff.symbols_of_death.remains>=6|buff.shadow_blades.up)&cooldown.secret_technique.remains<10+12*!talent.invigorating_shadowdust&(!talent.the_first_dance|(combo_points.deficit>=7&!buff.shadow_blades.up|buff.shadow_blades.up))
-    if  Target:DebuffUp(S.Rupture) and SnD_Condition() and CB() and ((Player:BuffRemains(S.SymbolsofDeath) >= 6 and S.Sepsis:IsAvailable()) or (Player:BuffRemains(S.SymbolsofDeath) >= 4 and not S.Sepsis:IsAvailable()) or (Player:BuffRemains(S.ShadowBlades) >= 8 and S.InvigoratingShadowdust:IsAvailable()) or (Player:BuffUp(S.ShadowBlades) and not S.InvigoratingShadowdust:IsAvailable())) and S.SecretTechnique:CooldownRemains() < 11 + 12 * num((not S.InvigoratingShadowdust:IsAvailable()) and (not S.TheFirstDance:IsAvailable() or (ComboPointsDeficit >= 7 and not Player:BuffUp(S.ShadowBlades) or Player:BuffUp(S.ShadowBlades)))) then
+    if  Target:DebuffUp(S.Rupture) and SnD_Condition() and CB() and ((Player:BuffRemains(S.SymbolsofDeath) >= 5 and S.Sepsis:IsAvailable()) or (Player:BuffRemains(S.SymbolsofDeath) >= 4 and not S.Sepsis:IsAvailable()) or (Player:BuffRemains(S.ShadowBlades) >= 8 and S.InvigoratingShadowdust:IsAvailable()) or (Player:BuffUp(S.ShadowBlades) and not S.InvigoratingShadowdust:IsAvailable()) or S.SymbolsofDeath:IsCastable()) and S.SecretTechnique:CooldownRemains() < 11 + 9 * num((not S.InvigoratingShadowdust:IsAvailable()) and (not S.TheFirstDance:IsAvailable() or (ComboPointsDeficit >= 7 and not Player:BuffUp(S.ShadowBlades) or Player:BuffUp(S.ShadowBlades)))) then
         ShouldReturn = StealthMacro(S.ShadowDance, EnergyThreshold)
         if ShouldReturn then return "ShadowDance Macro " .. ShouldReturn end
     end
