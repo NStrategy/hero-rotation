@@ -362,7 +362,7 @@ local function CDs ()
 
   -- # Killing Spree has higher priority than stealth cooldowns
   -- actions.cds+=/killing_spree,if=variable.finish_condition&!stealthed.all
-  if S.KillingSpree:IsAvailable() and Finish_Condition() and not Player:StealthUp(true, true) then
+  if S.KillingSpree:IsAvailable() and S.KillingSpree:IsCastable() and Finish_Condition() and not Player:StealthUp(true, true) then
     if HR.Cast(S.KillingSpree, Settings.Outlaw.OffGCDasOffGCD.KillingSpree) then return "Cast Killing Spree" end
   end
 
@@ -372,8 +372,8 @@ local function CDs ()
     if ShouldReturn then return ShouldReturn end
   end
 
-  -- actions.cds+=/thistle_tea,if=!buff.thistle_tea.up&(energy.base_deficit>=150|fight_remains<charges*6) -- potentially changing if too aggressive
-  if CDsON() and S.ThistleTea:IsCastable() and not Player:BuffUp(S.ThistleTea) and (EnergyDeficit >= 150 or HL.BossFilteredFightRemains("<", S.ThistleTea:Charges()*6)) then
+  -- actions.cds+=/thistle_tea,if=!buff.thistle_tea.up&(energy.base_deficit>=150|fight_remains<charges*6)
+  if CDsON() and S.ThistleTea:IsAvailable() and S.ThistleTea:IsCastable() and not Player:BuffUp(S.ThistleTea) and (EnergyTrue <= 50 or HL.BossFilteredFightRemains("<", S.ThistleTea:Charges()*6)) then
     if HR.Cast(S.ThistleTea, Settings.CommonsOGCD.OffGCDasOffGCD.ThistleTea) then return "Cast Thistle Tea" end
   end
 
@@ -521,6 +521,11 @@ local function Build ()
 		if Cast(S.EchoingReprimand, Settings.CommonsOGCD.GCDasOffGCD.EchoingReprimand, nil, not Target:IsSpellInRange(S.EchoingReprimand)) then return "Cast Echoing Reprimand" end
 	end
 
+  -- actions.build+=/ambush,if=talent.hidden_opportunity&buff.audacity.up
+  if S.Ambush:IsCastable() and S.HiddenOpportunity:IsAvailable() and Player:BuffUp(S.AudacityBuff) then
+    if HR.CastPooling(S.Ambush) then return "Cast Ambush (High-Prio Buffed)" end
+  end
+
 	-- # With Audacity + Hidden Opportunity + Fan the Hammer, consume Opportunity to proc Audacity any time Ambush is not available ns note: recheck if for w/e reason KiR builds will use Audacity as well
 	-- actions.build+=/pistol_shot,if=talent.fan_the_hammer&talent.audacity&talent.hidden_opportunity&buff.opportunity.up&!buff.audacity.up
 	if S.FanTheHammer:IsAvailable() and S.Audacity:IsAvailable() and S.HiddenOpportunity:IsAvailable() and Player:BuffUp(S.Opportunity) and Player:BuffDown(S.AudacityBuff) then
@@ -546,10 +551,8 @@ local function Build ()
 		and (EnergyTimeToMax > 1.5 or ComboPointsDeficit <= 1 + num(Player:BuffUp(S.Broadside)) or S.QuickDraw:IsAvailable() or S.Audacity:IsAvailable() and Player:BuffDown(S.AudacityBuff)) then
 		if HR.CastPooling(S.PistolShot) then return "Cast Pistol Shot" end
 	end
-    -- actions.build+=/ambush,if=talent.hidden_opportunity
-    if S.Ambush:IsCastable() and S.HiddenOpportunity:IsAvailable() then
-        if HR.CastPooling(S.Ambush) then return "Cast Ambush" end
-    end
+    -- actions.build+=/ambush,if=talent.hidden_opportunity note: dead operation??
+
     -- actions.build+=/sinister_strike
     if S.SinisterStrike:IsCastable() and Target:IsSpellInRange(S.SinisterStrike) then
         if HR.CastPooling(S.SinisterStrike) then return "Cast Sinister Strike" end
