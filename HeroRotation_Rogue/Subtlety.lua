@@ -277,9 +277,6 @@ local function Finish (ReturnSpellOnly, StealthSpell)
     if S.TheFirstDance:IsAvailable() then
       FinishComboPoints = mathmin(Player:ComboPointsMax(), ComboPoints + 4)
     end
-    if Player:HasTier(30, 2) then
-      SymbolsofDeathBuffRemains = mathmax(SymbolsofDeathBuffRemains, 6)
-    end
   end
 
   local SkipRupture = Skip_Rupture(ShadowDanceBuff)
@@ -553,7 +550,7 @@ local function CDs (EnergyThreshold)
       if HR.Cast(S.Sepsis, Settings.Subtlety.OffGCDasOffGCD.Sepsis) then return "Cast Sepsis" end
     end
     -- actions.cds+=/flagellation,target_if=max:target.time_to_die,if=variable.snd_condition&combo_points>=6&target.time_to_die>10&(variable.trinket_conditions&cooldown.shadow_blades.remains<=3|fight_remains<=28|cooldown.shadow_blades.remains>=14&talent.invigorating_shadowdust&talent.double_dance)&(!talent.invigorating_shadowdust|!talent.double_dance|talent.invigorating_shadowdust.rank=2&spell_targets.shuriken_storm>=2|cooldown.symbols_of_death.remains<=3|buff.symbols_of_death.remains>3)
-    if S.Flagellation:IsCastable() and SnDCondition and ComboPoints >= 6 and Target:FilteredTimeToDie(">", 10) and (Trinket_Conditions() and (S.ShadowBlades:CooldownRemains() <= 3 and S.SymbolsofDeath:CooldownRemains() <= 3) or S.ShadowBlades:CooldownRemains() >= 14 and S.InvigoratingShadowdust:IsAvailable() and S.DoubleDance:IsAvailable()) and (not S.InvigoratingShadowdust:IsAvailable() or not S.DoubleDance:IsAvailable() or S.InvigoratingShadowdust:TalentRank() == 2 and MeleeEnemies10yCount >= 2 or S.SymbolsofDeath:CooldownRemains() <= 3 or Player:BuffRemains(S.SymbolsofDeath) > 3) then
+    if S.Flagellation:IsCastable() and SnDCondition and ComboPoints >= 5 and Target:FilteredTimeToDie(">", 10) and (Trinket_Conditions() and (S.ShadowBlades:CooldownRemains() <= 3 and S.SymbolsofDeath:CooldownRemains() <= 3) or S.ShadowBlades:CooldownRemains() >= 14 and S.InvigoratingShadowdust:IsAvailable() and S.DoubleDance:IsAvailable()) and (not S.InvigoratingShadowdust:IsAvailable() or not S.DoubleDance:IsAvailable() or S.InvigoratingShadowdust:TalentRank() == 2 and MeleeEnemies10yCount >= 2 or S.SymbolsofDeath:CooldownRemains() <= 3 or Player:BuffRemains(S.SymbolsofDeath) > 3) then
         if HR.Cast(S.Flagellation, Settings.Subtlety.OffGCDasOffGCD.Flagellation) then return "Cast Flagellation" end
     end
   end 
@@ -773,7 +770,7 @@ local function Stealth_CDs (EnergyThreshold)
     -- # Dust Vanish
     -- actions.stealth_cds+=/vanish,if=talent.invigorating_shadowdust&(combo_points.deficit>1|buff.shadow_blades.up)&!variable.shd_threshold&(cooldown.flagellation.remains>=60|!talent.flagellation)&(cooldown.secret_technique.remains>=10&!raid_event.adds.up)
       if S.Vanish:IsCastable() and S.InvigoratingShadowdust:IsAvailable()
-        and (ComboPointsDeficit > 1 or Player:BuffUp(S.ShadowBlades)) and not ShD_Threshold() and ((S.Flagellation:CooldownRemains() >= 60 and not ((Target:NPCID() == 189632 and HL.CombatTime() < 465) or (Target:NPCID() == 204931 and HL.CombatTime() < 465) or Target:NPCID() == 207796 or Target:NPCID() == 214012 or Target:NPCID() == 214608)) or not S.Flagellation:IsAvailable()) and ((S.SecretTechnique:CooldownRemains() >= 10 and S.SecretTechnique:TimeSinceLastCast() < 8) or not S.SecretTechnique:IsAvailable()) then
+        and (ComboPointsDeficit > 1 or Player:BuffUp(S.ShadowBlades)) and not ShD_Threshold() and ((S.Flagellation:CooldownRemains() >= 60 and not ((Target:NPCID() == 189632 and HL.CombatTime() < 465) or (Target:NPCID() == 204931 and HL.CombatTime() < 465) or Target:NPCID() == 207796 or Target:NPCID() == 214012 or Target:NPCID() == 214608)) or not S.Flagellation:IsAvailable()) and ((S.SecretTechnique:CooldownRemains() >= 10) or not S.SecretTechnique:IsAvailable()) then
         ShouldReturn = StealthMacro(S.Vanish, EnergyThreshold)
         if ShouldReturn then return "Vanish Macro " .. ShouldReturn end
       end
