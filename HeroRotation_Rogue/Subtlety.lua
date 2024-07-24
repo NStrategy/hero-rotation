@@ -250,7 +250,7 @@ end
 local function Secret_Condition()
   -- actions.finish=variable,name=secret_condition,value=(action.gloomblade.used_for_danse|action.shadowstrike.used_for_danse|action.backstab.used_for_danse|action.shuriken_storm.used_for_danse)&(action.eviscerate.used_for_danse|action.black_powder.used_for_danse|action.rupture.used_for_danse)|!talent.danse_macabre
   -- actions.finish=variable,name=secret_condition,value=((action.gloomblade.used_for_danse|action.shadowstrike.used_for_danse|action.backstab.used_for_danse|action.shuriken_storm.used_for_danse)|!talent.danse_macabre)&(trinket.ashes_of_the_embersoul.cooldown.ready|trinket.ashes_of_the_embersoul.cooldown.remains>20|!equipped.ashes_of_the_embersoul)
-  return (Used_For_Danse(S.Gloomblade) or Used_For_Danse(S.Shadowstrike) or Used_For_Danse(S.Backstab) or Used_For_Danse(S.ShurikenStorm)) and (Used_For_Danse(S.Eviscerate) or Used_For_Danse(S.BlackPowder) or Used_For_Danse(S.Rupture)) or not S.DanseMacabre:IsAvailable()
+  return (Used_For_Danse(S.Gloomblade) or Used_For_Danse(S.Shadowstrike) or Used_For_Danse(S.Backstab) or Used_For_Danse(S.ShurikenStorm)) and (Used_For_Danse(S.Eviscerate) or Used_For_Danse(S.BlackPowder)) or not S.DanseMacabre:IsAvailable()
 end
 local function Trinket_Conditions ()
   -- actions.cds=variable,name=trinket_conditions,value=(!equipped.witherbarks_branch|equipped.witherbarks_branch&trinket.witherbarks_branch.cooldown.remains<=8|equipped.bandolier_of_twisted_blades|talent.invigorating_shadowdust)
@@ -298,7 +298,7 @@ local function Finish (ReturnSpellOnly, StealthSpell)
   end
   -- actions.finish+=/slice_and_dice,if=!stealthed.all&!variable.premed_snd_condition&spell_targets.shuriken_storm<6&!buff.shadow_dance.up&buff.slice_and_dice.remains<fight_remains&refreshable Note: maybe in the future, but the other check will most likely always be used anyways lol.
   -- actions.finish+=/rupture,if=(!variable.skip_rupture|variable.priority_rotation)&target.time_to_die-remains>6&refreshable
-  if ((not Player:BuffUp(S.ShadowDanceBuff) and not SkipRupture and not Skip_Rupture_NPC()) or PriorityRotation) and S.Rupture:IsCastable() then
+  if ((not ShadowDanceBuff and not SkipRupture and not Skip_Rupture_NPC()) or PriorityRotation) and S.Rupture:IsCastable() then
     if TargetInMeleeRange
       and (Target:FilteredTimeToDie(">", 6, -Target:DebuffRemains(S.Rupture)) or Target:TimeToDieIsNotValid())
       and Rogue.CanDoTUnit(Target, RuptureDMGThreshold)
@@ -330,7 +330,7 @@ local function Finish (ReturnSpellOnly, StealthSpell)
       if HR.Cast(S.SecretTechnique) then return "Cast Secret Technique" end
   end
 
-  if not Player:BuffUp(S.ShadowDanceBuff) and not SkipRupture and not Skip_Rupture_NPC() and S.Rupture:IsCastable() then
+  if not ShadowDanceBuff and not SkipRupture and not Skip_Rupture_NPC() and S.Rupture:IsCastable() then
     -- actions.finish+=/rupture,cycle_targets=1,if=!variable.skip_rupture&!variable.priority_rotation&spell_targets.shuriken_storm>=2&target.time_to_die>=(2*combo_points)&refreshable (if not Player:BuffUp(S.ShadowDanceBuff) instead of Skip_Rupture as it does not work correctly.)
     if not ReturnSpellOnly and HR.AoEON() and not PriorityRotation and MeleeEnemies10yCount >= 2 then
       local function Evaluate_Rupture_Target(TargetUnit)
@@ -341,7 +341,7 @@ local function Finish (ReturnSpellOnly, StealthSpell)
     end
   end
   -- actions.finish+=/rupture,if=!variable.skip_rupture&buff.finality_rupture.up&(cooldown.symbols_of_death.remains<=3|buff.symbols_of_death.up) note: rupture is not longer inside of shadow dance is because Nightstalker got removed
-  if S.Rupture:IsCastable() and not Player:BuffUp(S.VanishBuff) and not Player:BuffUp(S.ShadowDanceBuff) and Player:BuffUp(S.FinalityRuptureBuff) and not SkipRupture and not Skip_Rupture_NPC() and (S.SymbolsofDeath:CooldownRemains() <= 3 or Player:BuffUp(S.SymbolsofDeath)) then
+  if S.Rupture:IsCastable() and not ShadowDanceBuff and Player:BuffUp(S.FinalityRuptureBuff) and not SkipRupture and not Skip_Rupture_NPC() and (S.SymbolsofDeath:CooldownRemains() <= 3 or Player:BuffUp(S.SymbolsofDeath)) then
     if TargetInMeleeRange then
       if ReturnSpellOnly then
         return S.Rupture
@@ -553,7 +553,7 @@ local function CDs (EnergyThreshold)
       if HR.Cast(S.Sepsis, Settings.Subtlety.OffGCDasOffGCD.Sepsis) then return "Cast Sepsis" end
     end
     -- actions.cds+=/flagellation,target_if=max:target.time_to_die,if=variable.snd_condition&combo_points>=6&target.time_to_die>10&(variable.trinket_conditions&cooldown.shadow_blades.remains<=3|fight_remains<=28|cooldown.shadow_blades.remains>=14&talent.invigorating_shadowdust&talent.double_dance)&(!talent.invigorating_shadowdust|!talent.double_dance|talent.invigorating_shadowdust.rank=2&spell_targets.shuriken_storm>=2|cooldown.symbols_of_death.remains<=3|buff.symbols_of_death.remains>3)
-    if HR.CDsON() and S.Flagellation:IsCastable() and SnDCondition and ComboPoints >= 6 and Target:FilteredTimeToDie(">", 10) and (Trinket_Conditions() and (S.ShadowBlades:CooldownRemains() <= 3 and S.SymbolsofDeath:CooldownRemains() <= 3) or S.ShadowBlades:CooldownRemains() >= 14 and S.InvigoratingShadowdust:IsAvailable() and S.DoubleDance:IsAvailable()) and (not S.InvigoratingShadowdust:IsAvailable() or not S.DoubleDance:IsAvailable() or S.InvigoratingShadowdust:TalentRank() == 2 and MeleeEnemies10yCount >= 2 or S.SymbolsofDeath:CooldownRemains() <= 3 or Player:BuffRemains(S.SymbolsofDeath) > 3) then
+    if S.Flagellation:IsCastable() and SnDCondition and ComboPoints >= 6 and Target:FilteredTimeToDie(">", 10) and (Trinket_Conditions() and (S.ShadowBlades:CooldownRemains() <= 3 and S.SymbolsofDeath:CooldownRemains() <= 3) or S.ShadowBlades:CooldownRemains() >= 14 and S.InvigoratingShadowdust:IsAvailable() and S.DoubleDance:IsAvailable()) and (not S.InvigoratingShadowdust:IsAvailable() or not S.DoubleDance:IsAvailable() or S.InvigoratingShadowdust:TalentRank() == 2 and MeleeEnemies10yCount >= 2 or S.SymbolsofDeath:CooldownRemains() <= 3 or Player:BuffRemains(S.SymbolsofDeath) > 3) then
         if HR.Cast(S.Flagellation, Settings.Subtlety.OffGCDasOffGCD.Flagellation) then return "Cast Flagellation" end
     end
   end 
