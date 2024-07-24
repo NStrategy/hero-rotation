@@ -11,56 +11,13 @@ If you have any suggestions or if there are any issues, please reach out to me v
 TWW Note: I will be updating this fork for TWW. Two weeks before the official season starts will be sufficient to get everything up to date. In the upcoming weeks, I will upload the TWW files for the specs. Initially, I will not update the APL but will remove all content related to Dragonflight to ensure a fresh start. This includes custom timers and settings. Important changes I have made to the addon will remain intact.
 
 ----------------Notes for Specs----------------
-
-Assassination.lua:
-Working.
-Homebrew:
-To be announced, its way too much lol
-
-Outlaw.lua:
-Working.
-Homebrew:
-Simplified RTB logic based on Rogue Discord FAQ.
-Added functional KiR condition (aligns with the Rogue Discord FAQ.) - dunno if the offical version fixed it yet.
-Changed "low cd or max stacks Opportunity" condition for KiR, aligning with Rogue Discord FAQ.
-Changed Reroll check to include more buffs (based on testing and TC-Channel in Rogue Discord).
-Changed ooc reroll to 7 seconds instead of 2 to be able to reroll before going into a subterfuge window.
-Added the condition to Vanish/Dance early if ADR has 2 or less seconds on it
-Added a condition to hold Dance if Vanish comes up within 7 seconds or 10.5 if TB is active.
-ST Damage increase of: 0.2%
-
-
-
-Subtlety.lua:
-Working.
-Homebrew:
-Custom Stealth-Helper condition to make Darkbrew work.
-Enhanced "trinket_conditions" to include more checks.
-Added that Flag will be sugggest either when Symbols has 3 or less seconds on cd or if the Symbols buff is up for longer than 3 seconds. Will also not check for if the fight will end in less than 28 seconds (still included for sim reasons).
-Added a check for Symbols to be used even when snd isnt up but in dance. Added a check for Symbols to be used if Flags CD is less than 2 seconds and its only 1 enemy.
-Deleted the Snd condition of Blades. Included a check for less than 2 dance charges, achieving the use of Blade AFTER going into the first dance of an encounter.
-Included a check for Ashes and Fragment to check for either Blades or either of the Flag buffs to be up to sync it to the Secret Technique.
-Added a check for Dance that forces Dance to be synced to Symbols or any of the CD's unless there are more than 5 targets, in which case it would pool up to the Dance threshold and only be used if either Symbols has more than 14 seconds of CD or if Symbols has less than 3 seconds on CD (or is ready)
-Changed the Condition for Dance to be used if Blades is up for longer than 10 seconds, preventing weird extra dances.
-Changed the condition for Dance to sync with Secret from 10 to 11 seconds, making it more consistent.
-A lot of custom Condition for bosses (currently mainly Amidrassil - Gnarlroot, Nymue, Smolderon, Tindral and Fyrakk)
-Extra checks for Flag use in M+ - tries to sync Flag to blades with vanish, never Solo-Flags with Vanish - Only in Dungeonslice
-
-ST Damage increase of: 1.2%
-
-
-Settings.lua:
-Added Flag as OffGCD for Sub
-Added RtB as OffGCD for Outlaw
-Added Dance as OffGCD for Assa
-Added Combat Options for Fyrakk
-Added Funnel Option for Tindral
-Added Option to Vanish after Secret
+I dont even know what I updated, but it was something lol.
 
 
 
 Currently used APLs:
-
+---------------------------IMPORTANT--------------------------------
+THESE ARE BETA APLs (BESIDES ASSA) SO THEY ARE NOT 100% IN LINE WITH MY CODE.
 Assa:
 
 # Merk's APL
@@ -250,152 +207,112 @@ actions.vanish+=/vanish,if=!talent.improved_garrote&talent.master_assassin&!dot.
 
 Sub:
 
+
 # Executed before combat begins. Accepts non-harmful actions only.
 actions.precombat=apply_poison
 actions.precombat+=/flask
 actions.precombat+=/augmentation
 actions.precombat+=/food
-# Snapshot raid buffed stats before combat begins and pre-potting is done.
 actions.precombat+=/snapshot_stats
 actions.precombat+=/stealth
 actions.precombat+=/variable,name=algethar_puzzle_box_precombat_cast,value=3
 actions.precombat+=/use_item,name=algethar_puzzle_box
 actions.precombat+=/slice_and_dice,precombat_seconds=1
 
-# Executed every time the actor is available.
-# Restealth if possible (no vulnerable enemies in combat)
 actions=stealth
-# Interrupt on cooldown to allow simming interactions with that
 actions+=/kick
-# Used to determine whether cooldowns wait for SnD based on targets.
-actions+=/variable,name=snd_condition,value=buff.slice_and_dice.up|spell_targets.shuriken_storm>=cp_max_spend
-# Check CDs at first
+actions+=/variable,name=snd_condition,value=buff.slice_and_dice.up
 actions+=/call_action_list,name=cds
-# Apply Slice and Dice at 4+ CP if it expires within the next GCD or is not up
-actions+=/slice_and_dice,if=spell_targets.shuriken_storm<cp_max_spend&buff.slice_and_dice.remains<gcd.max&fight_remains>6&combo_points>=4
-# Run fully switches to the Stealthed Rotation (by doing so, it forces pooling if nothing is available).
+actions+=/slice_and_dice,if=combo_points>=1&!buff.slice_and_dice.up
 actions+=/run_action_list,name=stealthed,if=stealthed.all
-# Only change rotation if we have priority_rotation set.
 actions+=/variable,name=priority_rotation,value=priority_rotation
-# Used to define when to use stealth CDs or builders
 actions+=/variable,name=stealth_threshold,value=20+talent.vigor.rank*25+talent.thistle_tea*20+talent.shadowcraft*20
-actions+=/variable,name=stealth_helper,value=(energy.deficit-7)<=variable.stealth_threshold,if=talent.dark_brew.enabled&(!talent.vigor.enabled|talent.shadowcraft.enabled)
-actions+=/variable,name=stealth_helper,value=energy.deficit<=variable.stealth_threshold,if=talent.invigorating_shadowdust.enabled&(!talent.vigor.enabled|talent.shadowcraft.enabled)
 actions+=/variable,name=stealth_helper,value=energy>=variable.stealth_threshold
-# Consider using a Stealth CD when reaching the energy threshold
+actions+=/variable,name=stealth_helper,value=energy.deficit<=variable.stealth_threshold,if=!talent.vigor|talent.shadowcraft
 actions+=/call_action_list,name=stealth_cds,if=variable.stealth_helper|talent.invigorating_shadowdust
-actions+=/call_action_list,name=finish,if=effective_combo_points>=cp_max_spend
-# Finish at maximum or close to maximum combo point value
-actions+=/call_action_list,name=finish,if=combo_points.deficit<=1|fight_remains<=1&effective_combo_points>=3
-actions+=/call_action_list,name=finish,if=spell_targets.shuriken_storm>=4&effective_combo_points>=4
-# Use a builder when reaching the energy threshold
+actions+=/call_action_list,name=finish,if=buff.darkest_night.up&combo_points==cp_max_spend
+actions+=/call_action_list,name=finish,if=effective_combo_points>=cp_max_spend&!buff.darkest_night.up
+actions+=/call_action_list,name=finish,if=(combo_points.deficit<=1|fight_remains<=1&effective_combo_points>=3)&!buff.darkest_night.up
+actions+=/call_action_list,name=finish,if=spell_targets.shuriken_storm>=4&effective_combo_points>=4&!buff.darkest_night.up
 actions+=/call_action_list,name=build,if=energy.deficit<=variable.stealth_threshold
-# Lowest priority in all of the APL because it causes a GCD
 actions+=/arcane_torrent,if=energy.deficit>=15+energy.regen
 actions+=/arcane_pulse
 actions+=/lights_judgment
 actions+=/bag_of_tricks
 
-# Builders
-# Keep using Shuriken Storm for Lingering Shadows on high stacks.
-actions.build=shuriken_storm,if=spell_targets>=2+(talent.gloomblade&buff.lingering_shadow.remains>=6|buff.perforated_veins.up)
+actions.build+=/shuriken_storm,if=spell_targets>=2+(talent.gloomblade&buff.lingering_shadow.remains>=6|buff.perforated_veins.up)&(buff.flawless_form.up|!talent.unseen_blade)
 actions.build+=/gloomblade
 actions.build+=/backstab
 
-# Cooldowns
-# Helper Variable for Flagellation for trinket synchronisation
-actions.cds=variable,name=trinket_conditions,value=(!equipped.witherbarks_branch&!equipped.ashes_of_the_embersoul|!equipped.witherbarks_branch&trinket.witherbarks_branch.cooldown.remains<=8|equipped.witherbarks_branch&trinket.witherbarks_branch.cooldown.remains<=8|equipped.bandolier_of_twisted_blades|talent.invigorating_shadowdust)
-# Cold Blood on 5 combo points when not playing Secret Technique
+actions.cds=variable,name=trinket_conditions,value=(!equipped.witherbarks_branch|equipped.witherbarks_branch&trinket.witherbarks_branch.cooldown.remains<=8|equipped.bandolier_of_twisted_blades|talent.invigorating_shadowdust)
 actions.cds+=/cold_blood,if=!talent.secret_technique&combo_points>=5
-actions.cds+=/sepsis,if=variable.snd_condition&target.time_to_die>=16&(buff.perforated_veins.up|!talent.perforated_veins)
-# Defines Flagellation use in a stacked maner with trinkets and Shadow Blades
-actions.cds+=/flagellation,target_if=max:target.time_to_die,if=variable.snd_condition&combo_points>=5&target.time_to_die>10&(cooldown.symbols_of_death.remains<=3|buff.symbols_of_death.remains>3)&(variable.trinket_conditions&cooldown.shadow_blades.remains<=3|fight_remains<=28|cooldown.shadow_blades.remains>=14&talent.invigorating_shadowdust&talent.shadow_dance)&(!talent.invigorating_shadowdust|talent.sepsis|!talent.shadow_dance|talent.invigorating_shadowdust.rank=2&spell_targets.shuriken_storm>=2|cooldown.symbols_of_death.remains<=3|buff.symbols_of_death.remains>3)
-# Align Symbols of Death to Flagellation.
-actions.cds+=/symbols_of_death,if=(variable.snd_condition|(!variable.snd_condition&buff.shadow_dance.up))&(!buff.the_rotten.up|!set_bonus.tier30_2pc)&buff.symbols_of_death.remains<=3&(!talent.flagellation|(cooldown.flagellation.remains>10|(cooldown.flagellation.remains<2&spell_targets<2))|buff.shadow_dance.remains>=2&talent.invigorating_shadowdust|cooldown.flagellation.up&combo_points>=5&!talent.invigorating_shadowdust) 
-# Align Shadow Blades to Flagellation.
-actions.cds+=/shadow_blades,if=(combo_points<=1|set_bonus.tier31_4pc)&(((buff.flagellation_buff.up|buff.flagellation_persist.up)&cooldown.shadow_dance.charges_fractional<2)|!talent.flagellation)
-# ER during Shadow Dance.
-actions.cds+=/echoing_reprimand,if=variable.snd_condition&combo_points.deficit>=3
-# Shuriken Tornado with Symbols of Death on 3 and more targets
+actions.cds+=/sepsis,if=variable.snd_condition&(cooldown.shadow_blades.remains<=3|fight_remains<=12|cooldown.shadow_blades.remains>=14&talent.invigorating_shadowdust)
+actions.cds+=/flagellation,target_if=max:target.time_to_die,if=variable.snd_condition&combo_points>=6&target.time_to_die>10&(variable.trinket_conditions&cooldown.shadow_blades.remains<=3|fight_remains<=28|cooldown.shadow_blades.remains>=14&talent.invigorating_shadowdust&talent.double_dance)&(!talent.invigorating_shadowdust|!talent.double_dance|talent.invigorating_shadowdust.rank=2&spell_targets.shuriken_storm>=2|cooldown.symbols_of_death.remains<=3|buff.symbols_of_death.remains>3)
+#no Dust symbols
+actions.cds+=/symbols_of_death,if=!talent.invigorating_shadowdust&variable.snd_condition&(buff.shadow_blades.up|cooldown.shadow_blades.remains>20)
+# Dust symbols
+actions.cds+=/symbols_of_death,if=talent.invigorating_shadowdust&variable.snd_condition&buff.symbols_of_death.remains<=3&!buff.the_rotten.up&(cooldown.flagellation.remains>10|buff.shadow_dance.remains>=2)
+actions.cds+=/shadow_blades,if=variable.snd_condition&(combo_points<=1|set_bonus.tier31_4pc)&(buff.flagellation_buff.up|buff.flagellation_persist.up|!talent.flagellation)
+actions.cds+=/echoing_reprimand,if=time>0&combo_points.deficit>=3&(!talent.the_rotten|!talent.reverberation|buff.shadow_dance.up)
 actions.cds+=/shuriken_tornado,if=variable.snd_condition&buff.symbols_of_death.up&combo_points<=2&!buff.premeditation.up&(!talent.flagellation|cooldown.flagellation.remains>20)&spell_targets.shuriken_storm>=3
-# Shuriken Tornado only outside of cooldowns
 actions.cds+=/shuriken_tornado,if=variable.snd_condition&!buff.shadow_dance.up&!buff.flagellation_buff.up&!buff.flagellation_persist.up&!buff.shadow_blades.up&spell_targets.shuriken_storm<=2&!raid_event.adds.up
 actions.cds+=/shadow_dance,if=!buff.shadow_dance.up&fight_remains<=8+talent.subterfuge.enabled
-# Goremaws Bite during Shadow Dance if possible.
-actions.cds+=/goremaws_bite,if=variable.snd_condition&combo_points.deficit>=3&(!cooldown.shadow_dance.up|talent.shadow_dance&buff.shadow_dance.up&!talent.invigorating_shadowdust|spell_targets.shuriken_storm<4&!talent.invigorating_shadowdust|talent.the_rotten|raid_event.adds.up)
-# Thistle Tea during Shadow Dance when close to max stacks.
-actions.cds+=/thistle_tea,if=!buff.thistle_tea.up&cooldown.thistle_tea.charges_fractional>=2.5&buff.shadow_dance.remains>=4
-# Thistle Tea during Shadow Dance when secret techniques is up.
-actions.cds+=/thistle_tea,if=!buff.thistle_tea.up&buff.shadow_dance.remains>=4&cooldown.secret_technique.remains<=10
-# Thistle Tea for energy
-actions.cds+=/thistle_tea,if=!buff.thistle_tea.up&(energy.deficit>=(100)|!buff.thistle_tea.up&fight_remains<=(6*cooldown.thistle_tea.charges))&(cooldown.symbols_of_death.remains>=3|buff.symbols_of_death.up)&combo_points.deficit>=2
+actions.cds+=/shadow_dance,if=talent.invigorating_shadowdust&buff.shadow_blades.up&(buff.subterfuge.up&spell_targets>=4|buff.subterfuge.remains>=3)
+actions.cds+=/goremaws_bite,if=variable.snd_condition&combo_points.deficit>=3&(!cooldown.shadow_dance.up|talent.double_dance&buff.shadow_dance.up&!talent.invigorating_shadowdust|spell_targets.shuriken_storm<4&!talent.invigorating_shadowdust|talent.the_rotten|raid_event.adds.up)
+# Use tea during shadowblade dances and dances in which cold blood is up for sectech
+actions.cds+=/thistle_tea,if=!buff.thistle_tea.up&(buff.shadow_dance.remains>=4&buff.shadow_blades.up|buff.shadow_dance.remains>=4&cooldown.cold_blood.remains<=3)|fight_remains<=(6*cooldown.thistle_tea.charges)
 actions.cds+=/potion,if=buff.bloodlust.react|fight_remains<30|buff.symbols_of_death.up&(buff.shadow_blades.up|cooldown.shadow_blades.remains<=10)
 actions.cds+=/variable,name=racial_sync,value=buff.shadow_blades.up|!talent.shadow_blades&buff.symbols_of_death.up|fight_remains<20
 actions.cds+=/blood_fury,if=variable.racial_sync
 actions.cds+=/berserking,if=variable.racial_sync
-actions.cds+=/fireblood,if=variable.racial_sync
+actions.cds+=/fireblood,if=variable.racial_sync&buff.shadow_dance.up
 actions.cds+=/ancestral_call,if=variable.racial_sync
-# Sync specific trinkets to Flagellation or Shadow Dance.
-actions.cds+=/use_item,name=irideus_fragment,if=(buff.shadow_blades.up|buff.flagellation_buff.up|buff.flagellation_persist.up)&(buff.cold_blood.up|(!talent.danse_macabre&buff.shadow_dance.up|buff.danse_macabre.stack>=3)&!talent.cold_blood)|fight_remains<10
-actions.cds+=/use_item,name=ashes_of_the_embersoul,if=(buff.shadow_blades.up|buff.flagellation_buff.up|buff.flagellation_persist.up)&(buff.cold_blood.up|(!talent.danse_macabre&buff.shadow_dance.up|buff.danse_macabre.stack>=3)&!talent.cold_blood)|fight_remains<10
-actions.cds+=/use_item,name=witherbarks_branch,if=buff.flagellation_buff.up&talent.invigorating_shadowdust|buff.shadow_blades.up|equipped.bandolier_of_twisted_blades&raid_event.adds.up
-actions.cds+=/use_item,name=mirror_of_fractured_tomorrows,if=buff.shadow_dance.up&(target.time_to_die>=15|equipped.ashes_of_the_embersoul)
-actions.cds+=/use_item,name=beacon_to_the_beyond,if=!stealthed.all&(buff.deeper_daggers.up|!talent.deeper_daggers)&(!raid_event.adds.up|!equipped.stormeaters_boon|trinket.stormeaters_boon.cooldown.remains>20)
-actions.cds+=/use_item,name=manic_grieftorch,if=!buff.shadow_blades.up&!buff.shadow_dance.up&(!trinket.mirror_of_fractured_tomorrows.cooldown.ready|!equipped.mirror_of_fractured_tomorrows)&(!trinket.ashes_of_the_embersoul.cooldown.ready|!equipped.ashes_of_the_embersoul)&(!trinket.irideus_fragment.cooldown.ready|!equipped.irideus_fragment)|fight_remains<10
-# Default fallback for usable items: Use outside of Stealth/Shadow Dance.
-actions.cds+=/use_items,if=!stealthed.all&(!trinket.mirror_of_fractured_tomorrows.cooldown.ready|!equipped.mirror_of_fractured_tomorrows)&(!trinket.ashes_of_the_embersoul.cooldown.ready|!equipped.ashes_of_the_embersoul)|fight_remains<10
+actions.cds+=/use_item,name=imperfect_ascendancy_serum,use_off_gcd=1,if=dot.rupture.ticking&buff.flagellation_buff.up
+actions.cds+=/use_item,name=ashes_of_the_embersoul,if=(buff.cold_blood.up|(!talent.danse_macabre&buff.shadow_dance.up|buff.danse_macabre.stack>=3)&!talent.cold_blood)|fight_remains<10
+actions.cds+=/use_item,name=manic_grieftorch,use_off_gcd=1,if=!stealthed.all&(!raid_event.adds.up|!equipped.stormeaters_boon|trinket.stormeaters_boon.cooldown.remains>20)
+actions.cds+=/invoke_external_buff,name=power_infusion,if=buff.shadow_dance.up
+actions.cds+=/use_items,if=!stealthed.all|fight_remains<1
 
-# Finisher
-# Defines what abilitis need to be used for DM stacks before casting Secret Tchnique.
-actions.finish=variable,name=secret_condition,value=(action.gloomblade.used_for_danse|action.shadowstrike.used_for_danse|action.backstab.used_for_danse|action.shuriken_storm.used_for_danse)&(action.eviscerate.used_for_danse|action.black_powder.used_for_danse|action.rupture.used_for_danse)|!talent.danse_macabre
-# Apply Rupture if its not up.
+actions.finish=variable,name=secret_condition,value=(action.gloomblade.used_for_danse|action.shadowstrike.used_for_danse|action.backstab.used_for_danse|action.shuriken_storm.used_for_danse)|!talent.danse_macabre
 actions.finish+=/rupture,if=!dot.rupture.ticking&target.time_to_die-remains>6
 actions.finish+=/variable,name=premed_snd_condition,value=talent.premeditation.enabled&spell_targets.shuriken_storm<5
-# Variable to decide when not to use Rupture.
-actions.finish+=/variable,name=skip_rupture,value=buff.thistle_tea.up&spell_targets.shuriken_storm=1|buff.shadow_dance.up&(spell_targets.shuriken_storm=1|dot.rupture.ticking&spell_targets.shuriken_storm>=2)
+actions.finish+=/slice_and_dice,if=!stealthed.all&!variable.premed_snd_condition&spell_targets.shuriken_storm<6&!buff.shadow_dance.up&buff.slice_and_dice.remains<fight_remains&refreshable
+actions.finish+=/variable,name=skip_rupture,value=buff.thistle_tea.up&spell_targets.shuriken_storm=1|buff.shadow_dance.up&(spell_targets.shuriken_storm=1|dot.rupture.ticking&spell_targets.shuriken_storm>=2)|buff.darkest_night.up
 actions.finish+=/rupture,if=(!variable.skip_rupture|variable.priority_rotation)&target.time_to_die-remains>6&refreshable
-# Refresh Rupture during Shadow Dance with Finality.
-actions.finish+=/rupture,if=buff.finality_rupture.up&buff.shadow_dance.up&spell_targets.shuriken_storm<=4&!action.rupture.used_for_danse
 actions.finish+=/cold_blood,if=variable.secret_condition&cooldown.secret_technique.ready
-# Syncronizes Secret to Cold Blood if possible. Defualts to use once a builder and finisher is used.
 actions.finish+=/secret_technique,if=variable.secret_condition&(!talent.cold_blood|cooldown.cold_blood.remains>buff.shadow_dance.remains-2|!talent.improved_shadow_dance)
-# Multidotting targets that will live long enough, refresh during pandemic.
 actions.finish+=/rupture,cycle_targets=1,if=!variable.skip_rupture&!variable.priority_rotation&spell_targets.shuriken_storm>=2&target.time_to_die>=(2*combo_points)&refreshable
-# Refresh Rupture early if it will expire during Symbols. Do that refresh if SoD gets ready in the next 5s.
-actions.finish+=/rupture,if=!variable.skip_rupture&remains<cooldown.symbols_of_death.remains+10&cooldown.symbols_of_death.remains<=5&target.time_to_die-remains>cooldown.symbols_of_death.remains+5
-actions.finish+=/black_powder,if=!variable.priority_rotation&spell_targets>=3
+actions.finish+=/rupture,if=!variable.skip_rupture&buff.finality_rupture.up&(cooldown.symbols_of_death.remains<=3|buff.symbols_of_death.up)
+# deathstalker bp
+actions.finish+=/black_powder,if=!variable.priority_rotation&talent.deathstalkers_mark&spell_targets>=3&!buff.darkest_night.up
+# trickster bp
+actions.finish+=/black_powder,if=!variable.priority_rotation&talent.unseen_blade&spell_targets>=3&(!buff.flawless_form.up|spell_targets>8|(!used_for_danse&buff.shadow_dance.up))
 actions.finish+=/eviscerate
 
-# Stealth Cooldowns
-# Helper Variable for Shadow Dance.
-actions.stealth_cds=variable,name=shd_threshold,value=cooldown.shadow_dance.charges_fractional>=0.75+talent.shadow_dance
-# Helper variavle to check for Cold Blood and The Rotten buff.
-actions.stealth_cds+=/variable,name=rotten_cb,value=(!buff.the_rotten.up|!set_bonus.tier30_2pc)&(!talent.cold_blood|cooldown.cold_blood.remains<4|cooldown.cold_blood.remains>10)
-# Consider Flagellation, Symbols and Secret Technique cooldown when using vanish with Shadow Dust.
-actions.stealth_cds+=/vanish,if=(combo_points.deficit>1|buff.shadow_blades.up&talent.invigorating_shadowdust)&!variable.shd_threshold&(cooldown.flagellation.remains>=60|!talent.flagellation|fight_remains<=(30*cooldown.vanish.charges))&(cooldown.symbols_of_death.remains>3|!set_bonus.tier30_2pc)&(cooldown.secret_technique.remains>=10|!talent.secret_technique|cooldown.vanish.charges>=2&talent.invigorating_shadowdust&(buff.the_rotten.up|!talent.the_rotten)&!raid_event.adds.up)
-# Pool for Shadowmeld unless we are about to cap on Dance charges.
+actions.stealth_cds=variable,name=shd_threshold,value=cooldown.shadow_dance.charges_fractional>=0.75+talent.double_dance
+actions.stealth_cds+=/variable,name=cb,value=!talent.cold_blood|cooldown.cold_blood.remains<4|cooldown.cold_blood.remains>10
+# No dust vanish
+actions.stealth_cds+=/vanish,if=!talent.invigorating_shadowdust&!talent.subterfuge&combo_points.deficit>=3&buff.shadow_blades.up
+# Dust Vanish
+actions.stealth_cds+=/vanish,if=talent.invigorating_shadowdust&(combo_points.deficit>1|buff.shadow_blades.up)&!variable.shd_threshold&(cooldown.flagellation.remains>=60|!talent.flagellation|fight_remains<=(30*cooldown.vanish.charges))&(cooldown.secret_technique.remains>=10&!raid_event.adds.up)
 actions.stealth_cds+=/pool_resource,for_next=1,extra_amount=40,if=race.night_elf
 actions.stealth_cds+=/shadowmeld,if=energy>=40&energy.deficit>=10&!variable.shd_threshold&combo_points.deficit>4
-actions.stealth_cds+=/variable,name=shd_combo_points,value=combo_points.deficit>=3
-# Shadow dance when Rupture is up and syncronize depending on talent choice.
-actions.stealth_cds+=/shadow_dance,if=(dot.rupture.ticking|talent.invigorating_shadowdust)&variable.rotten_cb&(!talent.the_first_dance|combo_points.deficit>=4|buff.shadow_blades.up)&(variable.shd_combo_points&(variable.shd_threshold&spell_targets>=5&(cooldown.symbols_of_death.remains>=14|cooldown.symbols_of_death.remains<=3))|(buff.shadow_blades.remains>10|cooldown.symbols_of_death.up&!talent.sepsis|buff.symbols_of_death.remains>=4&!set_bonus.tier30_2pc|!buff.symbols_of_death.remains&set_bonus.tier30_2pc)&cooldown.secret_technique.remains<11+12*(!talent.invigorating_shadowdust|set_bonus.tier30_2pc)) 
+actions.stealth_cds+=/shadow_dance,if=dot.rupture.ticking&variable.snd_condition&variable.cb&(buff.symbols_of_death.remains>=6|buff.shadow_blades.up)&cooldown.secret_technique.remains<10+12*!talent.invigorating_shadowdust&(!talent.the_first_dance|(combo_points.deficit>=7&!buff.shadow_blades.up|buff.shadow_blades.up))
+# No Dust subterfuge vanish
+actions.stealth_cds+=/vanish,if=!talent.invigorating_shadowdust&talent.subterfuge&combo_points.deficit>=3&(buff.symbols_of_death.up|cooldown.symbols_of_death.remains>=3)
 
-# Stealthed Rotation
-# Always Strike fro Stealth
 actions.stealthed=shadowstrike,if=buff.stealth.up&(spell_targets.shuriken_storm<4|variable.priority_rotation)
-# Finish when on Anaima charged combo points or max combo points.
-actions.stealthed+=/call_action_list,name=finish,if=effective_combo_points>=cp_max_spend
-actions.stealthed+=/call_action_list,name=finish,if=buff.shuriken_tornado.up&combo_points.deficit<=2
-actions.stealthed+=/call_action_list,name=finish,if=combo_points.deficit<=1+(talent.deeper_stratagem|talent.secret_stratagem)
-# Backstab for Danse Macabre stack generation during Shadowblades.
-actions.stealthed+=/backstab,if=!buff.premeditation.up&buff.shadow_dance.remains>=3&buff.shadow_blades.up&!used_for_danse&talent.danse_macabre&spell_targets.shuriken_storm<=3&!buff.the_rotten.up
-# Gloomblade for Danse Macabre stack generation during Shadowblades.
-actions.stealthed+=/gloomblade,if=!buff.premeditation.up&buff.shadow_dance.remains>=3&buff.shadow_blades.up&!used_for_danse&talent.danse_macabre&spell_targets.shuriken_storm<=4
-# Shadow Strike for Danse Macabre stack generation during Shadowblades.
+actions.stealthed+=/call_action_list,name=finish,if=buff.darkest_night.up&combo_points==cp_max_spend
+actions.stealthed+=/call_action_list,name=finish,if=effective_combo_points>=cp_max_spend&!buff.darkest_night.up
+actions.stealthed+=/call_action_list,name=finish,if=buff.shuriken_tornado.up&combo_points.deficit<=2&!buff.darkest_night.up
+actions.stealthed+=/call_action_list,name=finish,if=(combo_points.deficit<=1+(talent.deeper_stratagem|talent.secret_stratagem))&!buff.darkest_night.up
+# If trickster ignore storm completely on aoe during dance
+actions.stealthed+=/shadowstrike,if=talent.unseen_blade&spell_targets>=2
 actions.stealthed+=/shadowstrike,if=!used_for_danse&buff.shadow_blades.up
 actions.stealthed+=/shuriken_storm,if=!buff.premeditation.up&spell_targets>=4
-actions.stealthed+=/vanish,if=buff.danse_macabre.stack>3&combo_points<=2&cooldown.flagellation.remains>=60&(cooldown.secret_technique.remains>=30|!talent.secret_technique)&cooldown.vanish.charges>1
+actions.stealthed+=/gloomblade,if=buff.lingering_shadow.remains>=10&buff.shadow_blades.up
 actions.stealthed+=/shadowstrike
+
 
 Outlaw:
 
@@ -406,7 +323,10 @@ actions.precombat+=/augmentation
 actions.precombat+=/food
 # Snapshot raid buffed stats before combat begins and pre-potting is done.
 actions.precombat+=/snapshot_stats
-actions.precombat+=/blade_flurry,precombat_seconds=3,if=talent.underhanded_upper_hand
+actions.precombat+=/use_item,name=imperfect_ascendancy_serum
+actions.precombat+=/stealth,precombat_seconds=2
+# Cancel Stealth to activate Double Jeopardy
+actions.precombat+=/cancel_buff,name=stealth,if=talent.double_jeopardy
 actions.precombat+=/roll_the_bones,precombat_seconds=2
 actions.precombat+=/adrenaline_rush,precombat_seconds=1,if=talent.improved_adrenaline_rush
 actions.precombat+=/slice_and_dice,precombat_seconds=1
@@ -417,19 +337,23 @@ actions.precombat+=/stealth
 actions=stealth
 # Interrupt on cooldown to allow simming interactions with that
 actions+=/kick
-# Default 4pc (Non 4pc also included)
-actions+=/variable,name=rtb_reroll,if=set_bonus.tier31_4pc,value=(rtb_buffs<=1+buff.loaded_dice.up)
+# Default Roll the Bones reroll rule: reroll for any buffs that aren't Buried Treasure, excluding Grand Melee in single target
+actions+=/variable,name=rtb_reroll,value=rtb_buffs.will_lose=(rtb_buffs.will_lose.buried_treasure+rtb_buffs.will_lose.grand_melee&spell_targets.blade_flurry<2&raid_event.adds.in>10)
+# Crackshot builds without T31 should reroll for True Bearing (or Broadside without Hidden Opportunity) if we won't lose over 1 buff
+actions+=/variable,name=rtb_reroll,if=talent.crackshot&!set_bonus.tier31_4pc,value=(!rtb_buffs.will_lose.true_bearing&talent.hidden_opportunity|!rtb_buffs.will_lose.broadside&!talent.hidden_opportunity)&rtb_buffs.will_lose<=1
+# Crackshot builds with T31 should reroll if we won't lose over 1 buff (2 with Loaded Dice)
+actions+=/variable,name=rtb_reroll,if=talent.crackshot&set_bonus.tier31_4pc,value=(rtb_buffs.will_lose<=1+buff.loaded_dice.up)
+# Hidden Opportunity builds without Crackshot should reroll for Skull and Crossbones or any 2 buffs excluding Grand Melee in single target
+actions+=/variable,name=rtb_reroll,if=!talent.crackshot&talent.hidden_opportunity,value=!rtb_buffs.will_lose.skull_and_crossbones&(rtb_buffs.will_lose<2+rtb_buffs.will_lose.grand_melee&spell_targets.blade_flurry<2&raid_event.adds.in>10)
 # Additional reroll rules if all active buffs will not be rolled away, not in stealth, Loaded Dice is active, and we have less than 6 buffs
 actions+=/variable,name=rtb_reroll,value=variable.rtb_reroll&rtb_buffs.longer=0|rtb_buffs.normal=0&rtb_buffs.longer>=1&rtb_buffs<6&rtb_buffs.max_remains<=39&!stealthed.all&buff.loaded_dice.up
-# Avoid rerolls when we will not have time remaining on the fight or add wave to recoup the opportunity cost of the global -- only included this for sim purposes.
+# Avoid rerolls when we will not have time remaining on the fight or add wave to recoup the opportunity cost of the global
 actions+=/variable,name=rtb_reroll,op=reset,if=!(raid_event.adds.remains>12|raid_event.adds.up&(raid_event.adds.in-raid_event.adds.remains)<6|target.time_to_die>12)|fight_remains<12
 actions+=/variable,name=ambush_condition,value=(talent.hidden_opportunity|combo_points.deficit>=2+talent.improved_ambush+buff.broadside.up)&energy>=50
 # Use finishers if at -1 from max combo points, or -2 in Stealth with Crackshot
 actions+=/variable,name=finish_condition,value=effective_combo_points>=cp_max_spend-1-(stealthed.all&talent.crackshot)
 # With multiple targets, this variable is checked to decide whether some CDs should be synced with Blade Flurry
 actions+=/variable,name=blade_flurry_sync,value=spell_targets.blade_flurry<2&raid_event.adds.in>20|buff.blade_flurry.remains>gcd
-# Force Roll the Bones to be refreshed when needed if 0 targets are active, as the RTB action in the sublist is not checked
-actions+=/roll_the_bones,if=rtb_buffs.max_remains<=2&spell_targets.blade_flurry=0&raid_event.adds.in<20
 actions+=/call_action_list,name=cds
 # High priority stealth list, will fall through if no conditions are met
 actions+=/call_action_list,name=stealth,if=stealthed.all
@@ -445,9 +369,9 @@ actions.build=echoing_reprimand
 # High priority Ambush for Hidden Opportunity builds
 actions.build+=/ambush,if=talent.hidden_opportunity&buff.audacity.up
 # With Audacity + Hidden Opportunity + Fan the Hammer, consume Opportunity to proc Audacity any time Ambush is not available
-actions.build+=/pistol_shot,if=talent.fan_the_hammer&talent.audacity&talent.hidden_opportunity&buff.opportunity.up&!buff.audacity.up&combo_points<=5
+actions.build+=/pistol_shot,if=talent.fan_the_hammer&talent.audacity&talent.hidden_opportunity&buff.opportunity.up&!buff.audacity.up
 # With Fan the Hammer, consume Opportunity as a higher priority if at max stacks or if it will expire
-actions.build+=/pistol_shot,if=talent.fan_the_hammer&buff.opportunity.up&((!variable.finish_condition&talent.keep_it_rolling.enabled)|talent.hidden_opportunity.enabled)&(buff.opportunity.stack>=6|buff.opportunity.remains<2)
+actions.build+=/pistol_shot,if=talent.fan_the_hammer&buff.opportunity.up&(buff.opportunity.stack>=buff.opportunity.max_stack|buff.opportunity.remains<2)
 # With Fan the Hammer, consume Opportunity if it will not overcap CPs, or with 1 CP at minimum
 actions.build+=/pistol_shot,if=talent.fan_the_hammer&buff.opportunity.up&(combo_points.deficit>=(1+(talent.quick_draw+buff.broadside.up)*(talent.fan_the_hammer.rank+1))|combo_points<=talent.ruthlessness)
 # If not using Fan the Hammer, then consume Opportunity based on energy, when it will exactly cap CPs, or when using Quick Draw
@@ -459,24 +383,25 @@ actions.build+=/sinister_strike
 
 # Cooldowns
 # Use Adrenaline Rush if it is not active and the finisher condition is not met, but Crackshot builds can refresh it with 2cp or lower inside stealth
-actions.cds+=/adrenaline_rush,if=(!buff.adrenaline_rush.up&(!variable.finish_condition|!talent.improved_adrenaline_rush))|(stealthed.all&talent.crackshot&talent.improved_adrenaline_rush&combo_points<=2)
-# Maintain Blade Flurry on 2+ targets, and on single target with Underhanded during Adrenaline Rush
-actions.cds+=/blade_flurry,if=spell_targets>=2-(talent.underhanded_upper_hand&!stealthed.all&buff.adrenaline_rush.up)&buff.blade_flurry.remains<gcd
-# With Deft Maneuvers, use Blade Flurry on cooldown at 5+ targets, or at 3-4 targets if missing combo points equal to the amount given 
-actions.cds+=/blade_flurry,if=talent.deft_maneuvers&!variable.finish_condition&((spell_targets=3&(combo_points=3|combo_points=4))|(spell_targets=4&(combo_points=2|combo_points=3))|spell_targets>=5)
-# Use Roll the Bones if not stealthed and reroll conditions are met; if 1 RtB buff and not Broadside or if 2 RtB buffs and neither is Broadside, with no buffs, before buffs expire with T31, or before buffs would expire in Crackshot windows with Vanish or Dance ready.
-actions.cds+=/roll_the_bones,if=(variable.rtb_reroll&!stealthed.all)|rtb_buffs=0|(rtb_buffs.max_remains<=2|(rtb_buffs<=3&rtb_buffs.max_remains<=9&buff.loaded_dice.up&!buff.true_bearing.up&!buff.broadside.up))&set_bonus.tier31_4pc&!stealthed.all|(!stealthed.all&rtb_buffs.max_remains<=7&(cooldown.shadow_dance.remains<=1|cooldown.vanish.remains<=1))
-# Use Keep it Rolling with at least 3 buffs (4 with T31)
-actions.cds+=/keep_it_rolling,if=!variable.rtb_reroll&rtb_buffs>=3+set_bonus.tier31_4pc&(buff.shadow_dance.down|rtb_buffs>=6)
-actions.cds+=/ghostly_strike,if=effective_combo_points<cp_max_spend
-# Use Sepsis to trigger Crackshot or if the target will survive its DoT
-actions.cds+=/sepsis,if=talent.crackshot&cooldown.between_the_eyes.ready&variable.finish_condition&!stealthed.all|!talent.crackshot&target.time_to_die>11&buff.between_the_eyes.up|fight_remains<11
-# Manic Grieftorch and Beacon to the Beyond should not be used during stealth and have higher priority than stealth cooldowns
+actions.cds=adrenaline_rush,if=!buff.adrenaline_rush.up&(!variable.finish_condition|!talent.improved_adrenaline_rush)|stealthed.all&talent.crackshot&talent.improved_adrenaline_rush&combo_points<=2
+# Maintain Blade Flurry on 2+ targets
+actions.cds+=/blade_flurry,if=spell_targets>=2&buff.blade_flurry.remains<gcd
+# With Deft Maneuvers, use Blade Flurry on cooldown at 5+ targets, or at 3-4 targets if missing combo points equal to the amount given
+actions.cds+=/blade_flurry,if=talent.deft_maneuvers&!variable.finish_condition&(spell_targets>=3&combo_points.deficit=spell_targets+buff.broadside.up|spell_targets>=5)
+# Use Roll the Bones if reroll conditions are met, or with no buffs, or 2s before buffs expire with T31, or 7s before buffs expire with Vanish ready
+actions.cds+=/roll_the_bones,if=variable.rtb_reroll|rtb_buffs=0|rtb_buffs.max_remains<=2&set_bonus.tier31_4pc|rtb_buffs.max_remains<=7&(cooldown.vanish.ready)
+# Use Keep it Rolling with at least 3 buffs that are not Buried Treasure. If Broadside is not active, then wait until just before the lowest buff expires.
+actions.cds+=/keep_it_rolling,if=rtb_buffs>=3+buff.buried_treasure.up&(rtb_buffs.min_remains<2|buff.broadside.up)
+actions.cds+=/ghostly_strike,if=combo_points<cp_max_spend
+# Trinkets that should not be used during stealth and have higher priority than entering stealth
 actions.cds+=/use_item,name=manic_grieftorch,if=!stealthed.all&buff.between_the_eyes.up|fight_remains<=5
 actions.cds+=/use_item,name=beacon_to_the_beyond,if=!stealthed.all&buff.between_the_eyes.up|fight_remains<=5
+actions.cds+=/use_item,name=imperfect_ascendancy_serum,if=!stealthed.all|fight_remains<=22
+# Killing Spree has higher priority than stealth cooldowns
+actions.cds+=/killing_spree,if=variable.finish_condition&!stealthed.all
 # Crackshot builds use stealth cooldowns if Between the Eyes is ready
 actions.cds+=/call_action_list,name=stealth_cds,if=!stealthed.all&(!talent.crackshot|cooldown.between_the_eyes.ready)
-actions.cds+=/thistle_tea,if=!buff.thistle_tea.up&(energy.base_deficit>=100|fight_remains<charges*6)
+actions.cds+=/thistle_tea,if=!buff.thistle_tea.up&(energy.base_deficit>=150|fight_remains<charges*6)
 # Use Blade Rush at minimal energy outside of stealth
 actions.cds+=/blade_rush,if=energy.base_time_to_max>4&!stealthed.all
 actions.cds+=/potion,if=buff.bloodlust.react|fight_remains<30|buff.adrenaline_rush.up
@@ -485,20 +410,21 @@ actions.cds+=/berserking
 actions.cds+=/fireblood
 actions.cds+=/ancestral_call
 # Default conditions for usable items.
+actions.cds+=/use_item,name=elementium_pocket_anvil,use_off_gcd=1,if=gcd.remains<=action.sinister_strike.gcd%2
+# Use Bomb Dispenser on cooldown, but hold if 2nd trinket is nearly off cooldown, unless at max charges or sim duration ends soon
 actions.cds+=/use_item,name=dragonfire_bomb_dispenser,use_off_gcd=1,if=gcd.remains<=action.sinister_strike.gcd%2&((!trinket.1.is.dragonfire_bomb_dispenser&trinket.1.cooldown.remains>10|trinket.2.cooldown.remains>10)|cooldown.dragonfire_bomb_dispenser.charges>2|fight_remains<20|!trinket.2.has_cooldown|!trinket.1.has_cooldown)
-actions.cds+=/use_item,name=stormeaters_boon,if=spell_targets.blade_flurry>desired_targets|raid_event.adds.in>60|fight_remains<10
+actions.cds+=/use_item,name=stormeaters_boon,if=spell_targets.blade_flurry>desired_targets|raid_event.adds.in>60|raid_event.adds.count<2|fight_remains<10
 actions.cds+=/use_item,name=enduring_dreadplate,if=spell_targets.blade_flurry>desired_targets|raid_event.adds.in>60|raid_event.adds.count<2|fight_remains<16
-actions.cds+=/use_item,name=windscar_whetstone,if=spell_targets.blade_flurry>desired_targets|raid_event.adds.in>60|fight_remains<7
+actions.cds+=/use_item,name=windscar_whetstone,if=spell_targets.blade_flurry>desired_targets|raid_event.adds.in>60|raid_event.adds.count<2|fight_remains<7
 actions.cds+=/use_items,slots=trinket1,if=buff.between_the_eyes.up|trinket.1.has_stat.any_dps|fight_remains<=20
 actions.cds+=/use_items,slots=trinket2,if=buff.between_the_eyes.up|trinket.2.has_stat.any_dps|fight_remains<=20
 
 # Finishers
-# Use Between the Eyes to keep the crit buff up, but on cooldown if Improved/Greenskins/T30, and avoid overriding Greenskins
-actions.finish=between_the_eyes,if=!talent.crackshot&(buff.between_the_eyes.remains<4|talent.improved_between_the_eyes|talent.greenskins_wickers|set_bonus.tier30_4pc)&!buff.greenskins_wickers.up
-# Crackshot builds use Between the Eyes outside of Stealth if Vanish or Dance will not come off cooldown within the next cast
-actions.finish+=/between_the_eyes,if=talent.crackshot&cooldown.vanish.remains>45&cooldown.shadow_dance.remains>8&(raid_event.adds.remains>8|raid_event.adds.in<raid_event.adds.remains|!raid_event.adds.up)
+# Use Between the Eyes to keep the crit buff up, but on cooldown if Improved/Greenskins, and avoid overriding Greenskins
+actions.finish=between_the_eyes,if=!talent.crackshot&(buff.between_the_eyes.remains<4|talent.improved_between_the_eyes|talent.greenskins_wickers)&!buff.greenskins_wickers.up
+# Crackshot builds use Between the Eyes outside of Stealth if we will not enter a Stealth window before the next cast
+actions.finish+=/between_the_eyes,if=talent.crackshot&cooldown.vanish.remains>45&(raid_event.adds.remains>8|raid_event.adds.in<raid_event.adds.remains|!raid_event.adds.up)
 actions.finish+=/slice_and_dice,if=buff.slice_and_dice.remains<fight_remains&refreshable
-actions.finish+=/killing_spree,if=debuff.ghostly_strike.up|!talent.ghostly_strike
 actions.finish+=/cold_blood
 actions.finish+=/dispatch
 
@@ -515,16 +441,12 @@ actions.stealth+=/pistol_shot,if=talent.crackshot&talent.fan_the_hammer.rank>=2&
 actions.stealth+=/ambush,if=talent.hidden_opportunity
 
 # Stealth Cooldowns
-actions.stealth_cds=variable,name=vanish_opportunity_condition,value=!talent.shadow_dance&talent.fan_the_hammer.rank+talent.quick_draw+talent.audacity<talent.count_the_odds+talent.keep_it_rolling
-# Hidden Opportunity builds without Crackshot use Vanish if Audacity is not active and when under max Opportunity stacks
-actions.stealth_cds+=/vanish,if=talent.hidden_opportunity&!talent.crackshot&!buff.audacity.up&(variable.vanish_opportunity_condition|buff.opportunity.stack<buff.opportunity.max_stack)&variable.ambush_condition
-# Crackshot builds or builds without Hidden Opportunity use Vanish at finish condition
-actions.stealth_cds+=/vanish,if=(!talent.hidden_opportunity|talent.crackshot)&(variable.finish_condition|buff.adrenaline_rush.up&buff.adrenaline_rush.remains<2)
-# Crackshot builds use Dance at finish condition
-actions.stealth_cds+=/shadow_dance,if=talent.crackshot&cooldown.vanish.remains>=(7*(1+(buff.true_bearing.up*0.5)))&(variable.finish_condition|(buff.adrenaline_rush.up&buff.adrenaline_rush.remains<2&!cooldown.vanish.ready))
-# Hidden Opportunity builds without Crackshot use Dance if Audacity and Opportunity are not active
-actions.stealth_cds+=/variable,name=shadow_dance_condition,value=buff.between_the_eyes.up&(!talent.hidden_opportunity|!buff.audacity.up&(talent.fan_the_hammer.rank<2|!buff.opportunity.up))&!talent.crackshot
-actions.stealth_cds+=/shadow_dance,if=!talent.keep_it_rolling&variable.shadow_dance_condition&buff.slice_and_dice.up&(variable.finish_condition|talent.hidden_opportunity)&(!talent.hidden_opportunity|!cooldown.vanish.ready)
-# Keep it Rolling builds without Crackshot use Dance at finish condition but hold it for an upcoming Keep it Rolling
-actions.stealth_cds+=/shadow_dance,if=talent.keep_it_rolling&variable.shadow_dance_condition&(cooldown.keep_it_rolling.remains<=30|cooldown.keep_it_rolling.remains>120&(variable.finish_condition|talent.hidden_opportunity))
-actions.stealth_cds+=/shadowmeld,if=variable.finish_condition&!cooldown.vanish.ready&!cooldown.shadow_dance.ready
+# Builds with Underhanded Upper Hand and Subterfuge (and Without a Trace for Crackshot) must use Vanish while Adrenaline Rush is active
+actions.stealth_cds=vanish,if=talent.underhanded_upper_hand&talent.subterfuge&(buff.adrenaline_rush.up|!talent.without_a_trace&talent.crackshot)&(variable.finish_condition|!talent.crackshot&(variable.ambush_condition|!talent.hidden_opportunity))
+# Builds without Underhanded Upper Hand but with Crackshot must still use Vanish into Between the Eyes on cooldown
+actions.stealth_cds+=/vanish,if=!talent.underhanded_upper_hand&talent.crackshot&variable.finish_condition
+# Builds without Underhanded Upper Hand and Crackshot but still Hidden Opportunity use Vanish into Ambush when Audacity is not active and under max Opportunity stacks
+actions.stealth_cds+=/vanish,if=!talent.underhanded_upper_hand&!talent.crackshot&talent.hidden_opportunity&!buff.audacity.up&buff.opportunity.stack<buff.opportunity.max_stack&variable.ambush_condition
+# Builds without Underhanded Upper Hand, Crackshot, and Hidden Opportunity use Vanish into a builder to activate Double Jeopardy without breaking the current coin streak, or to activate Take 'em by Surprise
+actions.stealth_cds+=/vanish,if=!talent.underhanded_upper_hand&!talent.crackshot&!talent.hidden_opportunity&(!variable.finish_condition&talent.double_jeopardy|!buff.take_em_by_surprise.up&talent.take_em_by_surprise)
+actions.stealth_cds+=/shadowmeld,if=variable.finish_condition&!cooldown.vanish.ready
