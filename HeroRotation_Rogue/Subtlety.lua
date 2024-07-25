@@ -214,7 +214,7 @@ end
 local function Skip_Rupture (ShadowDanceBuff)
   -- actions.finish+=/variable,name=skip_rupture,value=buff.thistle_tea.up&spell_targets.shuriken_storm=1|buff.shadow_dance.up&(spell_targets.shuriken_storm=1|dot.rupture.ticking&spell_targets.shuriken_storm>=2)|buff.darkest_night.up
   return Player:BuffUp(S.ThistleTea) and MeleeEnemies10yCount == 1
-    or Player:BuffUp(S.ShadowDanceBuff) and (MeleeEnemies10yCount == 1 or Target:DebuffUp(S.Rupture) and MeleeEnemies10yCount >= 2) or Player:BuffUp(S.DarkestNight)
+    or Player:BuffUp(S.ShadowDanceBuff) and (MeleeEnemies10yCount == 1 or Target:DebuffUp(S.Rupture) and MeleeEnemies10yCount >= 2) or Player:BuffUp(S.DarkestNightBuff)
 end
 local function Skip_Rupture_NPC () -- Homebrew exclude for certain NPCs
   local NPCID = Target:NPCID() 
@@ -350,7 +350,7 @@ local function Finish (ReturnSpellOnly, StealthSpell)
   end
   -- # DS BP
   -- actions.finish+=/black_powder,if=!variable.priority_rotation&talent.deathstalkers_mark&spell_targets>=3&!buff.darkest_night.up
-  if S.BlackPowder:IsCastable() and not PriorityRotation and S.DeathstalkersMark:IsAvailable() and MeleeEnemies10yCount >= 3 and not Player:BuffUp(S.DarkestNight)  then
+  if S.BlackPowder:IsCastable() and not PriorityRotation and S.DeathstalkersMark:IsAvailable() and MeleeEnemies10yCount >= 3 and not Player:BuffUp(S.DarkestNightBuff)  then
     if ReturnSpellOnly then
       return S.BlackPowder
     else
@@ -360,7 +360,7 @@ local function Finish (ReturnSpellOnly, StealthSpell)
   end
   -- # TS BP
   -- actions.finish+=/black_powder,if=!variable.priority_rotation&talent.unseen_blade&spell_targets>=3&(!buff.flawless_form.up|spell_targets>8|(!used_for_danse&buff.shadow_dance.up))
-  if S.BlackPowder:IsCastable() and not PriorityRotation and S.Unseenblade:IsAvailable() and MeleeEnemies10yCount >= 3 and (not Player:BuffUp(S.Flawlessform) or MeleeEnemies10yCount > 8 or (not Used_For_Danse(S.BlackPowder) and Player:BuffUp(S.ShadowDanceBuff)))  then
+  if S.BlackPowder:IsCastable() and not PriorityRotation and S.UnseenBlade:IsAvailable() and MeleeEnemies10yCount >= 3 and (not Player:BuffUp(S.FlawlessFormBuff) or MeleeEnemies10yCount > 8 or (not Used_For_Danse(S.BlackPowder) and Player:BuffUp(S.ShadowDanceBuff)))  then
     if ReturnSpellOnly then
       return S.BlackPowder
     else
@@ -370,7 +370,7 @@ local function Finish (ReturnSpellOnly, StealthSpell)
   end
   -- Normal BP
   -- actions.finish+=/black_powder,if=!variable.priority_rotation&spell_targets>=3
-  if S.BlackPowder:IsCastable() and not PriorityRotation and MeleeEnemies10yCount >= 3 and not S.Unseenblade:IsAvailable() and not S.DeathstalkersMark:IsAvailable() then
+  if S.BlackPowder:IsCastable() and not PriorityRotation and MeleeEnemies10yCount >= 3 and not S.UnseenBlade:IsAvailable() and not S.DeathstalkersMark:IsAvailable() then
     if ReturnSpellOnly then
       return S.BlackPowder
     else
@@ -432,25 +432,25 @@ local function Stealthed (ReturnSpellOnly, StealthSpell)
     end
   end
   -- actions.stealthed+=/call_action_list,name=finish,if=buff.darkest_night.up&combo_points==cp_max_spend
-  if Player:BuffUp(S.DarkestNight) and StealthEffectiveComboPoints == Rogue.CPMaxSpend() then
+  if Player:BuffUp(S.DarkestNightBuff) and StealthEffectiveComboPoints == Rogue.CPMaxSpend() then
     return Finish(ReturnSpellOnly, StealthSpell)
   end
   -- actions.stealthed+=/call_action_list,name=finish,if=effective_combo_points>=cp_max_spend&!buff.darkest_night.up
-  if StealthEffectiveComboPoints >= Rogue.CPMaxSpend() and not Player:BuffUp(S.DarkestNight) then
+  if StealthEffectiveComboPoints >= Rogue.CPMaxSpend() and not Player:BuffUp(S.DarkestNightBuff) then
     return Finish(ReturnSpellOnly, StealthSpell)
   end
   -- actions.stealthed+=/call_action_list,name=finish,if=buff.shuriken_tornado.up&combo_points.deficit<=2&!buff.darkest_night.up
-  if Player:BuffUp(S.ShurikenTornado) and StealthComboPointsDeficit <= 2 and not Player:BuffUp(S.DarkestNight) then
+  if Player:BuffUp(S.ShurikenTornado) and StealthComboPointsDeficit <= 2 and not Player:BuffUp(S.DarkestNightBuff) then
     return Finish(ReturnSpellOnly, StealthSpell)
   end
   -- actions.stealthed+=/call_action_list,name=finish,if=combo_points.deficit<=1+(talent.deeper_stratagem|talent.secret_stratagem)&!buff.darkest_night.up
-  if StealthComboPointsDeficit <= 1 + (num(S.DeeperStratagem:IsAvailable() or S.SecretStratagem:IsAvailable())) and not Player:BuffUp(S.DarkestNight) then
+  if StealthComboPointsDeficit <= 1 + (num(S.DeeperStratagem:IsAvailable() or S.SecretStratagem:IsAvailable())) and not Player:BuffUp(S.DarkestNightBuff) then
     return Finish(ReturnSpellOnly, StealthSpell)
   end
 
   -- # If trickster ignore storm completely on aoe during dance
   -- actions.stealthed+=/shadowstrike,if=talent.unseen_blade&spell_targets>=2
-  if ShadowstrikeIsCastable and S.Unseenblade:IsAvailable() and MeleeEnemies10yCount >= 2 then
+  if ShadowstrikeIsCastable and S.UnseenBlade:IsAvailable() and MeleeEnemies10yCount >= 2 then
     if ReturnSpellOnly then
       return S.Shadowstrike
     else
@@ -806,7 +806,7 @@ local function Build (EnergyThreshold)
   local ThresholdMet = not EnergyThreshold or Player:EnergyPredicted() >= EnergyThreshold
   -- actions.build+=/shuriken_storm,if=spell_targets>=2+(talent.gloomblade&buff.lingering_shadow.remains>=6|buff.perforated_veins.up)&(buff.flawless_form.up|!talent.unseen_blade)
   if HR.AoEON() and S.ShurikenStorm:IsCastable()
-    and MeleeEnemies10yCount >= 2 + BoolToInt(S.Gloomblade:IsAvailable() and Player:BuffRemains(S.LingeringShadowBuff) >= 6 or Player:BuffUp(S.PerforatedVeinsBuff)) and (S.Flawlessform:IsAvailable() or not S.Unseenblade:IsAvailable()) then
+    and MeleeEnemies10yCount >= 2 + BoolToInt(S.Gloomblade:IsAvailable() and Player:BuffRemains(S.LingeringShadowBuff) >= 6 or Player:BuffUp(S.PerforatedVeinsBuff)) and (S.FlawlessForm:IsAvailable() or not S.UnseenBlade:IsAvailable()) then
     if ThresholdMet and HR.Cast(S.ShurikenStorm) then return "Cast Shuriken Storm" end
     SetPoolingAbility(S.ShurikenStorm, EnergyThreshold)
   end
@@ -979,10 +979,10 @@ local function APL ()
     -- actions+=/call_action_list,name=finish,if=(combo_points.deficit<=1|fight_remains<=1&effective_combo_points>=3)&!buff.darkest_night.up
     -- # Finish at 4+ against 4 targets (outside stealth)
     -- actions+=/call_action_list,name=finish,if=spell_targets.shuriken_storm>=4&effective_combo_points>=4&!buff.darkest_night.up
-    if Player:BuffUp(S.DarkestNight) and EffectiveComboPoints == Rogue.CPMaxSpend()
-      or (EffectiveComboPoints >= Rogue.CPMaxSpend() and not Player:BuffUp(S.DarkestNight))
-      or ((ComboPointsDeficit <= 1 or HL.BossFilteredFightRemains("<=", 1) and EffectiveComboPoints >= 3) and not Player:BuffUp(S.DarkestNight))
-      or (MeleeEnemies10yCount >= 4 and EffectiveComboPoints >= 4 and not Player:BuffUp(S.DarkestNight)) then
+    if Player:BuffUp(S.DarkestNightBuff) and EffectiveComboPoints == Rogue.CPMaxSpend()
+      or (EffectiveComboPoints >= Rogue.CPMaxSpend() and not Player:BuffUp(S.DarkestNightBuff))
+      or ((ComboPointsDeficit <= 1 or HL.BossFilteredFightRemains("<=", 1) and EffectiveComboPoints >= 3) and not Player:BuffUp(S.DarkestNightBuff))
+      or (MeleeEnemies10yCount >= 4 and EffectiveComboPoints >= 4 and not Player:BuffUp(S.DarkestNightBuff)) then
       ShouldReturn = Finish()
       if ShouldReturn then return "Finish: " .. ShouldReturn end
     else
