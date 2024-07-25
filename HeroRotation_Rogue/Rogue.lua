@@ -93,12 +93,13 @@ Spell.Rogue.Commons = {
   ShadowDanceBuff         = Spell(185422),
   ThistleTea              = Spell(381623),
   Vigor                   = Spell(14983),
-  Withoutatrace           = Spell(382513),
+  WithoutATrace           = Spell(382513),
   -- Hero Talents
   DarkestNight            = Spell(457058),
   DeathstalkersMark       = Spell(457052),
   DoubleJeopardy          = Spell(454430),
-  Takeembysurprise        = Spell(382742),
+  TakeEmBySurprise        = Spell(382742),
+  TakeEmBySurpriseBuff    = Spell(385907),
   HandofFate              = Spell(452536),
   Flawlessform            = Spell(441321),
   Unseenblade             = Spell(441146),
@@ -209,7 +210,6 @@ Spell.Rogue.Outlaw = MergeTableByKey(Spell.Rogue.Commons, {
   Ruthlessness            = Spell(14161),
   SummarilyDispatched     = Spell(381990),
   SwiftSlasher            = Spell(381988),
-  TakeEmBySurpriseBuff    = Spell(385907),
   UnderhandedUpperhand    = Spell(424044),
   Weaponmaster            = Spell(200733),
   -- Utility
