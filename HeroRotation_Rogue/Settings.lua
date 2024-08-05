@@ -75,6 +75,10 @@ HR.GUISettings.APL.Rogue = {
     OffGCDasOffGCD = {
       Deathmark = true,
       IndiscriminateCarnage = true,
+    },
+    StealthMacro = {
+      Vanish = true,
+      Shadowmeld = true
     }
   },
   Outlaw = {
@@ -95,6 +99,10 @@ HR.GUISettings.APL.Rogue = {
       GhostlyStrike = false,
       KillingSpree = true, 
       AdrenalineRush = true,
+    },
+    SpellQueueMacro = {
+      Vanish = true,
+      Shadowmeld = true
     }
   },
   Subtlety = {
@@ -154,11 +162,15 @@ CreatePanelOption("Slider", CP_Assassination, "APL.Rogue.Assassination.EnvenomDM
 CreatePanelOption("Slider", CP_Assassination, "APL.Rogue.Assassination.MutilateDMGOffset", {1, 5, 0.25}, "Mutilate DMG Offset", "Set the Mutilate DMG Offset.")
 CreatePanelOption("CheckButton", CP_Assassination, "APL.Rogue.Assassination.Envat50", "With this setting checked, you will only pool to 50% Energy and use tea differently", "Check if you want to only pool to 50% Energy till 10 seconds before CDs (it will try to pool to 80% or use CDs when they are ready")
 CreatePanelOption("Dropdown", CP_Assassination, "APL.Rogue.Assassination.UsePriorityRotation", {"Never", "On Bosses", "Always", "Auto"}, "Use Priority Rotation", "Select when to show rotation for maximum priority damage (at the cost of overall AoE damage.)\nAuto will function as Never except on specific encounters where AoE is not recommended.")
+CreatePanelOption("CheckButton", CP_Assassination, "APL.Rogue.Assassination.StealthMacro.Vanish", "Stealth Combo - Vanish", "Allow suggesting Vanish stealth ability combos (recommended)")
+CreatePanelOption("CheckButton", CP_Assassination, "APL.Rogue.Assassination.StealthMacro.Shadowmeld", "Stealth Combo - Shadowmeld", "Allow suggesting Shadowmeld stealth ability combos (recommended)")
 CreateARPanelOptions(CP_Assassination, "APL.Rogue.Assassination")
 
 -- Outlaw
 CreatePanelOption("Dropdown", CP_Outlaw, "APL.Rogue.Outlaw.RolltheBonesLogic", {"SimC", "1+ Buff", "Broadside", "Buried Treasure", "Grand Melee", "Skull and Crossbones", "Ruthless Precision", "True Bearing"}, "Roll the Bones Logic", "Define the Roll the Bones logic to follow.\n(SimC highly recommended!)")
 CreatePanelOption("Dropdown", CP_Outlaw, "APL.Rogue.Outlaw.KillingSpreeDisplayStyle", {"Main Icon", "Suggested", "SuggestedRight", "Cooldown"}, "Killing Spree Display Style", "Define which icon display style to use for Killing Spree.")
+CreatePanelOption("CheckButton", CP_Outlaw, "APL.Rogue.Outlaw.SpellQueueMacro.Vanish", "Stealth Combo - Vanish", "Allow suggesting Vanish stealth ability combos (recommended)")
+CreatePanelOption("CheckButton", CP_Outlaw, "APL.Rogue.Outlaw.SpellQueueMacro.Shadowmeld", "Stealth Combo - Shadowmeld", "Allow suggesting Shadowmeld stealth ability combos (recommended)")
 CreateARPanelOptions(CP_Outlaw, "APL.Rogue.Outlaw")
 
 -- Subtlety

@@ -255,29 +255,201 @@ local function Vanish_DPS_Condition ()
   return Settings.Commons.UseDPSVanish or Settings.Commons.UseSoloVanish
 end
 
+local function Stealth(ReturnSpellOnly)
+  -- # Stealth
+  if S.BladeFlurry:IsReady() then
+    -- # With Deft Maneuvers, use Blade Flurry on cooldown at 5+ targets, or at 3-4 targets if missing combo points equal to the amount given
+    -- actions.cds+=/blade_flurry,if=talent.deft_maneuvers&!variable.finish_condition&((spell_targets=3&(combo_points=3|combo_points=4))|(spell_targets=4&(combo_points=2|combo_points=3))|spell_targets>=5)
+    if S.DeftManeuvers:IsAvailable() and not Finish_Condition() and ((EnemiesBFCount == 3 and (ComboPoints == 3 or ComboPoints == 4)) or (EnemiesBFCount == 4 and (ComboPoints == 2 or ComboPoints == 3)) or EnemiesBFCount >= 5) then
+      if ReturnSpellOnly then
+        return S.BladeFlurry
+      else
+        if Cast(S.BladeFlurry, Settings.Outlaw.GCDasOffGCD.BladeFlurry) then return "Cast Blade Flurry" end
+      end
+    end
+  end
+	-- actions.stealth=blade_flurry,if=talent.subterfuge&talent.hidden_opportunity&spell_targets>=2&buff.blade_flurry.remains<gcd
+	if S.BladeFlurry:IsCastable() and AoEON() and S.Subterfuge:IsAvailable() and S.HiddenOpportunity:IsAvailable() and EnemiesBFCount >= 2
+		and Player:BuffRemains(S.BladeFlurry) < Player:GCD() then
+    if ReturnSpellOnly then
+      return S.BladeFlurry
+    else
+      if Cast(S.BladeFlurry, Settings.Outlaw.GCDasOffGCD.BladeFlurry) then return "Cast Blade Flurry" end
+    end
+  end
+
+	-- actions.stealth+=/cold_blood,if=variable.finish_condition
+	if S.ColdBlood:IsCastable() and Player:BuffDown(S.ColdBlood) and Target:IsSpellInRange(S.Dispatch) and Finish_Condition() then
+		if HR.Cast(S.ColdBlood, Settings.CommonsOGCD.OffGCDasOffGCD.ColdBlood) then return "Cast Cold Blood" end
+	end
+
+  -- # Ensure Crackshot BtE is not skipped because of low energy
+  -- actions.stealth+=/pool_resource,for_next=1
+
+  -- # High priority Between the Eyes for Crackshot, except not directly out of Shadowmeld
+	-- actions.stealth+=/between_the_eyes,if=variable.finish_condition&talent.crackshot&(!buff.shadowmeld.up|stealthed.rogue)
+	if S.BetweentheEyes:IsCastable() and Target:IsSpellInRange(S.BetweentheEyes) and Finish_Condition() and S.Crackshot:IsAvailable() and (not Player:BuffUp(S.Shadowmeld) or Player:StealthUp(true, false)) then
+    if ReturnSpellOnly then
+      return S.BetweentheEyes
+    else
+      if CastPooling(S.BetweentheEyes) then return "Cast Between the Eyes" end
+    end
+  end
+
+	-- actions.stealth+=/dispatch,if=variable.finish_condition
+	if S.Dispatch:IsCastable() and Target:IsSpellInRange(S.Dispatch) and Finish_Condition() and not S.BetweentheEyes:IsCastable() then
+    if ReturnSpellOnly then
+      return S.Dispatch
+    else
+      if CastPooling(S.Dispatch) then return "Cast Dispatch" end
+    end
+  end
+
+	-- # 2 Fan the Hammer Crackshot builds can consume Opportunity in stealth with max stacks, Broadside, and low CPs, or with Greenskins active
+	-- actions.stealth+=/pistol_shot,if=talent.crackshot&talent.fan_the_hammer.rank>=2&buff.opportunity.stack>=6&(buff.broadside.up&combo_points<=1|buff.greenskins_wickers.up)
+	if S.PistolShot:IsCastable() and Target:IsSpellInRange(S.PistolShot) and S.Crackshot:IsAvailable() and S.FanTheHammer:TalentRank() >= 2 and Player:BuffStack(S.Opportunity) >= 6
+		and (Player:BuffUp(S.Broadside) and ComboPoints <= 1 or Player:BuffUp(S.GreenskinsWickersBuff)) then
+    if ReturnSpellOnly then
+      return S.PistolShot
+    else
+      if CastPooling(S.PistolShot) then return "Cast Pistol Shot" end
+    end
+  end
+
+  -- ***NOT PART of SimC*** Condition duplicated from build to Show SS Icon in stealth with audacity buff
+  if S.Ambush:IsCastable() and S.HiddenOpportunity:IsAvailable() and Player:BuffUp(S.AudacityBuff) then
+    if ReturnSpellOnly then
+      return S.SSAudacity
+    else
+      if CastPooling(S.SSAudacity, nil, not Target:IsSpellInRange(S.Ambush)) then return "Cast Ambush (SS High-Prio Buffed)" end
+    end
+  end
+
+  -- actions.stealth+=/ambush,if=talent.hidden_opportunity
+  if S.Ambush:IsCastable() and Target:IsSpellInRange(S.Ambush) and S.HiddenOpportunity:IsAvailable() then
+    if ReturnSpellOnly then
+      return S.Ambush
+    else
+      if CastPooling(S.Ambush) then return "Cast Ambush" end
+    end
+  end
+end
+
+local function Finish(ReturnSpellOnly)
+	-- # Finishers
+  -- # Use Between the Eyes to keep the crit buff up, but on cooldown if Improved/Greenskins, and avoid overriding Greenskins
+  -- actions.finish=between_the_eyes,if=!talent.crackshot&(buff.between_the_eyes.remains<4|talent.improved_between_the_eyes|talent.greenskins_wickers)&!buff.greenskins_wickers.up
+	if S.BetweentheEyes:IsCastable() and Target:IsSpellInRange(S.BetweentheEyes) and not S.Crackshot:IsAvailable()
+		and (Player:BuffRemains(S.BetweentheEyes) < 4 or S.ImprovedBetweenTheEyes:IsAvailable() or S.GreenskinsWickers:IsAvailable()) and not Player:BuffUp(S.GreenskinsWickers) then
+    if ReturnSpellOnly then
+      return S.BetweentheEyes
+    else
+      if CastPooling(S.BetweentheEyes) then return "Cast Between the Eyes" end
+    end
+  end
+
+	-- # Crackshot builds use Between the Eyes outside of Stealth if we will not enter a Stealth window before the next cast
+  -- actions.finish+=/between_the_eyes,if=talent.crackshot&cooldown.vanish.remains>45&(raid_event.adds.remains>8|raid_event.adds.in<raid_event.adds.remains|!raid_event.adds.up)
+	if S.BetweentheEyes:IsCastable() and Target:IsSpellInRange(S.BetweentheEyes) and S.Crackshot:IsAvailable() and S.Vanish:CooldownRemains() > 45 then
+    if ReturnSpellOnly then
+      return S.BetweentheEyes
+    else
+      if CastPooling(S.BetweentheEyes) then return "Cast Between the Eyes" end
+    end
+  end
+
+	-- actions.finish+=/slice_and_dice,if=buff.slice_and_dice.remains<fight_remains&refreshable
+	-- Note: Added Player:BuffRemains(S.SliceandDice) == 0 to maintain the buff while TTD is invalid (it's mainly for Solo, not an issue in raids)
+	if S.SliceandDice:IsCastable() and (HL.FilteredFightRemains(EnemiesBF, ">", Player:BuffRemains(S.SliceandDice), true) or Player:BuffRemains(S.SliceandDice) == 0)
+		and Player:BuffRemains(S.SliceandDice) < (1 + ComboPoints) * 1.8 then
+    if ReturnSpellOnly then
+      return S.SliceandDice
+    else
+      if CastPooling(S.SliceandDice) then return "Cast Slice and Dice" end
+    end
+  end
+
+  if S.ColdBlood:IsCastable() and Player:BuffDown(S.ColdBlood) and Target:IsSpellInRange(S.Dispatch) then
+    if HR.Cast(S.ColdBlood, Settings.CommonsOGCD.OffGCDasOffGCD.ColdBlood) then return "Cast Cold Blood" end
+  end
+
+  -- actions.finish+=/coup_de_grace
+  if S.CoupDeGrace:IsCastable() and Target:IsSpellInRange(S.CoupDeGrace) then
+    if ReturnSpellOnly then
+      return S.CoupDeGrace
+    else
+      if CastPooling(S.CoupDeGrace) then return "Cast Coup de Grace" end
+    end
+  end
+
+  -- actions.finish+=/dispatch
+  if S.Dispatch:IsCastable() and Target:IsSpellInRange(S.Dispatch) then
+    if ReturnSpellOnly then
+      return S.Dispatch
+    else
+      if CastPooling(S.Dispatch) then return "Cast Dispatch" end
+    end
+  end
+end
+
+-- # Spell Queue Macros
+-- This returns a table with the base spell and the result of the Stealth or Finish action lists as if the applicable buff / Combo points was present
+local function SpellQueueMacro (BaseSpell)
+  local MacroAbility
+
+  -- Handle StealthMacro GUI options
+  -- If false, just suggest them as off-GCD and bail out of the macro functionality
+  if BaseSpell:ID() == S.Vanish:ID() or BaseSpell:ID() == S.Shadowmeld:ID() then
+    -- Fetch stealth spell
+    MacroAbility = Stealth(true)
+    if BaseSpell:ID() == S.Vanish:ID() and (not Settings.Outlaw.SpellQueueMacro.Vanish or not MacroAbility) then
+      if Cast(S.Vanish, Settings.CommonsOGCD.OffGCDasOffGCD.Vanish) then return "Cast Vanish" end
+      return false
+    elseif BaseSpell:ID() == S.Shadowmeld:ID() and (not Settings.Outlaw.SpellQueueMacro.Shadowmeld or not MacroAbility) then
+      if Cast(S.Shadowmeld, Settings.CommonsOGCD.OffGCDasOffGCD.Racials) then return "Cast Shadowmeld" end
+      return false
+    end
+  end
+
+  local MacroTable = {BaseSpell, MacroAbility}
+
+  ShouldReturn = CastQueue(unpack(MacroTable))
+  if ShouldReturn then return "| " .. MacroTable[2]:Name() end
+
+  return false
+end
+
 local function StealthCDs ()
   -- # Builds with Underhanded Upper Hand and Subterfuge (and Without a Trace for Crackshot) must use Vanish while Adrenaline Rush is active
   -- actions.stealth_cds=vanish,if=talent.underhanded_upper_hand&talent.subterfuge&(buff.adrenaline_rush.up|!talent.without_a_trace&talent.crackshot)&(variable.finish_condition|!talent.crackshot&(variable.ambush_condition|!talent.hidden_opportunity))
-  if S.Vanish:IsCastable() and S.UnderhandedUpperhand:IsAvailable() and S.Subterfuge:IsAvailable() and (Player:BuffUp(S.AdrenalineRush) or not S.WithoutATrace:IsAvailable() and S.Crackshot:IsAvailable()) and (Finish_Condition() or not S.Crackshot:IsAvailable() and (Ambush_Condition() or not S.HiddenOpportunity:IsAvailable())) then
-    if HR.Cast(S.Vanish, Settings.CommonsOGCD.OffGCDasOffGCD.Vanish) then return "Cast Vanish (UHU&Subte&CSwithoutWaT)" end
+  if S.Vanish:IsCastable() and S.UnderhandedUpperhand:IsAvailable() and S.Subterfuge:IsAvailable() and ((Player:BuffUp(S.AdrenalineRush) or S.AdrenalineRush:IsCastable()) or not S.WithoutATrace:IsAvailable() and S.Crackshot:IsAvailable()) and (Finish_Condition() or not S.Crackshot:IsAvailable() and (Ambush_Condition() or not S.HiddenOpportunity:IsAvailable())) then
+    -- if HR.Cast(S.Vanish, Settings.CommonsOGCD.OffGCDasOffGCD.Vanish) then return "Cast Vanish (UHU&Subte&CSwithoutWaT)" end
+    ShouldReturn = SpellQueueMacro(S.Vanish)
+    if ShouldReturn then return "Vanish Macro 1 " .. ShouldReturn end
   end
 
   -- # Builds without Underhanded Upper Hand but with Crackshot must still use Vanish into Between the Eyes on cooldown
   -- actions.stealth_cds+=/vanish,if=!talent.underhanded_upper_hand&talent.crackshot&variable.finish_condition
   if S.Vanish:IsCastable() and not S.UnderhandedUpperhand:IsAvailable() and S.Crackshot:IsAvailable() and Finish_Condition() then
-    if HR.Cast(S.Vanish, Settings.CommonsOGCD.OffGCDasOffGCD.Vanish) then return "Cast Vanish (NoUHUwCS)" end
+    -- if HR.Cast(S.Vanish, Settings.CommonsOGCD.OffGCDasOffGCD.Vanish) then return "Cast Vanish (NoUHUwCS)" end
+    ShouldReturn = SpellQueueMacro(S.Vanish)
+    if ShouldReturn then return "Vanish Macro 2 " .. ShouldReturn end
   end
 
   -- # Builds without Underhanded Upper Hand and Crackshot but still Hidden Opportunity use Vanish into Ambush when Audacity is not active and under max Opportunity stacks
   -- actions.stealth_cds+=/vanish,if=!talent.underhanded_upper_hand&!talent.crackshot&talent.hidden_opportunity&!buff.audacity.up&buff.opportunity.stack<buff.opportunity.max_stack&variable.ambush_condition
   if S.Vanish:IsCastable() and not S.UnderhandedUpperhand:IsAvailable() and not S.Crackshot:IsAvailable() and S.HiddenOpportunity:IsAvailable() and not Player:BuffUp(S.AudacityBuff) and Player:BuffStack(S.Opportunity) < 6 and Ambush_Condition() then
-    if HR.Cast(S.Vanish, Settings.CommonsOGCD.OffGCDasOffGCD.Vanish) then return "Cast Vanish (HO)" end
+    -- if HR.Cast(S.Vanish, Settings.CommonsOGCD.OffGCDasOffGCD.Vanish) then return "Cast Vanish (HO)" end
+    ShouldReturn = SpellQueueMacro(S.Vanish)
+    if ShouldReturn then return "Vanish Macro 3 " .. ShouldReturn end
   end
 
   -- # Builds without Underhanded Upper Hand, Crackshot, and Hidden Opportunity use Vanish into a builder to activate Double Jeopardy without breaking the current coin streak, or to activate Take em by Surprise
   -- actions.stealth_cds+=/vanish,if=!talent.underhanded_upper_hand&!talent.crackshot&!talent.hidden_opportunity&(!variable.finish_condition&talent.double_jeopardy|!buff.take_em_by_surprise.up&talent.take_em_by_surprise)
   if S.Vanish:IsCastable() and not S.UnderhandedUpperhand:IsAvailable() and not S.Crackshot:IsAvailable() and not S.HiddenOpportunity:IsAvailable() and (not Finish_Condition() and S.DoubleJeopardy:IsAvailable() or not Player:BuffUp(S.TakeEmBySurpriseBuff) and S.TakeEmBySurprise:IsAvailable()) then
-    if HR.Cast(S.Vanish, Settings.CommonsOGCD.OffGCDasOffGCD.Vanish) then return "Cast Vanish (JeopardyorTakeembysurprise)" end
+    -- if HR.Cast(S.Vanish, Settings.CommonsOGCD.OffGCDasOffGCD.Vanish) then return "Cast Vanish (JeopardyorTakeembysurprise)" end
+    ShouldReturn = SpellQueueMacro(S.Vanish)
+    if ShouldReturn then return "Vanish Macro 4 " .. ShouldReturn end
   end
 
   -- actions.stealth_cds+=/shadowmeld,if=variable.finish_condition&!cooldown.vanish.ready
@@ -309,7 +481,7 @@ local function CDs ()
   -- actions.cds+=/adrenaline_rush,if=!buff.adrenaline_rush.up&(!variable.finish_condition|!talent.improved_adrenaline_rush)|stealthed.all&talent.crackshot&talent.improved_adrenaline_rush&combo_points<=2
   if CDsON() and S.AdrenalineRush:IsCastable() then
     if not Player:BuffUp(S.AdrenalineRush) and (not Finish_Condition() or not S.ImprovedAdrenalineRush:IsAvailable()) or Player:StealthUp(true, true) and S.Crackshot:IsAvailable() and S.ImprovedAdrenalineRush:IsAvailable() and ComboPoints <= 2 then
-       if HR.Cast(S.AdrenalineRush, Settings.Outlaw.OffGCDasOffGCD.AdrenalineRush) then return "Cast Adrenaline Rush" end
+       if Cast(S.AdrenalineRush, Settings.Outlaw.OffGCDasOffGCD.AdrenalineRush) then return "Cast Adrenaline Rush" end
     end
   end
 
@@ -344,8 +516,8 @@ local function CDs ()
   end
 
   -- # Use Keep it Rolling with at least 3 buffs (4 with T31)
-  -- actions.cds+=/keep_it_rolling,if=!variable.rtb_reroll&rtb_buffs>=3+set_bonus.tier31_4pc&(buff.shadow_dance.down|rtb_buffs>=6)
-  if S.KeepItRolling:IsCastable() and not RtB_Reroll() and RtB_Buffs() >= 3 + num(Player:HasTier(31, 4)) and (Player:BuffDown(S.ShadowDance) or RtB_Buffs() >= 6) then
+  -- actions.cds+=/keep_it_rolling,if=!variable.rtb_reroll&rtb_buffs>=3+set_bonus.tier31_4pc
+  if S.KeepItRolling:IsCastable() and not RtB_Reroll() and RtB_Buffs() >= 3 + num(Player:HasTier(31, 4)) then
     if HR.Cast(S.KeepItRolling, Settings.Outlaw.GCDasOffGCD.KeepItRolling) then return "Cast Keep it Rolling" end
   end
   -- # Use Keep it Rolling with at least 3 buffs that are not Buried Treasure. If Broadside is not active, then wait until just before the lowest buff expires.
@@ -426,92 +598,6 @@ local function CDs ()
     if TrinketToUse and (Player:BuffUp(S.BetweentheEyes) or HL.BossFilteredFightRemains("<", 20) or TrinketToUse:HasStatAnyDps()) then
       if HR.Cast(TrinketToUse, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Generic use_items for " .. TrinketToUse:Name() end
     end
-  end
-end
-
-local function Stealth()
-  -- # Stealth
-  if S.BladeFlurry:IsReady() then
-    -- # With Deft Maneuvers, use Blade Flurry on cooldown at 5+ targets, or at 3-4 targets if missing combo points equal to the amount given
-    -- actions.cds+=/blade_flurry,if=talent.deft_maneuvers&!variable.finish_condition&((spell_targets=3&(combo_points=3|combo_points=4))|(spell_targets=4&(combo_points=2|combo_points=3))|spell_targets>=5)
-    if S.DeftManeuvers:IsAvailable() and not Finish_Condition() and ((EnemiesBFCount == 3 and (ComboPoints == 3 or ComboPoints == 4)) or (EnemiesBFCount == 4 and (ComboPoints == 2 or ComboPoints == 3)) or EnemiesBFCount >= 5) then
-        if Settings.Outlaw.GCDasOffGCD.BladeFlurry then
-          HR.CastSuggested(S.BladeFlurry)
-        else
-          if HR.Cast(S.BladeFlurry) then return "Stealth Cast Blade Flurry (3 or 4 Target Filler or 5+ Targets)" end
-        end
-    end
-  end
-	-- actions.stealth=blade_flurry,if=talent.subterfuge&talent.hidden_opportunity&spell_targets>=2&buff.blade_flurry.remains<gcd
-	if S.BladeFlurry:IsCastable() and AoEON() and S.Subterfuge:IsAvailable() and S.HiddenOpportunity:IsAvailable() and EnemiesBFCount >= 2
-		and Player:BuffRemains(S.BladeFlurry) < Player:GCD() then
-		if Settings.Outlaw.GCDasOffGCD.BladeFlurry then
-		  HR.CastSuggested(S.BladeFlurry)
-		else
-		  if HR.Cast(S.BladeFlurry) then return "Cast Blade Flurry" end
-		end
-	end
-
-	-- actions.stealth+=/cold_blood,if=variable.finish_condition
-	if S.ColdBlood:IsCastable() and Player:BuffDown(S.ColdBlood) and Target:IsSpellInRange(S.Dispatch) and Finish_Condition() then
-		if HR.Cast(S.ColdBlood, Settings.CommonsOGCD.OffGCDasOffGCD.ColdBlood) then return "Cast Cold Blood" end
-	end
-
-  -- # Ensure Crackshot BtE is not skipped because of low energy
-  -- actions.stealth+=/pool_resource,for_next=1
-
-  -- # High priority Between the Eyes for Crackshot, except not directly out of Shadowmeld
-	-- actions.stealth+=/between_the_eyes,if=variable.finish_condition&talent.crackshot&(!buff.shadowmeld.up|stealthed.rogue)
-	if S.BetweentheEyes:IsCastable() and Target:IsSpellInRange(S.BetweentheEyes) and Finish_Condition() and S.Crackshot:IsAvailable() and (not Player:BuffUp(S.Shadowmeld) or Player:StealthUp(true, false)) then
-     if HR.CastPooling(S.BetweentheEyes, Player:EnergyTimeToX(22)) then return "Cast Between the Eyes" end
-  end
-
-	-- actions.stealth+=/dispatch,if=variable.finish_condition
-	if S.Dispatch:IsCastable() and Target:IsSpellInRange(S.Dispatch) and Finish_Condition() and not S.BetweentheEyes:IsCastable() then
-		if HR.CastPooling(S.Dispatch) then return "Cast Dispatch" end
-	end
-
-	-- # 2 Fan the Hammer Crackshot builds can consume Opportunity in stealth with max stacks, Broadside, and low CPs, or with Greenskins active
-	-- actions.stealth+=/pistol_shot,if=talent.crackshot&talent.fan_the_hammer.rank>=2&buff.opportunity.stack>=6&(buff.broadside.up&combo_points<=1|buff.greenskins_wickers.up)
-	if S.PistolShot:IsCastable() and Target:IsSpellInRange(S.PistolShot) and S.Crackshot:IsAvailable() and S.FanTheHammer:TalentRank() >= 2 and Player:BuffStack(S.Opportunity) >= 6
-		and (Player:BuffUp(S.Broadside) and ComboPoints <= 1 or Player:BuffUp(S.GreenskinsWickersBuff)) then
-		if HR.CastPooling(S.PistolShot) then return "Cast Pistol Shot (Broadside)" end
-	end
-
-	-- actions.stealth+=/ambush,if=talent.hidden_opportunity
-	if S.Ambush:IsCastable() and Target:IsSpellInRange(S.Ambush) and S.HiddenOpportunity:IsAvailable() then
-		if HR.CastPooling(S.Ambush) then return "Cast Ambush" end
-	end
-end
-
-local function Finish ()
-	-- # Finishers
-  -- # Use Between the Eyes to keep the crit buff up, but on cooldown if Improved/Greenskins, and avoid overriding Greenskins
-  -- actions.finish=between_the_eyes,if=!talent.crackshot&(buff.between_the_eyes.remains<4|talent.improved_between_the_eyes|talent.greenskins_wickers)&!buff.greenskins_wickers.up
-	if S.BetweentheEyes:IsCastable() and Target:IsSpellInRange(S.BetweentheEyes) and not S.Crackshot:IsAvailable()
-		and (Player:BuffRemains(S.BetweentheEyes) < 4 or S.ImprovedBetweenTheEyes:IsAvailable() or S.GreenskinsWickers:IsAvailable()) and not Player:BuffUp(S.GreenskinsWickers) then
-		if HR.CastPooling(S.BetweentheEyes) then return "Cast Between the Eyes" end
-	end
-
-	-- # Crackshot builds use Between the Eyes outside of Stealth if we will not enter a Stealth window before the next cast
-  -- actions.finish+=/between_the_eyes,if=talent.crackshot&cooldown.vanish.remains>45&(raid_event.adds.remains>8|raid_event.adds.in<raid_event.adds.remains|!raid_event.adds.up)
-	if S.BetweentheEyes:IsCastable() and Target:IsSpellInRange(S.BetweentheEyes) and S.Crackshot:IsAvailable() and S.Vanish:CooldownRemains() > 45 then
-		if HR.CastPooling(S.BetweentheEyes) then return "Cast Between the Eyes" end
-	end
-
-	-- actions.finish+=/slice_and_dice,if=buff.slice_and_dice.remains<fight_remains&refreshable
-	-- Note: Added Player:BuffRemains(S.SliceandDice) == 0 to maintain the buff while TTD is invalid (it's mainly for Solo, not an issue in raids)
-	if S.SliceandDice:IsCastable() and (HL.FilteredFightRemains(EnemiesBF, ">", Player:BuffRemains(S.SliceandDice), true) or Player:BuffRemains(S.SliceandDice) == 0)
-		and Player:BuffRemains(S.SliceandDice) < (1 + ComboPoints) * 1.8 then
-		if HR.CastPooling(S.SliceandDice) then return "Cast Slice and Dice" end
-	end
-
-  if S.ColdBlood:IsCastable() and Player:BuffDown(S.ColdBlood) and Target:IsSpellInRange(S.Dispatch) then
-    if HR.Cast(S.ColdBlood, Settings.CommonsOGCD.OffGCDasOffGCD.ColdBlood) then return "Cast Cold Blood" end
-  end
-  -- actions.finish+=/dispatch
-  if S.Dispatch:IsCastable() and Target:IsSpellInRange(S.Dispatch) and (Player:BuffUp(S.Shadowmeld) or not Player:StealthUp(true, false)) then
-    if HR.CastPooling(S.Dispatch) then return "Cast Dispatch" end
   end
 end
 
