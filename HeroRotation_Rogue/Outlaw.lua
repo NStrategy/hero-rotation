@@ -489,20 +489,12 @@ local function CDs ()
   -- actions.cds+=/blade_flurry,if=spell_targets>=2&buff.blade_flurry.remains<gcd
   if S.BladeFlurry:IsCastable() then
     if EnemiesBFCount >= 2 and Player:BuffRemains(S.BladeFlurry) < Player:GCD() then
-      if Settings.Outlaw.GCDasOffGCD.BladeFlurry then
-        HR.CastSuggested(S.BladeFlurry)
-      else
-        if HR.Cast(S.BladeFlurry) then return "Cast Blade Flurry (2+Targets)" end
-      end
+      if Cast(S.BladeFlurry, Settings.Outlaw.GCDasOffGCD.BladeFlurry) then return "Cast Blade Flurry" end
     end
     -- # With Deft Maneuvers, use Blade Flurry on cooldown at 5+ targets, or at 3-4 targets if missing combo points equal to the amount given
     -- actions.cds+=/blade_flurry,if=talent.deft_maneuvers&!variable.finish_condition&((spell_targets=3&(combo_points=3|combo_points=4))|(spell_targets=4&(combo_points=2|combo_points=3))|spell_targets>=5)
     if S.DeftManeuvers:IsAvailable() and not Finish_Condition() and ((EnemiesBFCount == 3 and (ComboPoints == 3 or ComboPoints == 4)) or (EnemiesBFCount == 4 and (ComboPoints == 2 or ComboPoints == 3)) or EnemiesBFCount >= 5) then
-        if Settings.Outlaw.GCDasOffGCD.BladeFlurry then
-          HR.CastSuggested(S.BladeFlurry)
-        else
-          if HR.Cast(S.BladeFlurry) then return "Cast Blade Flurry (3 or 4 Target Filler or 5+ Targets)" end
-        end
+        if Cast(S.BladeFlurry, Settings.Outlaw.GCDasOffGCD.BladeFlurry) then return "Cast Blade Flurry 3 or 4, 5 Targets" end
     end
   end
   
