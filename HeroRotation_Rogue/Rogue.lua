@@ -102,11 +102,12 @@ Spell.Rogue.Commons = {
   DeathStalkersMark       = Spell(457052),
   DeathStalkersMarkBuff   = Spell(457157),
   DoubleJeopardy          = Spell(454430),
+  EscalatingBladeBuff     = Spell(441786),
   FateboundCoin           = Spell(453012),
   FateboundCoinHeads      = Spell(456479),
   FateboundCoinTails      = Spell(452538),
   FateboundLuckyCoin      = Spell(461818),
-  FazedDebuff             = Spell(441224), -- unsure if SpellID is correct
+  Fazed                   = Spell(441224), -- unsure if SpellID is correct
   FollowTheBlood          = Spell(457068),
   TakeEmBySurprise        = Spell(382742),
   TakeEmBySurpriseBuff    = Spell(385907),
@@ -334,8 +335,8 @@ Item.Rogue.Subtlety = {
   ImperfectAscendancySerum   = Item(225654, {13, 14}),
   WitherbarksBranch          = Item(109999, {13, 14}),
   BandolierOfTwistedBlades   = Item(207165, {13, 14}),
-  BattleReadyGoggles         = Item(198326,{1}),
-  PersonalSpaceAmplifier     = Item(255940,{6}) -- If you are playing with this enchant, please put your belt item id here instead of "255940". Only then you will not get suggestions.
+  TreacherousTransmitter     = Item(221023, {13, 14}),
+  SkardynsGrace              = Item(56440,  {13, 14})
 }
 
 function Commons.StealthSpell()
