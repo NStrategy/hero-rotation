@@ -186,18 +186,7 @@ local function Stealth_Threshold ()
   -- actions+=/variable,name=stealth_threshold,value=20+talent.vigor.rank*25+talent.thistle_tea*20+talent.shadowcraft*20
   return 20 + S.Vigor:TalentRank() * 25 + num(S.ThistleTea:IsAvailable()) * 20 + num(S.Shadowcraft:IsAvailable()) * 20
 end
-local function Stealth_Helper ()
-  -- actions+=/variable,name=stealth_helper,value=energy>=variable.stealth_threshold
-  -- actions+=/variable,name=stealth_helper,value=(energy.deficit-7)<=variable.stealth_threshold,if=talent.dark_brew.enabled&(!talent.vigor.enabled|talent.shadowcraft.enabled)
-  -- actions+=/variable,name=stealth_helper,value=energy.deficit<=variable.stealth_threshold,if=talent.invigorating_shadowdust.enabled&(!talent.vigor.enabled|talent.shadowcraft.enabled)
-  if S.InvigoratingShadowdust:IsAvailable() and (not S.Vigor:IsAvailable() or S.Shadowcraft:IsAvailable()) then
-    return Player:EnergyDeficitPredicted() <= Stealth_Threshold()
-  elseif S.DarkBrew:IsAvailable() and (not S.Vigor:IsAvailable() or S.Shadowcraft:IsAvailable()) then
-    return (Player:EnergyDeficitPredicted() - 7) <= Stealth_Threshold()
-  else
-    return Player:Energy() >= Stealth_Threshold()
-  end
-end
+
 local function ShD_Threshold ()
   -- actions.stealth_cds=variable,name=shd_threshold,value=cooldown.shadow_dance.charges_fractional>=0.75+talent.double_dance
   return S.ShadowDance:ChargesFractional() >= 0.75 + BoolToInt(S.DoubleDance:IsAvailable())
@@ -247,7 +236,7 @@ local function Used_For_Danse(Spell)
 end
 local function Secret_Condition ()
   -- actions.finish=variable,name=secret_condition,value=!buff.darkest_night.up&(buff.danse_macabre.stack>=2|!talent.danse_macabre|(talent.unseen_blade&buff.shadow_dance.up&buff.escalating_blade.stack>=2))
-  return not Player:BuffUp(S.DarkestNightBuff) and (Player:BuffStack(S.DanseMacabreBuff) >= 2 or not S.DanseMacabre:IsAvailable() or (S.UnseenBlade:IsAvailable() and Player:BuffUp(S.ShadowDanceBuff) and Player:BuffStack(S.EscalatingBladeBuff) >= 2))
+  return not Player:BuffUp(S.DarkestNightBuff) and (Player:BuffStack(S.DanseMacabreBuff) >= 2 or not S.DanseMacabre:IsAvailable() or (S.UnseenBlade:IsAvailable() and Player:BuffUp(S.ShadowDanceBuff) and Player:BuffStack(S.EscalatingBlade) >= 2))
 end
 
 
@@ -360,7 +349,7 @@ local function Finish (ReturnSpellOnly, StealthSpell)
   end
   -- # TS BP
   -- actions.finish+=/black_powder,if=!variable.priority_rotation&talent.unseen_blade&((buff.escalating_blade.stack=4&!buff.shadow_dance.up)|spell_targets>=3&!buff.flawless_form.up|spell_targets>10|(!used_for_danse&buff.shadow_dance.up&talent.shuriken_tornado&spell_targets>=3))
-  if S.BlackPowder:IsCastable() and not PriorityRotation and S.UnseenBlade:IsAvailable() and ((Player:BuffStack(S.EscalatingBladeBuff) == 4 and not Player:BuffUp(S.ShadowDanceBuff)) or MeleeEnemies10yCount >= 3 and not Player:BuffUp(S.FlawlessFormBuff) or MeleeEnemies10yCount > 10 or (not Used_For_Danse(S.BlackPowder) and Player:BuffUp(S.ShadowDanceBuff) and S.ShurikenTornado:IsAvailable() and MeleeEnemies10yCount >= 3)) then
+  if S.BlackPowder:IsCastable() and not PriorityRotation and S.UnseenBlade:IsAvailable() and ((Player:BuffStack(S.EscalatingBlade) == 4 and not Player:BuffUp(S.ShadowDanceBuff)) or MeleeEnemies10yCount >= 3 and not Player:BuffUp(S.FlawlessFormBuff) or MeleeEnemies10yCount > 10 or (not Used_For_Danse(S.BlackPowder) and Player:BuffUp(S.ShadowDanceBuff) and S.ShurikenTornado:IsAvailable() and MeleeEnemies10yCount >= 3)) then
     if ReturnSpellOnly then
       return S.BlackPowder
     else
@@ -736,7 +725,7 @@ local function Build (EnergyThreshold)
   end
   -- Deathstalker shuriken storm on single target
   -- actions.build+=/shuriken_storm,if=buff.clear_the_witnesses.up&(!buff.symbols_of_death.up|!talent.inevitability)&(buff.lingering_shadow.remains<=6|!talent.lingering_shadow)
-  if S.ShurikenStorm:IsCastable() and Player:BuffUp(S.ClearTheWitnesses) then
+  if S.ShurikenStorm:IsCastable() and Player:BuffUp(S.ClearTheWitnessesBuff) then
     if (not Player:BuffUp(S.SymbolsofDeath) or not S.Inevitability:IsAvailable()) and (Player:BuffRemains(S.LingeringShadowBuff) <= 6 or not S.LingeringShadow:IsAvailable()) then
       if ThresholdMet and HR.Cast(S.ShurikenStorm) then return "Cast Shuriken Storm (Single Target)" end
       SetPoolingAbility(S.ShurikenStorm, EnergyThreshold)
@@ -898,11 +887,9 @@ local function APL ()
       return "Stealthed Pooling"
     end
 
-    -- actions+=/call_action_list,name=stealth_cds,if=variable.stealth_helper|talent.invigorating_shadowdust
-    if Stealth_Helper() or S.InvigoratingShadowdust:IsAvailable() then
-      ShouldReturn = Stealth_CDs()
-      if ShouldReturn then return "Stealth CDs: " .. ShouldReturn end
-    end
+    -- actions+=/call_action_list,name=stealth_cds
+    ShouldReturn = Stealth_CDs(StealthEnergyRequired)
+    if ShouldReturn then return "Stealth CDs: " .. ShouldReturn end
 
     -- actions+=/call_action_list,name=finish,if=buff.darkest_night.up&combo_points==cp_max_spend
     -- actions+=/call_action_list,name=finish,if=effective_combo_points>=cp_max_spend&!buff.darkest_night.up
