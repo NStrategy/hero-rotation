@@ -103,6 +103,7 @@ Spell.Rogue.Commons = {
   DeathStalkersMark       = Spell(457052),
   DeathStalkersMarkDebuff = Spell(457129),
   DoubleJeopardy          = Spell(454430),
+  EdgeCase                = Spell(453457),
   EscalatingBlade         = Spell(441786),
   FateboundCoin           = Spell(453012),
   FateboundCoinHeads      = Spell(456479),
