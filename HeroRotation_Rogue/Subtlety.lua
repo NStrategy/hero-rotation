@@ -290,7 +290,7 @@ local function Finish (ReturnSpellOnly, StealthSpell)
     end
   end
   -- actions.finish+=/coup_de_grace,if=buff.shadow_dance.up&debuff.fazed.up
-  if S.CoupDeGrace:IsCastable() and TargetInMeleeRange and ShadowDanceBuff and Target:DebuffUp(S.Fazed) then
+  if S.CoupDeGrace:IsCastable() and TargetInMeleeRange and ShadowDanceBuff and Target:DebuffUp(S.FazedDebuff) then
     if ReturnSpellOnly then
       return S.CoupDeGrace
     else
