@@ -13,6 +13,7 @@ local Spell = HL.Spell
 local MultiSpell = HL.MultiSpell
 local Item = HL.Item
 local BoolToInt = HL.Utils.BoolToInt
+local ValueIsInArray = HL.Utils.ValueIsInArray
 -- HeroRotation
 local HR = HeroRotation
 local AoEON = HR.AoEON
@@ -301,7 +302,7 @@ local function Finish (ReturnSpellOnly, StealthSpell)
     end
   end
   -- actions.finish+=/coup_de_grace,if=debuff.fazed.up&(buff.shadow_dance.up|(buff.symbols_of_death.up&cooldown.shadow_dance.charges_fractional<=0.85))
-  if S.CoupDeGrace:IsReady() and TargetInMeleeRange and Target:DebuffUp(S.Fazed) and (Player:BuffUp(S.ShadowDanceBuff) or (Player:BuffUp(S.SymbolsofDeath) and S.ShadowDance:ChargesFractional() <= 0.85)) then
+  if S.CoupDeGrace:IsReady() and TargetInMeleeRange and Target:DebuffUp(S.FazedDebuff) and (Player:BuffUp(S.ShadowDanceBuff) or (Player:BuffUp(S.SymbolsofDeath) and S.ShadowDance:ChargesFractional() <= 0.85)) then
     if ReturnSpellOnly then
       return S.CoupDeGrace
     else
@@ -379,7 +380,7 @@ local function Finish (ReturnSpellOnly, StealthSpell)
     end
   end
   -- actions.finish+=/coup_de_grace,if=debuff.fazed.up
-  if S.CoupDeGrace:IsReady() and TargetInMeleeRange and Target:DebuffUp(S.Fazed) then
+  if S.CoupDeGrace:IsReady() and TargetInMeleeRange and Target:DebuffUp(S.FazedDebuff) then
     if ReturnSpellOnly then
       return S.CoupDeGrace
     else
@@ -433,7 +434,7 @@ local function Stealthed (ReturnSpellOnly, StealthSpell)
   end
 
   -- actions.stealthed=shadowstrike,if=talent.deathstalkers_mark&!debuff.deathstalkers_mark.up&!buff.darkest_night.up
-  if ShadowstrikeIsCastable and S.DeathStalkersMark:IsAvailable() and not Target:DebuffUp(S.DeathStalkersMarkBuff) and not Player:BuffUp(S.DarkestNightBuff) then
+  if ShadowstrikeIsCastable and S.DeathStalkersMark:IsAvailable() and not Target:DebuffUp(S.DeathStalkersMarkDebuff) and not Player:BuffUp(S.DarkestNightBuff) then
     if ReturnSpellOnly then
       return S.Shadowstrike
     else
