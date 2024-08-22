@@ -651,6 +651,7 @@ local function CDs (EnergyThreshold)
         if HR.Cast(S.AncestralCall, Settings.CommonsOGCD.OffGCDasOffGCD.Racials) then return "Cast Ancestral Call" end
       end
     end
+  end
 
   return false
 end
@@ -737,6 +738,7 @@ local function Stealth_CDs (EnergyThreshold)
     ShouldReturn = StealthMacro(S.Shadowmeld, EnergyThreshold)
     if ShouldReturn then return "Shadowmeld Macro " .. ShouldReturn end
   end
+
   return false
 end
 
@@ -769,6 +771,7 @@ local function Build (EnergyThreshold)
       SetPoolingAbility(S.Backstab, EnergyThreshold)
     end
   end
+
   return false
 end
 

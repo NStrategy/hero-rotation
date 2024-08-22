@@ -314,6 +314,8 @@ Item.Rogue.Assassination = {
   AshesoftheEmbersoul        = Item(207167, {13, 14}),
   IrideusFragment            = Item(193743, {13, 14}),
   WitherbarksBranch          = Item(109999, {13, 14}),
+  ImperfectAscendancySerum   = Item(225654, {13, 14}),
+  TreacherousTransmitter     = Item(221023, {13, 14}),
 }
 
 Item.Rogue.Outlaw = {
@@ -322,6 +324,8 @@ Item.Rogue.Outlaw = {
   WindscarWhetstone       = Item(137486, {13, 14}),
   BeaconToTheBeyond       = Item(203963, {13, 14}),
   DragonfireBombDispenser = Item(202610, {13, 14}),
+  ImperfectAscendancySerum   = Item(225654, {13, 14}),
+  TreacherousTransmitter     = Item(221023, {13, 14}),
   BattleReadyGoggles      = Item(198326,{1}),
   PersonalSpaceAmplifier  = Item(255940,{6}), -- If you are playing with this enchant, please put your belt item id here instead of "255940". Only then you will not get suggestions.
 }
