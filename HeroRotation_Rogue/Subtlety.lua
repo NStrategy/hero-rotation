@@ -58,6 +58,21 @@ local PriorityRotation
 local DungeonSlice
 local InRaid
 
+-- Trinkets
+local trinket1, trinket2 = Player:GetTrinketItems()
+-- If we don't have trinket items, try again in 2 seconds.
+if trinket1:ID() == 0 or trinket2:ID() == 0 then
+  Delay(2, function()
+    trinket1, trinket2 = Player:GetTrinketItems()
+  end
+  )
+end
+
+HL:RegisterForEvent(function()
+  trinket1, trinket2 = Player:GetTrinketItems()
+end, "PLAYER_EQUIPMENT_CHANGED" )
+
+
 S.Eviscerate:RegisterDamageFormula(
   -- Eviscerate DMG Formula (Pre-Mitigation):
   --- Player Modifier
@@ -239,10 +254,8 @@ local function Secret_Condition ()
   return not Player:BuffUp(S.DarkestNightBuff) and (Player:BuffStack(S.DanseMacabreBuff) >= 2 or not S.DanseMacabre:IsAvailable() or (S.UnseenBlade:IsAvailable() and Player:BuffUp(S.ShadowDanceBuff) and Player:BuffStack(S.EscalatingBlade) >= 2))
 end
 local function Trinket_Sync_Slot ()
-  -- actions.precombat+=/variable,name=trinket_sync_slot,value=1,if=trinket.1.has_stat.any_dps
-  -- &(!trinket.2.has_stat.any_dps|trinket.1.cooldown.duration>=trinket.2.cooldown.duration)
-  -- actions.precombat+=/variable,name=trinket_sync_slot,value=2,if=trinket.2.has_stat.any_dps
-  -- &(!trinket.1.has_stat.any_dps|trinket.2.cooldown.duration>trinket.1.cooldown.duration)
+  -- actions.precombat+=/variable,name=trinket_sync_slot,value=1,if=trinket.1.has_stat.any_dps&(!trinket.2.has_stat.any_dps|trinket.1.cooldown.duration>=trinket.2.cooldown.duration)
+  -- actions.precombat+=/variable,name=trinket_sync_slot,value=2,if=trinket.2.has_stat.any_dps&(!trinket.1.has_stat.any_dps|trinket.2.cooldown.duration>trinket.1.cooldown.duration)
   local TrinketSyncSlot = 0
 
   if trinket1:HasStatAnyDps() and (not trinket2:HasStatAnyDps() or trinket1:Cooldown() >= trinket1:Cooldown()) then
@@ -620,7 +633,7 @@ local function CDs (EnergyThreshold)
     
     -- # Use tea during shadowblade dances and dances in which cold blood is up for sectech
     -- actions.cds+=/thistle_tea,if=!buff.thistle_tea.up&(buff.shadow_dance.remains>=4&buff.shadow_blades.up|buff.shadow_dance.remains>=4&cooldown.cold_blood.remains<=3)|fight_remains<=(6*cooldown.thistle_tea.charges)
-    if S.ThistleTea:IsCastable() and not Player:BuffUp(S.ThistleTea) and (Player:BuffRemains(S.ShadowDanceBuff) >= 4 and Player:BuffUp(S.ShadowBlades) or Player:BuffRemains(S.ShadowDanceBuff) >= 4 and S.ColdBlood:CooldownRemains() <= 3) or (HL.BossFilteredFightRemains("<=", 6 * S.ThistleTea:Charges()) and InRaid) then
+    if S.ThistleTea:IsCastable() and not Player:BuffUp(S.ThistleTea) and (Player:BuffRemains(S.ShadowDanceBuff) >= 4 and Player:BuffUp(S.ShadowBlades) or Player:BuffRemains(S.ShadowDanceBuff) >= 4 and S.ColdBlood:CooldownRemains() <= 3) then
         if HR.Cast(S.ThistleTea, Settings.CommonsOGCD.OffGCDasOffGCD.ThistleTea) then return "Cast Thistle Tea (Max Stacks during Shadow Dance)" end
       end
     -- actions.cds+=/potion,if=buff.bloodlust.react|fight_remains<30|buff.symbols_of_death.up&(buff.shadow_blades.up|cooldown.shadow_blades.remains<=10)
@@ -889,6 +902,10 @@ local function APL ()
     -- actions=call_action_list,name=cds
     ShouldReturn = CDs()
     if ShouldReturn then return "CDs: " .. ShouldReturn end
+
+    -- actions+=/call_action_list,name=items,if=variable.trinket_sync_slot=1
+    ShouldReturn = Items()
+    if ShouldReturn then return "Items: " .. ShouldReturn end
 
     -- actions+=/slice_and_dice,if=combo_points>=1&!buff.slice_and_dice.up
     if S.SliceandDice:IsCastable() and ComboPoints >= 1 and not SnD_Condition() then
