@@ -215,7 +215,7 @@ local function Skip_Rupture (ShadowDanceBuff)
   -- actions.finish+=/variable,name=skip_rupture,value=buff.thistle_tea.up&spell_targets.shuriken_storm=1|buff.shadow_dance.up&(spell_targets.shuriken_storm=1|dot.rupture.ticking&spell_targets.shuriken_storm>=2)|buff.darkest_night.up
   return Player:BuffUp(S.ThistleTea) and MeleeEnemies10yCount == 1 or Player:BuffUp(S.ShadowDanceBuff) and (MeleeEnemies10yCount == 1 or Target:DebuffUp(S.Rupture) and MeleeEnemies10yCount >= 2) or Player:BuffUp(S.DarkestNightBuff)
 end
-local function Skip_Rupture_NPC () -- Homebrew exclude for certain NPCs -- TODO Function to exclude these targets in "MeleeEnemies10yCount >= 5 and S.Rupture:AuraActiveCount() >= MeleeEnemies10yCount - 2"
+local function Skip_Rupture_NPC () -- Homebrew exclude for certain NPCs -- TODO Function to exclude these targets in "MeleeEnemies10yCount >= 5 and S.Rupture:AuraActiveCount() >= MeleeEnemies10yCount - 2" TODO: New NPC Ids for unimportant mobs.
   local NPCID = Target:NPCID() 
    -- Rise
   return NPCID == 206351 or NPCID == 206352 or NPCID == 203763 or NPCID == 203799 or NPCID == 203857 or NPCID == 203688 or NPCID == 205265
@@ -239,7 +239,7 @@ local function Skip_Rupture_NPC () -- Homebrew exclude for certain NPCs -- TODO 
       or NPCID == 210231 or NPCID == 207341 or NPCID == 208459 or NPCID == 208461 or NPCID == 214441 or NPCID == 211306 or NPCID == 214608 or NPCID == 202969 or NPCID == 202971 or NPCID == 194991 or NPCID == 194990 or NPCID == 191714 or NPCID == 194647 or NPCID == 189233 or NPCID == 187638 or NPCID == 191510
 end
 local function Ruptures_Before_Flag ()
-  -- actions.cds=variable,name=ruptures_before_flag,value=spell_targets<=4|talent.invigorating_shadowdust&!talent.follow_the_blood|(talent.replicating_shadows&(spell_targets>=5&active_dot.rupture>=spell_targets-2))|!talent.replicating_shadows
+  -- actions.cds=variable,name=ruptures_before_flag,value=spell_targets<=4|buff.shadow_dance.up|talent.invigorating_shadowdust&!talent.follow_the_blood|(talent.replicating_shadows&(spell_targets>=5&active_dot.rupture>=spell_targets-2))|!talent.replicating_shadows -- If NPC exlucde causes issues with this, I will look at this again (for example, a boss spawning 100 trash adds, Anduiun for example, based on this, the script would not execute Flag, and there no CDs would be used (which is retarded))
   return MeleeEnemies10yCount <= 4 or Player:BuffUp(S.ShadowDanceBuff) or S.InvigoratingShadowdust:IsAvailable() and not S.FollowTheBlood:IsAvailable() or (S.ReplicatingShadows:IsAvailable() and (MeleeEnemies10yCount >= 5 and S.Rupture:AuraActiveCount() >= MeleeEnemies10yCount - 2)) or not S.ReplicatingShadows:IsAvailable()
 end
 local function CB ()
@@ -580,9 +580,9 @@ local function CDs (EnergyThreshold)
   end
 
   if HR.CDsON() then
-    -- actions.cds+=/shadow_blades,if=variable.snd_condition&combo_points<=1&(buff.flagellation_buff.up|!talent.flagellation)
+    -- actions.cds+=/shadow_blades,if=variable.snd_condition&combo_points<=4&(buff.flagellation_buff.up|!talent.flagellation)
     if S.ShadowBlades:IsCastable() then
-      if SnDCondition and ComboPoints <= 1 and (Player:BuffUp(S.Flagellation) or not S.Flagellation:IsAvailable()) then 
+      if SnDCondition and ComboPoints <= 4 and (Player:BuffUp(S.Flagellation) or not S.Flagellation:IsAvailable()) then 
         if HR.Cast(S.ShadowBlades, Settings.Subtlety.OffGCDasOffGCD.ShadowBlades) then return "Cast Shadow Blades" end
       end
     end
@@ -616,7 +616,7 @@ local function CDs (EnergyThreshold)
         ShouldReturn = StealthMacro(S.ShadowDance, EnergyThreshold)
         if ShouldReturn then return "ShadowDance Macro " .. ShouldReturn end
     end
-    -- actions.cds+=/shadow_dance,if=!buff.shadow_dance.up&talent.unseen_blade&talent.invigorating_shadowdust&dot.rupture.ticking&variable.snd_condition&(buff.symbols_of_death.remains>=6&!buff.flagellation_buff.up|buff.symbols_of_death.up&buff.shadow_blades.up|buff.shadow_blades.up&!talent.invigorating_shadowdust)&(cooldown.secret_technique.remains<10+12*!talent.invigorating_shadowdust|buff.shadow_blades.up)&(!talent.the_first_dance|(combo_points.deficit>=7&!buff.shadow_blades.up|buff.shadow_blades.up))
+    -- actions.cds+=/shadow_dance,if=!buff.shadow_dance.up&talent.unseen_blade&talent.invigorating_shadowdust&dot.rupture.ticking&variable.snd_condition&(buff.symbols_of_death.remains>=6&!buff.flagellation_buff.up|buff.symbols_of_death.up&buff.shadow_blades.up|buff.shadow_blades.up&!talent.invigorating_shadowdust)&(cooldown.secret_technique.remains<10+12*!talent.invigorating_shadowdust|buff.shadow_blades.up)&(!talent.the_first_dance|(combo_points.deficit>=7&!buff.shadow_blades.up|buff.shadow_blades.up)) note: !buff.flagellation_buff.up is a dmg loss on old tier set with M+ Brew builds
     if S.ShadowDance:IsCastable() and not Player:BuffUp(S.ShadowDanceBuff) and S.UnseenBlade:IsAvailable() and S.InvigoratingShadowdust:IsAvailable() and Target:DebuffUp(S.Rupture) and SnDCondition and (Player:BuffRemains(S.SymbolsofDeath) >= 6 and not Player:BuffUp(S.Flagellation) or Player:BuffUp(S.SymbolsofDeath) and Player:BuffUp(S.ShadowBlades) or Player:BuffUp(S.ShadowBlades) and not S.InvigoratingShadowdust:IsAvailable()) and (S.SecretTechnique:CooldownRemains() < 10 + 12 * BoolToInt(not S.InvigoratingShadowdust:IsAvailable()) or Player:BuffUp(S.ShadowBlades)) and (not S.TheFirstDance:IsAvailable() or (ComboPointsDeficit >= 7 and not Player:BuffUp(S.ShadowBlades) or Player:BuffUp(S.ShadowBlades))) then
         ShouldReturn = StealthMacro(S.ShadowDance, EnergyThreshold)
         if ShouldReturn then return "ShadowDance Macro " .. ShouldReturn end
