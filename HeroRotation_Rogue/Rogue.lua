@@ -219,6 +219,7 @@ Spell.Rogue.Outlaw = MergeTableByKey(Spell.Rogue.Commons, {
   ImprovedBetweenTheEyes  = Spell(235484),
   KeepItRolling           = Spell(381989),
   KillingSpree            = Spell(51690),
+  LoadedDice              = Spell(256170),
   LoadedDiceBuff          = Spell(256171),
   PreyontheWeak           = Spell(131511),
   PreyontheWeakDebuff     = Spell(255909),
