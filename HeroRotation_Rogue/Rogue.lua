@@ -96,7 +96,7 @@ Spell.Rogue.Commons = {
   WithoutATrace           = Spell(382513),
   -- Hero Talents
   ClearTheWitnesses       = Spell(457053),
-  ClearTheWitnessesBuff   = Spell(457179),
+  ClearTheWitnessesBuff   = Spell(457178),
   CoupDeGrace             = Spell(441776),
   DarkestNight            = Spell(457058),
   DarkestNightBuff        = Spell(457280),

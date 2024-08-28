@@ -77,20 +77,28 @@ local TrinketSyncSlot = 0
 local EffectiveCPSpend
 
 -- Equipment
+local VarTrinketFailures = 0
 local function SetTrinketVariables ()
-  TrinketItem1, TrinketItem2 = Player:GetTrinketItems()
+  local T1, T2 = Player:GetTrinketData()
+
   -- If we don't have trinket items, try again in 2 seconds.
-  if TrinketItem1:ID() == 0 or TrinketItem2:ID() == 0 then
-    Delay(2, function()
-        TrinketItem1, TrinketItem2 = Player:GetTrinketItems()
+  if VarTrinketFailures < 5 and (T1.ID == 0 or T2.ID == 0) then
+    VarTrinketFailures = VarTrinketFailures + 1
+    Delay(5, function()
+        SetTrinketVariables()
       end
     )
+    return
   end
+
+  TrinketItem1 = T1.Object
+  TrinketItem2 = T2.Object
+
   -- actions.precombat+=/variable,name=trinket_sync_slot,value=1,if=trinket.1.has_stat.any_dps&(!trinket.2.has_stat.any_dps|trinket.1.cooldown.duration>=trinket.2.cooldown.duration)&!trinket.2.is.witherbarks_branch|trinket.1.is.witherbarks_branch
   -- actions.precombat+=/variable,name=trinket_sync_slot,value=2,if=trinket.2.has_stat.any_dps&(!trinket.1.has_stat.any_dps|trinket.2.cooldown.duration>trinket.1.cooldown.duration)&!trinket.1.is.witherbarks_branch|trinket.2.is.witherbarks_branch
-  if TrinketItem1:HasStatAnyDps() and (not TrinketItem2:HasStatAnyDps() or TrinketItem1:Cooldown() >= TrinketItem2:Cooldown()) and TrinketItem2:ID() ~= I.WitherbarksBranch:ID() or TrinketItem1:ID() == I.WitherbarksBranch:ID() then
+  if TrinketItem1:HasStatAnyDps() and (not TrinketItem2:HasStatAnyDps() or T1.Cooldown >= T2.Cooldown) and T2.ID ~= I.WitherbarksBranch:ID() or T1.ID == I.WitherbarksBranch:ID() then
     TrinketSyncSlot = 1
-  elseif TrinketItem2:HasStatAnyDps() and (not TrinketItem1:HasStatAnyDps() or TrinketItem2:Cooldown() > TrinketItem1:Cooldown()) and TrinketItem1:ID() ~= I.WitherbarksBranch:ID() or TrinketItem2:ID() == I.WitherbarksBranch:ID() then
+  elseif TrinketItem2:HasStatAnyDps() and (not TrinketItem1:HasStatAnyDps() or T2.Cooldown > T1.Cooldown) and T1.ID ~= I.WitherbarksBranch:ID() or T2.ID == I.WitherbarksBranch:ID() then
     TrinketSyncSlot = 2
   else
     TrinketSyncSlot = 0
@@ -100,6 +108,7 @@ SetTrinketVariables()
 
 
 HL:RegisterForEvent(function()
+  VarTrinketFailures = 0
   SetTrinketVariables()
 end, "PLAYER_EQUIPMENT_CHANGED" )
 
@@ -204,10 +213,10 @@ end
 -- |energy.pct>=(40+30*talent.hand_of_fate-15*talent.vicious_venoms)
 -- |fight_remains<=20
 local function NotPoolingVar()
-  if ((Target:DebuffUp(S.Deathmark) or Target:DebuffUp(S.Kingsbane) or Target:DebuffUp(S.ShivDebuff))
+  if (Target:DebuffUp(S.Deathmark) or Target:DebuffUp(S.Kingsbane) or Target:DebuffUp(S.ShivDebuff))
     or (Player:BuffUp(S.Envenom) and Player:BuffRemains(S.Envenom) <= 1)
     or Player:EnergyPercentage() >= (40 + 30 * num(S.HandOfFate:IsAvailable()) - 15 * num(S.ViciousVenoms:IsAvailable()))
-    or HL.BossFilteredFightRemains("<=", 20)) then
+    or HL.BossFilteredFightRemains("<=", 20) then
       return true
   end
   return false
@@ -339,7 +348,7 @@ local function Stealthed (ReturnSpellOnly, ForceStealth)
   -- actions.stealthed=pool_resource,for_next=1
 
   -- actions.stealthed+=/ambush,if=!debuff.deathstalkers_mark.up&talent.deathstalkers_mark&!buff.darkest_night.up
-  if (S.Ambush:IsCastable() or ForceStealth)  and Target:DebuffDown(S.DeathStalkersMarkDebuff) and S.DeathStalkersMark:IsAvailable()
+  if (S.Ambush:IsReady() or ForceStealth)  and Target:DebuffDown(S.DeathStalkersMarkDebuff) and S.DeathStalkersMark:IsAvailable()
     and Player:BuffDown(S.DarkestNightBuff) then
     if ReturnSpellOnly then
       return S.Ambush
@@ -419,7 +428,7 @@ local function Stealthed (ReturnSpellOnly, ForceStealth)
     if HR.AoEON() then
       local TargetIfUnit = CheckTargetIfTarget("min", GarroteTargetIfFunc, GarroteIfFunc)
       if TargetIfUnit and TargetIfUnit:GUID() ~= Target:GUID() then
-        CastLeftNameplate(TargetIfUnit, S.Garrote)
+        return CastLeftNameplate(TargetIfUnit, S.Garrote)
       end
     end
     if GarroteIfFunc(Target) then
@@ -450,8 +459,10 @@ local function StealthMacro (StealthSpell)
   -- If false, just suggest them as off-GCD and bail out of the macro functionality
   if StealthSpell:ID() == S.Vanish:ID() and (not Settings.Assassination.StealthMacro.Vanish or not MacroAbility) then
     if Cast(S.Vanish, Settings.CommonsOGCD.OffGCDasOffGCD.Vanish) then return "Cast Vanish" end
+    return false
   elseif StealthSpell:ID() == S.Shadowmeld:ID() and (not Settings.Assassination.StealthMacro.Shadowmeld or not MacroAbility) then
     if Cast(S.Shadowmeld, Settings.CommonsOGCD.OffGCDasOffGCD.Racials) then return "Cast Shadowmeld" end
+    return false
   end
 
   local MacroTable = {StealthSpell, MacroAbility}
@@ -663,11 +674,8 @@ local function CDs ()
   end
 
   -- -- actions.cds+=/call_action_list,name=shiv
-  if ShouldReturn then
-    ShivUsage()
-  else
-    ShouldReturn = ShivUsage()
-  end
+  ShouldReturn = ShivUsage()
+  if ShouldReturn then return ShouldReturn end
 
   -- actions.cds+=/kingsbane,if=(debuff.shiv.up|cooldown.shiv.remains<6)&buff.envenom.up&(cooldown.deathmark.remains>=50|dot.deathmark.ticking)|fight_remains<=15
   if S.Kingsbane:IsReady() then
@@ -805,10 +813,10 @@ local function Direct ()
   -- actions.direct+=/ambush,if=talent.caustic_spatter&dot.rupture.ticking&(!debuff.caustic_spatter.up|debuff.caustic_spatter.remains<=2)&variable.use_filler&!variable.single_target
   if not SingleTarget and S.CausticSpatter:IsAvailable() and Target:DebuffUp(S.Rupture) and Target:DebuffRemains(S.CausticSpatterDebuff) <= 2 then
     if S.Mutilate:IsCastable() then
-      if Cast(S.Mutilate, nil, nil, not TargetInMeleeRange) then return "Cast Mutilate (Casutic)" end
+      if Cast(S.Mutilate, nil, nil, not TargetInMeleeRange) then return "Cast Mutilate (Caustic)" end
     end
 
-    if (S.Ambush:IsCastable() or S.AmbushOverride:IsCastable()) and (Player:StealthUp(true, true) or Player:BuffUp(S.BlindsideBuff)) then
+    if (S.Ambush:IsReady() or S.AmbushOverride:IsReady()) and (Player:StealthUp(true, true) or Player:BuffUp(S.BlindsideBuff)) then
       if Cast(S.Ambush, nil, nil, not TargetInMeleeRange) then return "Cast Ambush (Caustic)" end
     end
   end
@@ -840,7 +848,7 @@ local function Direct ()
   end
 
   -- actions.direct+=/ambush,if=variable.use_filler&(buff.blindside.up|stealthed.rogue)&(!dot.kingsbane.ticking|debuff.deathmark.down|buff.blindside.up)
-  if (S.Ambush:IsCastable() or S.AmbushOverride:IsCastable()) and (Player:BuffUp(S.BlindsideBuff) or Player:StealthUp(true, false))
+  if (S.Ambush:IsReady() or S.AmbushOverride:IsReady()) and (Player:BuffUp(S.BlindsideBuff) or Player:StealthUp(true, false))
     and (Target:DebuffDown(S.Kingsbane) or Target:DebuffDown(S.Deathmark) or Player:BuffUp(S.BlindsideBuff)) then
       if CastPooling(S.Ambush, nil, not TargetInMeleeRange) then return "Cast Ambush" end
   end
@@ -951,9 +959,6 @@ local function APL ()
       ShouldReturn = Stealthed()
       if ShouldReturn then return ShouldReturn .. " (Stealthed)" end
     end
-    -- actions+=/call_action_list,name=cds
-    ShouldReturn = CDs()
-    if ShouldReturn then return ShouldReturn end
 
     -- # Put SnD up initially for Cut to the Chase, refresh with Envenom if at low duration
     -- actions+=/slice_and_dice,if=!buff.slice_and_dice.up&dot.rupture.ticking&combo_points>=1
@@ -978,6 +983,10 @@ local function APL ()
         if Cast(S.PoisonedKnife) then return "Cast Poisoned Knife" end
       end
     end
+
+    -- actions+=/call_action_list,name=cds
+    ShouldReturn = CDs()
+    if ShouldReturn then return ShouldReturn end
 
     -- actions+=/call_action_list,name=dot
     -- actions+=/call_action_list,name=aoe_dot,if=!variable.single_target
@@ -1008,7 +1017,7 @@ local function APL ()
       end
     end
     -- Trick to take in consideration the Recovery Setting
-    if S.Mutilate:IsCastable() or S.Ambush:IsCastable() or S.AmbushOverride:IsCastable() then
+    if S.Mutilate:IsCastable() or S.Ambush:IsReady() or S.AmbushOverride:IsReady() then
       if Cast(S.PoolEnergy) then return "Normal Pooling" end
     end
   end
