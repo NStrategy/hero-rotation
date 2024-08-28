@@ -287,10 +287,10 @@ local function Finish (ReturnSpellOnly, StealthSpell)
   end
 
   local SkipRupture = Skip_Rupture(ShadowDanceBuff)
-  -- actions.finish+=/rupture,if=!dot.rupture.ticking&target.time_to_die-remains>6 NOTE: Homebrew check for M+, if at 1 or 2 targets, use Rupture unless the NPC is excluded. If at 3 or more targets, ignore Rupture when in Dance unless priority target, given that at 3 targets you use BlackPowder/AOE.
+  -- actions.finish+=/rupture,if=!dot.rupture.ticking&target.time_to_die-remains>6 NOTE: Never use Rupture in Dance/Maybe add a check for 1 or 2 Targets in Raid? Will see
   if S.Rupture:IsCastable() then
       if not Target:DebuffUp(S.Rupture) and Target:FilteredTimeToDie(">", 6, -Target:DebuffRemains(S.Rupture)) then
-          if (MeleeEnemies10yCount <= 2 and (not Skip_Rupture_NPC() or PriorityRotation)) or (MeleeEnemies10yCount >= 3 and (not Skip_Rupture_NPC() or PriorityRotation) and (not Player:BuffUp(S.ShadowDanceBuff) or PriorityRotation)) then
+          if (not Skip_Rupture_NPC() or PriorityRotation) and (not Player:BuffUp(S.ShadowDanceBuff) or PriorityRotation) then
               if ReturnSpellOnly then
                   return S.Rupture
               else
@@ -309,17 +309,17 @@ local function Finish (ReturnSpellOnly, StealthSpell)
       if ReturnSpellOnly then
         return S.Rupture
       else
-        if S.Rupture:IsReady() and HR.Cast(S.Rupture) then return "Cast Rupture Refresh" end
+        if S.Rupture:IsCastable() and HR.Cast(S.Rupture) then return "Cast Rupture Refresh" end
         SetPoolingFinisher(S.Rupture)
       end
     end
   end
   -- actions.finish+=/coup_de_grace,if=debuff.fazed.up&(buff.shadow_dance.up|(buff.symbols_of_death.up&cooldown.shadow_dance.charges_fractional<=0.85))
-  if S.CoupDeGrace:IsReady() and TargetInMeleeRange and Target:DebuffUp(S.FazedDebuff) and (Player:BuffUp(S.ShadowDanceBuff) or (Player:BuffUp(S.SymbolsofDeath) and S.ShadowDance:ChargesFractional() <= 0.85)) then
+  if S.CoupDeGrace:IsCastable() and TargetInMeleeRange and Target:DebuffUp(S.FazedDebuff) and (ShadowDanceBuff or (Player:BuffUp(S.SymbolsofDeath) and S.ShadowDance:ChargesFractional() <= 0.85)) then
     if ReturnSpellOnly then
       return S.CoupDeGrace
     else
-      if S.CoupDeGrace:IsCastable() and HR.Cast(S.CoupDeGrace) then return "Cast Coup De Grace 1" end
+      if S.CoupDeGrace:IsReady() and HR.Cast(S.CoupDeGrace) then return "Cast Coup De Grace 1" end
       SetPoolingFinisher(S.CoupDeGrace)
     end
   end
@@ -374,7 +374,7 @@ local function Finish (ReturnSpellOnly, StealthSpell)
   end
   -- # TS BP
   -- actions.finish+=/black_powder,if=!variable.priority_rotation&talent.unseen_blade&((buff.escalating_blade.stack=4&!buff.shadow_dance.up)|spell_targets>=3&!buff.flawless_form.up|spell_targets>10|(!used_for_danse&buff.shadow_dance.up&talent.shuriken_tornado&spell_targets>=3))
-  if S.BlackPowder:IsCastable() and not PriorityRotation and S.UnseenBlade:IsAvailable() and ((Player:BuffStack(S.EscalatingBlade) == 4 and not Player:BuffUp(S.ShadowDanceBuff)) or MeleeEnemies10yCount >= 3 and not Player:BuffUp(S.FlawlessFormBuff) or MeleeEnemies10yCount > 10 or (not Used_For_Danse(S.BlackPowder) and Player:BuffUp(S.ShadowDanceBuff) and S.ShurikenTornado:IsAvailable() and MeleeEnemies10yCount >= 3)) then
+  if S.BlackPowder:IsCastable() and not PriorityRotation and S.UnseenBlade:IsAvailable() and ((Player:BuffStack(S.EscalatingBlade) == 4 and not ShadowDanceBuff) or MeleeEnemies10yCount >= 3 and not Player:BuffUp(S.FlawlessFormBuff) or MeleeEnemies10yCount > 10 or (not Used_For_Danse(S.BlackPowder) and ShadowDanceBuff and S.ShurikenTornado:IsAvailable() and MeleeEnemies10yCount >= 3)) then
     if ReturnSpellOnly then
       return S.BlackPowder
     else
@@ -393,11 +393,11 @@ local function Finish (ReturnSpellOnly, StealthSpell)
     end
   end
   -- actions.finish+=/coup_de_grace,if=debuff.fazed.up
-  if S.CoupDeGrace:IsReady() and TargetInMeleeRange and Target:DebuffUp(S.FazedDebuff) then
+  if S.CoupDeGrace:IsCastable() and TargetInMeleeRange and Target:DebuffUp(S.FazedDebuff) then
     if ReturnSpellOnly then
       return S.CoupDeGrace
     else
-      if S.CoupDeGrace:IsCastable() and HR.Cast(S.CoupDeGrace) then return "Cast Coup De Grace" end
+      if S.CoupDeGrace:IsReady() and HR.Cast(S.CoupDeGrace) then return "Cast Coup De Grace" end
       SetPoolingFinisher(S.CoupDeGrace)
     end
   end
