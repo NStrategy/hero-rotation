@@ -29,6 +29,8 @@ local bool = HR.Commons.Everyone.bool
 local mathmin = math.min
 local mathmax = math.max
 local mathabs = math.abs
+-- WoW API
+local Delay = C_Timer.After
 
 --- ============================ CONTENT ============================
 --- ======= APL LOCALS =======
@@ -51,22 +53,23 @@ local I = Item.Rogue.Outlaw
 
 -- Create table to exclude above trinkets from On Use function
 local OnUseExcludes = {
-  I.ManicGrieftorch:ID(),
-  I.DragonfireBombDispenser:ID(),
-  I.BeaconToTheBeyond:ID(),
+  I.ImperfectAscendancySerum:ID(),
   I.BattleReadyGoggles:ID(),
   I.PersonalSpaceAmplifier:ID()
 }
 
 -- Trinkets
-local Equipment = Player:GetEquipment()
-local trinket1 = Equipment[13] and Item(Equipment[13]) or Item(0)
-local trinket2 = Equipment[14] and Item(Equipment[14]) or Item(0)
+local trinket1, trinket2 = Player:GetTrinketItems()
+-- If we don't have trinket items, try again in 2 seconds.
+if trinket1:ID() == 0 or trinket2:ID() == 0 then
+  Delay(2, function()
+      trinket1, trinket2 = Player:GetTrinketItems()
+    end
+  )
+end
 
 HL:RegisterForEvent(function()
-  Equipment = Player:GetEquipment()
-  trinket1 = Equipment[13] and Item(Equipment[13]) or Item(0)
-  trinket2 = Equipment[14] and Item(Equipment[14]) or Item(0)
+  trinket1, trinket2 = Player:GetTrinketItems()
 end, "PLAYER_EQUIPMENT_CHANGED" )
 
 
@@ -111,30 +114,68 @@ local RtB_BuffsList = {
   S.TrueBearing
 }
 
+local enableRtBDebugging = false
 -- Get the number of Roll the Bones buffs currently on
 local function RtB_Buffs ()
   if not Cache.APLVar.RtB_Buffs then
     Cache.APLVar.RtB_Buffs = {}
+    Cache.APLVar.RtB_Buffs.Will_Lose = {}
+    Cache.APLVar.RtB_Buffs.Will_Lose.Total = 0
     Cache.APLVar.RtB_Buffs.Total = 0
     Cache.APLVar.RtB_Buffs.Normal = 0
     Cache.APLVar.RtB_Buffs.Shorter = 0
     Cache.APLVar.RtB_Buffs.Longer = 0
+    Cache.APLVar.RtB_Buffs.MinRemains = 0
+    Cache.APLVar.RtB_Buffs.MaxRemains = 0
     local RtBRemains = Rogue.RtBRemains()
     for i = 1, #RtB_BuffsList do
       local Remains = Player:BuffRemains(RtB_BuffsList[i])
       if Remains > 0 then
         Cache.APLVar.RtB_Buffs.Total = Cache.APLVar.RtB_Buffs.Total + 1
-        if Remains == RtBRemains then
+        if Remains > Cache.APLVar.RtB_Buffs.MaxRemains then
+          Cache.APLVar.RtB_Buffs.MaxRemains = Remains
+        end
+
+        if Remains < Cache.APLVar.RtB_Buffs.MinRemains then
+          Cache.APLVar.RtB_Buffs.MinRemains = Remains
+        end
+
+        local difference = math.abs(Remains - RtBRemains)
+        if difference <= 0.5 then
           Cache.APLVar.RtB_Buffs.Normal = Cache.APLVar.RtB_Buffs.Normal + 1
+          Cache.APLVar.RtB_Buffs.Will_Lose[RtB_BuffsList[i]:Name()] = true
+          Cache.APLVar.RtB_Buffs.Will_Lose.Total = Cache.APLVar.RtB_Buffs.Will_Lose.Total + 1
+
         elseif Remains > RtBRemains then
           Cache.APLVar.RtB_Buffs.Longer = Cache.APLVar.RtB_Buffs.Longer + 1
+
         else
           Cache.APLVar.RtB_Buffs.Shorter = Cache.APLVar.RtB_Buffs.Shorter + 1
+          Cache.APLVar.RtB_Buffs.Will_Lose[RtB_BuffsList[i]:Name()] = true
+          Cache.APLVar.RtB_Buffs.Will_Lose.Total = Cache.APLVar.RtB_Buffs.Will_Lose.Total + 1
         end
       end
+
+      if enableRtBDebugging then
+        print("RtbRemains", RtBRemains)
+        print(RtB_BuffsList[i]:Name(), Remains)
+      end
+    end
+
+    if enableRtBDebugging then
+      print("have: ", Cache.APLVar.RtB_Buffs.Total)
+      print("will lose: ", Cache.APLVar.RtB_Buffs.Will_Lose.Total)
+      print("shorter: ", Cache.APLVar.RtB_Buffs.Shorter)
+      print("normal: ", Cache.APLVar.RtB_Buffs.Normal)
+      print("longer: ", Cache.APLVar.RtB_Buffs.Longer)
+      print("max remains: ", Cache.APLVar.RtB_Buffs.MaxRemains)
     end
   end
   return Cache.APLVar.RtB_Buffs.Total
+end
+
+local function checkBuffWillLose(buff)
+  return (Cache.APLVar.RtB_Buffs.Will_Lose and Cache.APLVar.RtB_Buffs.Will_Lose[buff]) and true or false
 end
 
 -- Function to get the longest remaining duration of RtB buffs
@@ -162,7 +203,7 @@ local function ShortestRtBRemains()
 end
 
 -- RtB rerolling strategy, return true if we should reroll
-local function RtB_Reroll ()
+local function RtB_Reroll()
   if not Cache.APLVar.RtB_Reroll then
     -- 1+ Buff
     if Settings.Outlaw.RolltheBonesLogic == "1+ Buff" then
@@ -187,35 +228,26 @@ local function RtB_Reroll ()
       Cache.APLVar.RtB_Reroll = (not Player:BuffUp(S.TrueBearing)) and true or false
       -- SimC Default
     else
-      -- Reset the default value of RtB_Reroll
       Cache.APLVar.RtB_Reroll = false
       RtB_Buffs()
-      -- Following Rogue Discord FAQ: Use Roll the Bones if: You have 0-1 buffs OR if you have 2 buffs and Loaded Dice is active.
-      -- actions+=/variable,name=rtb_reroll,if=set_bonus.tier31_4pc,value=(rtb_buffs<=1+buff.loaded_dice.up)
-      if Player:HasTier(31, 4) then
-        if (RtB_Buffs() <= 1 + num(Player:BuffUp(S.LoadedDiceBuff))) then
-          Cache.APLVar.RtB_Reroll = true
-        end
+      -- # If Loaded Dice is talented, then keep any 1 buff from Roll the Bones but roll it into 2 buffs when Loaded Dice is active
+      -- actions+=/variable,name=rtb_reroll,if=talent.loaded_dice,value=rtb_buffs.will_lose=buff.loaded_dice.up
+      if (RtB_Buffs() < 1 + num(Player:BuffUp(S.LoadedDiceBuff))) then
+        Cache.APLVar.RtB_Reroll = true
       end
-      -- Added safety reroll check for the situation if we are at 2 seconds of normal buffs and a cto from stealth procs, my new LongestRtBRemains would not trigger in the RTB condition, thereby not rerolling correctly. With this, if there are 3 or more buffs under 2 seconds, it would reroll even tho the longest duration may be longer. Will add further safety checks in the future/if needed
+      -- Check to see if its worth to reroll your buffs instead of letting them expire, i.e, always keeping TrueBearing and some feelcraft on Keeping Broadside when using KiR
       local buffsCloseToExpiration = 0
       for _, buff in ipairs(RtB_BuffsList) do
         if Player:BuffUp(buff) and Player:BuffRemains(buff) <= 2 then
           buffsCloseToExpiration = buffsCloseToExpiration + 1
         end
       end
-      if buffsCloseToExpiration >= 3 and Player:HasTier(31, 4) and S.RolltheBones:TimeSinceLastCast() >= 26 then 
+      if buffsCloseToExpiration >= 2 and S.RolltheBones:TimeSinceLastCast() >= 28 and (Player:BuffUp(S.TrueBearing) or (Player:BuffUp(S.Broadside) and S.KeepItRolling:IsAvailable())) then 
         Cache.APLVar.RtB_Reroll = true
       end
-      -- Following Rogue Discord FAQ: Keep any 2 buffs from Roll the Bones. If you have 1 buff, reroll if it is not True Bearing (for HO builds), or Broadside (for KIR builds).
-      -- Without T31 4pc
-      if not Player:HasTier(31, 4) then
-        if RtB_Buffs() == 0 or (RtB_Buffs() == 1 and not Player:BuffUp(S.TrueBearing) and S.HiddenOpportunity:IsAvailable()) or (RtB_Buffs() == 1 and not Player:BuffUp(S.Broadside) and S.KeepItRolling:IsAvailable()) then
-          Cache.APLVar.RtB_Reroll = true
-        end
-      end
-      -- Extra Reroll check for KiR -- actions+=/variable,name=rtb_reroll,value=variable.rtb_reroll&rtb_buffs.longer=0|rtb_buffs.normal=0&rtb_buffs.longer>=1&rtb_buffs<6&rtb_buffs.max_remains<=39&!stealthed.all&buff.loaded_dice.up
-      -- After you press KIR, those KIR buffs don't get rerolled by the next Roll the Bones. So use RTB once after you press KIR to try and get even more buffs. Only Reroll if all active buffs will not be rolled away, not in stealth, Loaded Dice is active, and we have less than 6 buffs
+      -- # If all active Roll the Bones buffs are ahead of its container buff and have under 40s remaining,
+      -- then reroll again with Loaded Dice active in an attempt to get even more buffs
+      -- actions+=/variable,name=rtb_reroll,value=variable.rtb_reroll&rtb_buffs.longer=0|rtb_buffs.normal=0&rtb_buffs.longer>=1&rtb_buffs<6&rtb_buffs.max_remains<=39&!stealthed.all&buff.loaded_dice.up
       if S.KeepItRolling:IsAvailable() and not S.KeepItRolling:IsReady() then
         if S.KeepItRolling:TimeSinceLastCast() < S.RolltheBones:TimeSinceLastCast() then
           local allBuffsBelowThreshold = true
@@ -234,6 +266,7 @@ local function RtB_Reroll ()
       end
     end
   end
+
   return Cache.APLVar.RtB_Reroll
 end
 
@@ -256,7 +289,7 @@ local function Vanish_DPS_Condition ()
 end
 
 local function Stealth(ReturnSpellOnly)
-  -- # Stealth
+  -- # Stealth # High priority stealth list, will fall through if no conditions are met
   if S.BladeFlurry:IsReady() then
     -- # With Deft Maneuvers, use Blade Flurry on cooldown at 5+ targets, or at 3-4 targets if missing combo points equal to the amount given
     -- actions.cds+=/blade_flurry,if=talent.deft_maneuvers&!variable.finish_condition&((spell_targets=3&(combo_points=3|combo_points=4))|(spell_targets=4&(combo_points=2|combo_points=3))|spell_targets>=5)
@@ -278,13 +311,10 @@ local function Stealth(ReturnSpellOnly)
     end
   end
 
-	-- actions.stealth+=/cold_blood,if=variable.finish_condition
+	-- actions.stealth=cold_blood,if=variable.finish_condition
 	if S.ColdBlood:IsCastable() and Player:BuffDown(S.ColdBlood) and Target:IsSpellInRange(S.Dispatch) and Finish_Condition() then
 		if HR.Cast(S.ColdBlood, Settings.CommonsOGCD.OffGCDasOffGCD.ColdBlood) then return "Cast Cold Blood" end
 	end
-
-  -- # Ensure Crackshot BtE is not skipped because of low energy
-  -- actions.stealth+=/pool_resource,for_next=1
 
   -- # High priority Between the Eyes for Crackshot, except not directly out of Shadowmeld
 	-- actions.stealth+=/between_the_eyes,if=variable.finish_condition&talent.crackshot&(!buff.shadowmeld.up|stealthed.rogue)
@@ -349,8 +379,8 @@ local function Finish(ReturnSpellOnly)
   end
 
 	-- # Crackshot builds use Between the Eyes outside of Stealth if we will not enter a Stealth window before the next cast
-  -- actions.finish+=/between_the_eyes,if=talent.crackshot&cooldown.vanish.remains>45&(raid_event.adds.remains>8|raid_event.adds.in<raid_event.adds.remains|!raid_event.adds.up)
-	if S.BetweentheEyes:IsCastable() and Target:IsSpellInRange(S.BetweentheEyes) and S.Crackshot:IsAvailable() and S.Vanish:CooldownRemains() > 45 then
+  -- actions.finish+=/between_the_eyes,if=talent.crackshot&(cooldown.vanish.remains>45|talent.underhanded_upper_hand&talent.without_a_trace&(buff.adrenaline_rush.remains>10|buff.adrenaline_rush.down&cooldown.adrenaline_rush.remains>45))
+	if S.BetweentheEyes:IsCastable() and Target:IsSpellInRange(S.BetweentheEyes) and S.Crackshot:IsAvailable() and (S.Vanish:CooldownRemains() > 45 or S.UnderhandedUpperhand:IsAvailable() and S.WithoutATrace:IsAvailable() and (Player:BuffRemains(S.AdrenalineRush) > 10 or Player:BuffDown(S.AdrenalineRush) and S.AdrenalineRush:CooldownRemains() > 45)) then
     if ReturnSpellOnly then
       return S.BetweentheEyes
     else
@@ -369,6 +399,7 @@ local function Finish(ReturnSpellOnly)
     end
   end
 
+  -- actions.finish+=/cold_blood
   if S.ColdBlood:IsCastable() and Player:BuffDown(S.ColdBlood) and Target:IsSpellInRange(S.Dispatch) then
     if HR.Cast(S.ColdBlood, Settings.CommonsOGCD.OffGCDasOffGCD.ColdBlood) then return "Cast Cold Blood" end
   end
@@ -444,12 +475,20 @@ local function StealthCDs ()
     if ShouldReturn then return "Vanish Macro 3 " .. ShouldReturn end
   end
 
-  -- # Builds without Underhanded Upper Hand, Crackshot, and Hidden Opportunity use Vanish into a builder to activate Double Jeopardy without breaking the current coin streak, or to activate Take em by Surprise
-  -- actions.stealth_cds+=/vanish,if=!talent.underhanded_upper_hand&!talent.crackshot&!talent.hidden_opportunity&(!variable.finish_condition&talent.double_jeopardy|!buff.take_em_by_surprise.up&talent.take_em_by_surprise)
-  if S.Vanish:IsCastable() and not S.UnderhandedUpperhand:IsAvailable() and not S.Crackshot:IsAvailable() and not S.HiddenOpportunity:IsAvailable() and (not Finish_Condition() and S.DoubleJeopardy:IsAvailable() or not Player:BuffUp(S.TakeEmBySurpriseBuff) and S.TakeEmBySurprise:IsAvailable()) then
+  -- # Builds without Underhanded Upper Hand, Crackshot, and Hidden Opportunity but with Fatebound use Vanish at five stacks of either Fatebound coin in order to proc the Lucky Coin if it's not already active, and otherwise continue to Vanish into a Dispatch to proc Double Jeopardy on a biased coin
+  -- actions.stealth_cds+=/vanish,if=!talent.underhanded_upper_hand&!talent.crackshot&!talent.hidden_opportunity&talent.fateful_ending&(!buff.fatebound_lucky_coin.up&(buff.fatebound_coin_tails.stack>=5|buff.fatebound_coin_heads.stack>=5)|buff.fatebound_lucky_coin.up&!cooldown.between_the_eyes.ready)
+  if S.Vanish:IsCastable() and not S.UnderhandedUpperhand:IsAvailable() and not S.Crackshot:IsAvailable() and not S.HiddenOpportunity:IsAvailable() and S.FatefulEnding:IsAvailable() and (not Player:BuffUp(S.FateboundLuckyCoin) and (Player:BuffStack(S.FateboundCoinTails) >= 5 or Player:BuffStack(S.FateboundCoinHeads) >=5) or Player:BuffUp(S.FateboundLuckyCoin) and not S.BetweentheEyes:IsCastable()) then
     -- if HR.Cast(S.Vanish, Settings.CommonsOGCD.OffGCDasOffGCD.Vanish) then return "Cast Vanish (JeopardyorTakeembysurprise)" end
     ShouldReturn = SpellQueueMacro(S.Vanish)
     if ShouldReturn then return "Vanish Macro 4 " .. ShouldReturn end
+  end
+
+  -- # Builds with none of the above can use Vanish to maintain Take 'em By Surprise
+  -- actions.stealth_cds+=/vanish,if=!talent.underhanded_upper_hand&!talent.crackshot&!talent.hidden_opportunity&!talent.fateful_ending&talent.take_em_by_surprise&!buff.take_em_by_surprise.up
+  if S.Vanish:IsCastable() and not S.UnderhandedUpperhand:IsAvailable() and not S.Crackshot:IsAvailable() and not S.HiddenOpportunity:IsAvailable() and not S.FatefulEnding:IsAvailable() and S.TakeEmBySurprise:IsAvailable() and not Player:BuffUp(S.TakeEmBySurpriseBuff) then
+    -- if HR.Cast(S.Vanish, Settings.CommonsOGCD.OffGCDasOffGCD.Vanish) then return "Cast Vanish (Last Resort)" end
+    ShouldReturn = SpellQueueMacro(S.Vanish)
+    if ShouldReturn then return "Vanish Macro 5 " .. ShouldReturn end
   end
 
   -- actions.stealth_cds+=/shadowmeld,if=variable.finish_condition&!cooldown.vanish.ready
@@ -462,18 +501,11 @@ end
 
 local function CDs ()
   -- # Cooldowns
-  -- # Manic Grieftorch and Beacon to the Beyond should not be used during stealth and have higher priority than stealth cooldowns
+  -- actions.cds+=/use_item,name=imperfect_ascendancy_serum,if=!stealthed.all|fight_remains<=22
   if Settings.Commons.Enabled.Trinkets then
-    -- actions.cds+=/use_item,name=manic_grieftorch,if=!stealthed.all&buff.between_the_eyes.up|fight_remains<=5
-    if I.ManicGrieftorch:IsEquippedAndReady() then
-      if not Player:StealthUp(true, true) and Player:BuffUp(S.BetweentheEyes) or (InRaid and HL.BossFilteredFightRemains("<=", 5)) then
-        if HR.Cast(I.ManicGrieftorch, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Manic Grieftorch"; end
-      end
-    end
-    -- actions.cds+=/use_item,name=beacon_to_the_beyond,if=!stealthed.all&buff.between_the_eyes.up|fight_remains<=5
-    if I.BeaconToTheBeyond:IsEquippedAndReady() then
-      if not Player:StealthUp(true, true) and Player:BuffUp(S.BetweentheEyes) or (InRaid and HL.BossFilteredFightRemains("<", 5)) then
-        if HR.Cast(I.BeaconToTheBeyond, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Beacon"; end
+    if I.ImperfectAscendancySerum:IsEquippedAndReady() then
+      if not Player:StealthUp(true, true) or (HL.BossFilteredFightRemains("<=", 22) and not InRaid) then
+        if Cast(I.ImperfectAscendancySerum, nil, Settings.CommonsDS.DisplayStyle.Trinkets, not Target:IsItemInRange(I.ImperfectAscendancySerum)) then return "Imperfect Ascendancy Serum"; end
       end
     end
   end
@@ -491,31 +523,25 @@ local function CDs ()
     if EnemiesBFCount >= 2 and Player:BuffRemains(S.BladeFlurry) < Player:GCD() then
       if Cast(S.BladeFlurry, Settings.Outlaw.GCDasOffGCD.BladeFlurry) then return "Cast Blade Flurry" end
     end
-    -- # With Deft Maneuvers, use Blade Flurry on cooldown at 5+ targets, or at 3-4 targets if missing combo points equal to the amount given
+    -- # With Deft Maneuvers, use Blade Flurry on cooldown at 5+ targets, or at 3-4 targets if missing combo points equal to the amount given Note: Custom Check
     -- actions.cds+=/blade_flurry,if=talent.deft_maneuvers&!variable.finish_condition&((spell_targets=3&(combo_points=3|combo_points=4))|(spell_targets=4&(combo_points=2|combo_points=3))|spell_targets>=5)
     if S.DeftManeuvers:IsAvailable() and not Finish_Condition() and ((EnemiesBFCount == 3 and (ComboPoints == 3 or ComboPoints == 4)) or (EnemiesBFCount == 4 and (ComboPoints == 2 or ComboPoints == 3)) or EnemiesBFCount >= 5) then
         if Cast(S.BladeFlurry, Settings.Outlaw.GCDasOffGCD.BladeFlurry) then return "Cast Blade Flurry 3 or 4, 5 Targets" end
     end
   end
-  
-
-  -- # Use Roll the Bones if reroll conditions are met, or with no buffs, or 2s before buffs expire with T31, or 7s before buffs expire with Vanish ready
-  -- actions.cds+=/roll_the_bones,if=variable.rtb_reroll|rtb_buffs=0|rtb_buffs.max_remains<=2&set_bonus.tier31_4pc|rtb_buffs.max_remains<=7&cooldown.vanish.remains<=1
+ 
+  -- # Use Roll the Bones if reroll conditions are met, or with no buffs
+  -- actions.cds+=/roll_the_bones,if=variable.rtb_reroll|rtb_buffs=0 Note: Extra check to reroll in the last 2 GCDs -- The feelycraft answer would be to not roll during stealth if you only have like 1-2 globals remaining of stealth.
   if S.RolltheBones:IsCastable() then
-    if (RtB_Reroll() and not Player:StealthUp(true, true)) or RtB_Buffs() == 0 or (LongestRtBRemains() <= 2.5 and Player:HasTier(31, 4) and not Player:StealthUp(true, true)) or (not Player:StealthUp(true, true) and LongestRtBRemains() <= 7.5 and S.Vanish:CooldownRemains() <= 1) then
+    if RtB_Reroll() or RtB_Buffs() == 0 then
       if HR.Cast(S.RolltheBones, Settings.Outlaw.GCDasOffGCD.RolltheBones) then return "Cast Roll the Bones" end
     end
   end
 
-  -- # Use Keep it Rolling with at least 3 buffs (4 with T31)
-  -- actions.cds+=/keep_it_rolling,if=!variable.rtb_reroll&rtb_buffs>=3+set_bonus.tier31_4pc
-  if S.KeepItRolling:IsCastable() and not RtB_Reroll() and RtB_Buffs() >= 3 + num(Player:HasTier(31, 4)) then
+  -- # Use Keep it Rolling with any 4 buffs. If Broadside is not active, then wait until just before the lowest buff expires in an attempt to obtain it from Count the Odds.
+  -- actions.cds+=/keep_it_rolling,if=rtb_buffs>=4&(rtb_buffs.min_remains<2|buff.broadside.up)
+  if S.KeepItRolling:IsCastable() and ((RtB_Buffs() >= 4 and (ShortestRtBRemains() < 2 or Player:BuffUp(S.Broadside))) or (Player:BuffUp(S.TrueBearing) and Player:BuffUp(S.Broadside) and Player:BuffUp(S.RuthlessPrecision))) then
     if HR.Cast(S.KeepItRolling, Settings.Outlaw.GCDasOffGCD.KeepItRolling) then return "Cast Keep it Rolling" end
-  end
-  -- # Use Keep it Rolling with at least 3 buffs that are not Buried Treasure. If Broadside is not active, then wait until just before the lowest buff expires.
-  -- actions.cds+=/keep_it_rolling,if=rtb_buffs>=3+buff.buried_treasure.up&(rtb_buffs.min_remains<2|buff.broadside.up)
-  if not Player:HasTier(31, 4) and S.KeepItRolling:IsCastable() and RtB_Buffs() >= 3 + num(Player:BuffUp(S.BuriedTreasure)) and (ShortestRtBRemains() < 2 or Player:BuffUp(S.Broadside)) then
-    if HR.Cast(S.KeepItRolling, Settings.Outlaw.GCDasOffGCD.KeepItRolling) then return "Cast Keep it Rolling no T31P4" end
   end
 
   -- # Don't Ghostly Strike at 7cp
@@ -537,7 +563,7 @@ local function CDs ()
   end
 
   -- actions.cds+=/thistle_tea,if=!buff.thistle_tea.up&(energy.base_deficit>=150|fight_remains<charges*6)
-  if CDsON() and S.ThistleTea:IsAvailable() and S.ThistleTea:IsCastable() and not Player:BuffUp(S.ThistleTea) and (EnergyTrue <= 50 or HL.BossFilteredFightRemains("<", S.ThistleTea:Charges()*6)) then
+  if CDsON() and S.ThistleTea:IsAvailable() and S.ThistleTea:IsCastable() and not Player:BuffUp(S.ThistleTea) and (EnergyTrue <= 50 or (HL.BossFilteredFightRemains("<", S.ThistleTea:Charges()*6) and InRaid)) then
     if HR.Cast(S.ThistleTea, Settings.CommonsOGCD.OffGCDasOffGCD.ThistleTea) then return "Cast Thistle Tea" end
   end
 
@@ -577,17 +603,10 @@ local function CDs ()
 
   -- # Default conditions for usable items.
   if Settings.Commons.Enabled.Trinkets then
-    -- Use Bomb Dispenser on cooldown, but hold if 2nd trinket is nearly off cooldown, unless at max charges or sim duration ends soon
-    -- actions.cds+=/use_item,name=dragonfire_bomb_dispenser,use_off_gcd=1,if=gcd.remains<=action.sinister_strike.gcd%2&((!trinket.1.is.dragonfire_bomb_dispenser&trinket.1.cooldown.remains>10|trinket.2.cooldown.remains>10)|cooldown.dragonfire_bomb_dispenser.charges>2|fight_remains<20|!trinket.2.has_cooldown|!trinket.1.has_cooldown)
-    if I.DragonfireBombDispenser:IsEquippedAndReady() then
-      if ((trinket1:ID() ~= I.DragonfireBombDispenser:ID() and trinket1:CooldownRemains() > 10 or trinket2:CooldownRemains() > 10) or I.DragonfireBombDispenser:OnUseSpell():Charges() > 2 or HL.BossFilteredFightRemains("<", 20) or not trinket2:HasCooldown() or not trinket1:HasCooldown()) then
-        if HR.Cast(trinket1, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Dragonfire Bomb Dispenser"; end
-      end
-    end
     -- actions.cds+=/use_items,slots=trinket1,if=debuff.between_the_eyes.up|trinket.1.has_stat.any_dps|fight_remains<=20 -- maybe add that generic trinket will not be suggested till Torch is on cd?
     -- actions.cds+=/use_items,slots=trinket2,if=debuff.between_the_eyes.up|trinket.2.has_stat.any_dps|fight_remains<=20
     local TrinketToUse = Player:GetUseableItems(OnUseExcludes, 13) or Player:GetUseableItems(OnUseExcludes, 14)
-    if TrinketToUse and (Player:BuffUp(S.BetweentheEyes) or HL.BossFilteredFightRemains("<", 20) or TrinketToUse:HasStatAnyDps()) then
+    if TrinketToUse and (Player:BuffUp(S.BetweentheEyes) or (HL.BossFilteredFightRemains("<", 20) and InRaid) or TrinketToUse:HasStatAnyDps()) then
       if HR.Cast(TrinketToUse, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Generic use_items for " .. TrinketToUse:Name() end
     end
   end
@@ -599,6 +618,7 @@ local function Build ()
 		if Cast(S.EchoingReprimand, Settings.CommonsOGCD.GCDasOffGCD.EchoingReprimand, nil, not Target:IsSpellInRange(S.EchoingReprimand)) then return "Cast Echoing Reprimand" end
 	end
 
+  -- # High priority Ambush for Hidden Opportunity builds
   -- actions.build+=/ambush,if=talent.hidden_opportunity&buff.audacity.up
   if S.Ambush:IsCastable() and S.HiddenOpportunity:IsAvailable() and Player:BuffUp(S.AudacityBuff) then
     if HR.CastPooling(S.Ambush) then return "Cast Ambush (High-Prio Buffed)" end
@@ -611,8 +631,8 @@ local function Build ()
 	end
 
 	-- # With Fan the Hammer, consume Opportunity as a higher priority if at max stacks or if it will expire. "With 6 stacks of opportunity, or if opportunity buff is running out, use PS at any cp (unless finish condition is fulfilled)."
-	-- actions.build+=/pistol_shot,if=talent.fan_the_hammer&buff.opportunity.up&((!variable.finish_condition&talent.keep_it_rolling.enabled)|talent.hidden_opportunity.enabled)&(buff.opportunity.stack>=6|buff.opportunity.remains<2) NS: Custom checks based on FAQ
-	if S.FanTheHammer:IsAvailable() and ((not Finish_Condition() and S.KeepItRolling:IsAvailable()) or S.HiddenOpportunity:IsAvailable()) and Player:BuffUp(S.Opportunity) and (Player:BuffStack(S.Opportunity) >= 6 or Player:BuffRemains(S.Opportunity) < 2) then
+	-- actions.build+=/pistol_shot,if=talent.fan_the_hammer&buff.opportunity.up&((combo_points<=3&talent.keep_it_rolling.enabled)|talent.hidden_opportunity.enabled)&(buff.opportunity.stack>=6|buff.opportunity.remains<2) NS: Custom checks based on FAQ
+	if S.FanTheHammer:IsAvailable() and ((ComboPoints <= 3 and S.KeepItRolling:IsAvailable()) or S.HiddenOpportunity:IsAvailable()) and Player:BuffUp(S.Opportunity) and (Player:BuffStack(S.Opportunity) >= 6 or Player:BuffRemains(S.Opportunity) < 2) then
 		if HR.CastPooling(S.PistolShot) then return "Cast Pistol Shot (FtH Dump)" end
 	end
 
@@ -698,10 +718,10 @@ local function APL ()
       end
       -- actions.precombat+=/roll_the_bones,precombat_seconds=2
       -- Use same extended logic as a normal rotation for between pulls
-      if S.RolltheBones:IsReady() and not Player:DebuffUp(S.Dreadblades) and (RtB_Buffs() == 0 or RtB_Reroll() or (LongestRtBRemains() <= 7.5 and DungeonSlice and EnemiesBFCount == 0)) then
+      if S.RolltheBones:IsReady() and (RtB_Buffs() == 0 or RtB_Reroll() or (LongestRtBRemains() <= 7.5 and DungeonSlice and EnemiesBFCount == 0)) then
         if HR.Cast(S.RolltheBones) then return "Cast Roll the Bones (Opener)" end
       end
-      -- actions.precombat+=/adrenaline_rush,precombat_seconds=3,if=talent.improved_adrenaline_rush
+      -- actions.precombat+=/adrenaline_rush,precombat_seconds=1,if=talent.improved_adrenaline_rush
       if S.AdrenalineRush:IsReady() and S.ImprovedAdrenalineRush:IsAvailable() then
         if HR.Cast(S.AdrenalineRush) then return "Cast Adrenaline Rush (Opener)" end
       end
