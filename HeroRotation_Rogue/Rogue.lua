@@ -466,7 +466,7 @@ do
   end
   local function ComputeImprovedGarrotePMultiplier ()
     if AssassinationSpell.ImprovedGarrote:IsAvailable() and (Player:BuffUp(AssassinationSpell.ImprovedGarroteAura, nil, true)
-      or Player:BuffUp(AssassinationSpell.ImprovedGarroteBuff, nil, true) or Player:BuffUp(AssassinationSpell.SepsisBuff, nil, true)) then
+      or Player:BuffUp(AssassinationSpell.ImprovedGarroteBuff, nil, true)) then
       return 1.5
     end
     return 1

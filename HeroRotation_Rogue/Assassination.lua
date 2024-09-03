@@ -70,7 +70,7 @@ local Enemies30y, MeleeEnemies10y, MeleeEnemies10yCount, MeleeEnemies5y
 local ShouldReturn
 local BleedTickTime, ExsanguinatedBleedTickTime = 2 * Player:SpellHaste(), 1 * Player:SpellHaste()
 local ComboPoints, ComboPointsDeficit
-local RuptureThreshold, CrimsonTempestThreshold, RuptureDMGThreshold, GarroteDMGThreshold, RuptureDurationThreshold, RuptureTickTime, GarroteTickTime
+local RuptureThreshold,GarroteThreshold, CrimsonTempestThreshold, RuptureDMGThreshold, GarroteDMGThreshold, RuptureDurationThreshold, RuptureTickTime, GarroteTickTime
 local PriorityRotation
 local NotPooling, PoisonedBleeds, EnergyRegenCombined, EnergyTimeToMaxCombined, EnergyRegenSaturated, SingleTarget, ScentSaturated
 local TrinketSyncSlot = 0
@@ -498,7 +498,7 @@ local function Vanish ()
 
   -- # Vanish to spread Garrote during Deathmark without Indiscriminate Carnage
   -- actions.vanish+=/vanish,if=!talent.master_assassin&!talent.indiscriminate_carnage&talent.improved_garrote&cooldown.garrote.up&(dot.garrote.pmultiplier<=1|dot.garrote.refreshable)&(debuff.deathmark.up|cooldown.deathmark.remains<4)&combo_points.deficit>=(spell_targets.fan_of_knives>?4)
-  if S.Vanish:IsCastable() and not S.MasterAssassin:IsAvailable() and not S.IndiscriminateCarnage:IsAvailable() and S.ImprovedGarrote:IsAvailable() and S.Garrote:CooldownUp() and (Target:PMultiplier(S.Garrote) <= 1 or IsDebuffRefreshable(Target, S.Garrote)) and (Target:DebuffUp(S.Deathmark) or S.Deathmark:CooldownRemains() < 4) and ComboPointsDeficit >= mathmin(MeleeEnemies10yCount, 4) then
+  if S.Vanish:IsCastable() and not S.MasterAssassin:IsAvailable() and not S.IndiscriminateCarnage:IsAvailable() and S.ImprovedGarrote:IsAvailable() and S.Garrote:CooldownUp() and (Target:PMultiplier(S.Garrote) <= 1 or IsDebuffRefreshable(Target, S.Garrote, GarroteThreshold)) and (Target:DebuffUp(S.Deathmark) or S.Deathmark:CooldownRemains() < 4) and ComboPointsDeficit >= mathmin(MeleeEnemies10yCount, 4) then
       ShouldReturn = StealthMacro(S.Vanish)
       if ShouldReturn then return "Cast Vanish Garrote Deathmark (No Carnage)" .. ShouldReturn end
   end
@@ -510,21 +510,21 @@ local function Vanish ()
 
   -- # Vanish for cleaving Garrotes with Indiscriminate Carnage
   --actions.vanish+=/vanish,if=!talent.master_assassin&talent.indiscriminate_carnage&talent.improved_garrote&cooldown.garrote.up&(dot.garrote.pmultiplier<=1|dot.garrote.refreshable)&spell_targets.fan_of_knives>2&(target.time_to_die-remains>15|raid_event.adds.in>20)
-    if S.Vanish:IsCastable() and not S.MasterAssassin:IsAvailable() and S.IndiscriminateCarnage:IsAvailable() and S.ImprovedGarrote:IsAvailable() and S.Garrote:CooldownUp() and (Target:PMultiplier(S.Garrote) <= 1 or IsDebuffRefreshable(Target, S.Garrote)) and MeleeEnemies10yCount > 2 and Target:TimeToDie() > 15 then
+    if S.Vanish:IsCastable() and not S.MasterAssassin:IsAvailable() and S.IndiscriminateCarnage:IsAvailable() and S.ImprovedGarrote:IsAvailable() and S.Garrote:CooldownUp() and (Target:PMultiplier(S.Garrote) <= 1 or IsDebuffRefreshable(Target, S.Garrote, GarroteThreshold)) and MeleeEnemies10yCount > 2 and Target:TimeToDie() > 15 then
       ShouldReturn = StealthMacro(S.Vanish)
       if ShouldReturn then return "Cast Vanish (Garrote Carnage)" .. ShouldReturn end
   end
 
   -- # Vanish fallback for Master Assassin
   --actions.vanish+=/vanish,if=!talent.improved_garrote&talent.master_assassin&!dot.rupture.refreshable&dot.garrote.remains>3&debuff.deathmark.up&(debuff.shiv.up|debuff.deathmark.remains<4)
-  if S.Vanish:IsCastable() and not S.ImprovedGarrote:IsAvailable() and S.MasterAssassin:IsAvailable() and not IsDebuffRefreshable(Target, S.Rupture) and Target:DebuffRemains(S.Garrote) > 3 and Target.DebuffUp(S.Deathmark) and (Target.DebuffUp(S.ShivDebuff) or Target.DebuffRemains(S.Deathmark) < 4) then
+  if S.Vanish:IsCastable() and not S.ImprovedGarrote:IsAvailable() and S.MasterAssassin:IsAvailable() and not IsDebuffRefreshable(Target, S.Rupture, RuptureThreshold) and Target:DebuffRemains(S.Garrote) > 3 and Target.DebuffUp(S.Deathmark) and (Target.DebuffUp(S.ShivDebuff) or Target.DebuffRemains(S.Deathmark) < 4) then
       ShouldReturn = StealthMacro(S.Vanish)
       if ShouldReturn then return "Cast Vanish (Master Assassin)" .. ShouldReturn end
   end
 
   -- # Vanish fallback for Improved Garrote during Deathmark if no add waves are expected
   --actions.vanish+=/vanish,if=talent.improved_garrote&cooldown.garrote.up&(dot.garrote.pmultiplier<=1|dot.garrote.refreshable)&(debuff.deathmark.up|cooldown.deathmark.remains<4)&raid_event.adds.in>30
-  if S.Vanish:IsCastable() and S.ImprovedGarrote:IsAvailable() and S.Garrote:CooldownUp() and (Target:PMultiplier(S.Garrote) <= 1 or IsDebuffRefreshable(Target, S.Garrote)) and (Target:DebuffUp(S.Deathmark) or S.Deathmark:CooldownRemains() < 4) then
+  if S.Vanish:IsCastable() and S.ImprovedGarrote:IsAvailable() and S.Garrote:CooldownUp() and (Target:PMultiplier(S.Garrote) <= 1 or IsDebuffRefreshable(Target, S.Garrote, GarroteThreshold)) and (Target:DebuffUp(S.Deathmark) or S.Deathmark:CooldownRemains() < 4) then
       ShouldReturn = StealthMacro(S.Vanish)
       if ShouldReturn then return "Cast Vanish (Improved Garrote during Deathmark)" .. ShouldReturn end
   end
@@ -721,22 +721,25 @@ end
 
 local function CoreDot()
   -- Maintain Garrote
+  -- actions.core_dot=/garrote,if=combo_points.deficit>=1&(pmultiplier<=1)&refreshable&target.time_to_die-remains>12
   if S.Garrote:IsCastable() and ComboPointsDeficit >= 1 and Target:PMultiplier(S.Garrote) <= 1 
-    and IsDebuffRefreshable(Target, S.Garrote) 
+    and IsDebuffRefreshable(Target, S.Garrote, GarroteThreshold) 
     and (Target:FilteredTimeToDie(">", 12, -Target:DebuffRemains(S.Garrote)) or Target:TimeToDieIsNotValid()) then
     if Cast(S.Garrote, nil, nil, not TargetInMeleeRange) then return "Cast Garrote (Core)" end
   end
 
   -- Maintain Rupture unless darkest night is up
+  -- actions.core_dot+=/rupture,if=effective_combo_points>=variable.effective_spend_cp&(pmultiplier<=1)&refreshable&target.time_to_die-remains>(4+(talent.dashing_scoundrel*5)+(variable.regen_saturated*6))&!buff.darkest_night.up
   if S.Rupture:IsCastable() and ComboPoints >= EffectiveCPSpend and Target:PMultiplier(S.Rupture) <= 1 
-    and IsDebuffRefreshable(Target, S.Rupture) and Player:BuffDown(S.DarkestNightBuff) then
+    and IsDebuffRefreshable(Target, S.Rupture, RuptureThreshold) and Player:BuffDown(S.DarkestNightBuff) then
     local RuptureDurationThreshold = 4 + (S.DashingScoundrel:IsAvailable() and 5 or 0) + (EnergyRegenSaturated and 6 or 0)
     if Target:FilteredTimeToDie(">", RuptureDurationThreshold, -Target:DebuffRemains(S.Rupture)) or Target:TimeToDieIsNotValid() then
       if Cast(S.Rupture, nil, nil, not TargetInMeleeRange) then return "Cast Rupture (Core)" end
     end
   end
 
-  -- Crimson Tempest if Deathmark and Momentum of Despair are up as long envenom is healthy 
+  -- Crimson Tempest if Deathmark and Momentum of Despair are up as long envenom is healthy
+  -- actions.core_dot+=/crimson_tempest,if=effective_combo_points>=variable.effective_spend_cp&(dot.deathmark.remains>3)&!dot.crimson_tempest.ticking&buff.momentum_of_despair.remains>3&buff.envenom.remains>=4
   if S.CrimsonTempest:IsCastable() and ComboPoints >= EffectiveCPSpend  
     and Target:DebuffRemains(S.Deathmark) > 3 and Target:DebuffDown(S.CrimsonTempest) 
     and Player:BuffRemains(S.MomentumOfDespairBuff) > 3 and Player:BuffRemains(S.Envenom) >= 4 then
@@ -770,7 +773,7 @@ local function AoeDot ()
   -- actions.aoe_dot+=/garrote,cycle_targets=1,if=combo_points.deficit>=1&(pmultiplier<=1)&refreshable&!variable.regen_saturated&target.time_to_die-remains>12
   if S.Garrote:IsCastable() and ComboPointsDeficit >= 1 then
     local function Evaluate_Garrote_Target(TargetUnit)
-      return IsDebuffRefreshable(TargetUnit, S.Garrote) and TargetUnit:PMultiplier(S.Garrote) <= 1
+      return IsDebuffRefreshable(TargetUnit, S.Garrote, GarroteThreshold) and TargetUnit:PMultiplier(S.Garrote) <= 1
     end
     if HR.AoEON() and not EnergyRegenSaturated and S.Kingsbane:CooldownRemains() < 46 and S.Deathmark:CooldownRemains() < 104 then
       SuggestCycleDoT(S.Garrote, Evaluate_Garrote_Target, 12, MeleeEnemies5y)
@@ -787,7 +790,7 @@ local function AoeDot ()
   -- actions.aoe_dot+=/rupture,cycle_targets=1,if=effective_combo_points>=variable.effective_spend_cp&(pmultiplier<=1)&refreshable&((buff.serrated_bone_spike_charges.up&!dot.serrated_bone_spike.ticking)|!variable.regen_saturated|!variable.scent_saturation&(talent.scent_of_blood.rank=2|(talent.scent_of_blood.rank=1&buff.indiscriminate_carnage.up)|!talent.scent_of_blood))&target.time_to_die-remains>15&!buff.darkest_night.up
   if S.Rupture:IsCastable() and ComboPoints >= EffectiveCPSpend and Player:BuffDown(S.DarkestNightBuff) then
     local function Evaluate_Rupture_Target(TargetUnit)
-      return IsDebuffRefreshable(TargetUnit, S.Rupture) and TargetUnit:PMultiplier(S.Rupture) <= 1
+      return IsDebuffRefreshable(TargetUnit, S.Rupture, RuptureThreshold) and TargetUnit:PMultiplier(S.Rupture) <= 1
         and ((Player:BuffUp(S.SerratedBoneSpikeChargesBuff) and not TargetUnit:DebuffUp(S.SerratedBoneSpike))
           or not EnergyRegenSaturated
           or not ScentSaturated and (S.ScentOfBlood:TalentRank() == 2 or (S.ScentOfBlood:TalentRank() == 1 and Player:BuffUp(S.IndiscriminateCarnageBuff)) or not S.ScentOfBlood:IsAvailable()))
@@ -930,6 +933,7 @@ local function APL ()
   ComboPoints = Rogue.EffectiveComboPoints(Player:ComboPoints())
   ComboPointsDeficit = Player:ComboPointsMax() - ComboPoints
   RuptureThreshold = (4 + ComboPoints * 4) * 0.3
+  GarroteThreshold = 18 * 0.3
   CrimsonTempestThreshold = (4 + ComboPoints * 2) * 0.3
   RuptureDMGThreshold = S.Envenom:Damage() * Settings.Assassination.EnvenomDMGOffset; -- Used to check if Rupture is worth to be casted since it's a finisher.
   GarroteDMGThreshold = S.Mutilate:Damage() * Settings.Assassination.MutilateDMGOffset; -- Used as TTD Not Valid fallback since it's a generator.
