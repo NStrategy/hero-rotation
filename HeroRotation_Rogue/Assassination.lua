@@ -725,7 +725,7 @@ local function CoreDot()
   if S.Garrote:IsCastable() and ComboPointsDeficit >= 1 and Target:PMultiplier(S.Garrote) <= 1 
     and IsDebuffRefreshable(Target, S.Garrote, GarroteThreshold) 
     and (Target:FilteredTimeToDie(">", 12, -Target:DebuffRemains(S.Garrote)) or Target:TimeToDieIsNotValid()) then
-    if Cast(S.Garrote, nil, nil, not TargetInMeleeRange) then return "Cast Garrote (Core)" end
+    if CastPooling(S.Garrote, nil, nil, not TargetInMeleeRange) then return "Cast Garrote (Core)" end
   end
 
   -- Maintain Rupture unless darkest night is up
@@ -734,7 +734,7 @@ local function CoreDot()
     and IsDebuffRefreshable(Target, S.Rupture, RuptureThreshold) and Player:BuffDown(S.DarkestNightBuff) then
     local RuptureDurationThreshold = 4 + (S.DashingScoundrel:IsAvailable() and 5 or 0) + (EnergyRegenSaturated and 6 or 0)
     if Target:FilteredTimeToDie(">", RuptureDurationThreshold, -Target:DebuffRemains(S.Rupture)) or Target:TimeToDieIsNotValid() then
-      if Cast(S.Rupture, nil, nil, not TargetInMeleeRange) then return "Cast Rupture (Core)" end
+      if CastPooling(S.Rupture, nil, nil, not TargetInMeleeRange) then return "Cast Rupture (Core)" end
     end
   end
 
@@ -752,13 +752,13 @@ end
 -- # Damage over time abilities
 local function AoeDot ()
   -- # Crimson Tempest on 2+ Targets if we have enough energy regen
-  -- actions.aoe_dot+=/crimson_tempest,target_if=min:remains,if=spell_targets>=(2)&!dot.crimson_tempest.ticking&effective_combo_points>=variable.effective_spend_cp&(pmultiplier<=1)&target.time_to_die>3
-  if HR.AoEON() and S.CrimsonTempest:IsCastable() and MeleeEnemies10yCount >= 2 and ComboPoints >= EffectiveCPSpend then
+  -- actions.aoe_dot+=/crimson_tempest,target_if=min:remains,if=spell_targets>=(2)&!dot.crimson_tempest.ticking&effective_combo_points>=variable.effective_spend_cp&(pmultiplier<=1)&target.time_to_die>3 note: 10 sec check to not allow CT spam when chainpulling
+  if HR.AoEON() and S.CrimsonTempest:IsCastable() and MeleeEnemies10yCount >= 2 and ComboPoints >= EffectiveCPSpend and (S.CrimsonTempest:TimeSinceLastCast() > 10 or S.CrimsonTempest:TimeSinceLastCast() == 0) then
     local function EvaluateCrimsonTempestTarget(TargetUnit)
       return TargetUnit:DebuffRemains(S.CrimsonTempest)
     end
     local function CrimsonTempestIfFunc(TargetUnit)
-      return TargetUnit:DebuffDown(S.CrimsonTempest) 
+      return (TargetUnit:DebuffDown(S.CrimsonTempest) or (TargetUnit:DebuffRemains(S.CrimsonTempest) < 1 and TargetUnit:DebuffUp(S.CrimsonTempest)))
            and TargetUnit:TimeToDie() > 3 
            and TargetUnit:PMultiplier(S.CrimsonTempest) <= 1
     end
@@ -1039,8 +1039,10 @@ local function APL ()
     ShouldReturn = CoreDot()
     if ShouldReturn then return ShouldReturn end
     -- actions+=/call_action_list,name=aoe_dot,if=!variable.single_target
-    ShouldReturn = AoeDot()
-    if ShouldReturn then return ShouldReturn end
+    if HR.AoEON() and not SingleTarget then
+      ShouldReturn = AoeDot()
+      if ShouldReturn then return ShouldReturn end
+    end
 
     -- actions+=/call_action_list,name=direct
     ShouldReturn = Direct()
