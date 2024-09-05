@@ -467,9 +467,18 @@ local function StealthMacro (StealthSpell)
 
   -- Handle StealthMacro GUI options
   -- If false, just suggest them as off-GCD and bail out of the macro functionality
-  if StealthSpell:ID() == S.Vanish:ID() and (not Settings.Assassination.StealthMacro.Vanish or not MacroAbility) then
-    if Cast(S.Vanish, Settings.CommonsOGCD.OffGCDasOffGCD.Vanish) then return "Cast Vanish" end
-    return false
+  if StealthSpell:ID() == S.Vanish:ID() then
+    if DungeonSlice and Settings.Assassination.VanishalwaysasOffGCD then
+      -- In Dungeon: Always show regular Vanish, no split icon Need to add an option to
+      if Cast(S.Vanish, Settings.Assassination.OffGCDasOffGCD.Vanish) then return "Cast Vanish" end
+      return false
+    else
+      -- Not in Dungeon: Use existing logic
+      if not Settings.Assassination.StealthMacro.Vanish or not MacroAbility then
+        if Cast(S.Vanish, Settings.CommonsOGCD.OffGCDasOffGCD.Vanish) then return "Cast Vanish" end
+        return false
+      end
+    end
   elseif StealthSpell:ID() == S.Shadowmeld:ID() and (not Settings.Assassination.StealthMacro.Shadowmeld or not MacroAbility) then
     if Cast(S.Shadowmeld, Settings.CommonsOGCD.OffGCDasOffGCD.Racials) then return "Cast Shadowmeld" end
     return false

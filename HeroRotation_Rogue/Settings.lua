@@ -61,7 +61,7 @@ HR.GUISettings.APL.Rogue = {
   Assassination = {
     EnvenomDMGOffset = 3,
     MutilateDMGOffset = 3,
-    Envat50 = false,
+    VanishalwaysasOffGCD = true,
     UsePriorityRotation = "Never", -- Only for Assassination / Subtlety
     PotionType = {
       Selected = "Power",
@@ -69,12 +69,12 @@ HR.GUISettings.APL.Rogue = {
     GCDasOffGCD = {
       Exsanguinate = false,
       Kingsbane = false,
-      ShadowDance = false,
       Shiv = false,
     },
     OffGCDasOffGCD = {
       Deathmark = true,
       IndiscriminateCarnage = true,
+      Vanish = true,
     },
     StealthMacro = {
       Vanish = true,
@@ -107,8 +107,6 @@ HR.GUISettings.APL.Rogue = {
   },
   Subtlety = {
     EviscerateDMGOffset = 3, -- Used to compute the rupture threshold
-    VanishFlagintoBlades = true,
-    VanishafterSecret = true,
     BurnShadowDance = "On Bosses not in Dungeons", -- Burn Shadow Dance charges when the target is about to die
     UsePriorityRotation = "Auto", -- Only for Assassination / Subtlety
     PotionType = {
@@ -160,9 +158,9 @@ CreateARPanelOptions(CP_RogueOGCD, "APL.Rogue.CommonsOGCD")
 -- Assassination
 CreatePanelOption("Slider", CP_Assassination, "APL.Rogue.Assassination.EnvenomDMGOffset", {1, 5, 0.25}, "Envenom DMG Offset", "Set the Envenom DMG Offset.")
 CreatePanelOption("Slider", CP_Assassination, "APL.Rogue.Assassination.MutilateDMGOffset", {1, 5, 0.25}, "Mutilate DMG Offset", "Set the Mutilate DMG Offset.")
-CreatePanelOption("CheckButton", CP_Assassination, "APL.Rogue.Assassination.Envat50", "With this setting checked, you will only pool to 50% Energy and use tea differently", "Check if you want to only pool to 50% Energy till 10 seconds before CDs (it will try to pool to 80% or use CDs when they are ready")
 CreatePanelOption("Dropdown", CP_Assassination, "APL.Rogue.Assassination.UsePriorityRotation", {"Never", "On Bosses", "Always", "Auto"}, "Use Priority Rotation", "Select when to show rotation for maximum priority damage (at the cost of overall AoE damage.)\nAuto will function as Never except on specific encounters where AoE is not recommended.")
-CreatePanelOption("CheckButton", CP_Assassination, "APL.Rogue.Assassination.StealthMacro.Vanish", "Stealth Combo - Vanish", "Allow suggesting Vanish stealth ability combos (recommended)")
+CreatePanelOption("CheckButton", CP_Assassination, "APL.Rogue.Assassination.StealthMacro.Vanish", "Stealth Combo - Vanish (check the Vanish box below (under 'Potion Type') if you want Vanish to be shown as OffGCD in Dungeons (elsewhere it is used normally again))", "Allow suggesting Vanish stealth ability combos (recommended)")
+CreatePanelOption("CheckButton", CP_Assassination, "APL.Rogue.Assassination.VanishalwaysasOffGCD", "Must check the Vanish box below (under 'Potion Type') if you want Vanish to be actually shown as OffGCD in Dungeons (elsewhere it is used normally again))", "Allow suggesting Vanish as OffGCD in Dungeons")
 CreatePanelOption("CheckButton", CP_Assassination, "APL.Rogue.Assassination.StealthMacro.Shadowmeld", "Stealth Combo - Shadowmeld", "Allow suggesting Shadowmeld stealth ability combos (recommended)")
 CreateARPanelOptions(CP_Assassination, "APL.Rogue.Assassination")
 
@@ -175,8 +173,6 @@ CreateARPanelOptions(CP_Outlaw, "APL.Rogue.Outlaw")
 
 -- Subtlety
 CreatePanelOption("Slider", CP_Subtlety, "APL.Rogue.Subtlety.EviscerateDMGOffset", {1, 5, 0.25}, "Eviscerate Damage Offset", "Set the Eviscerate Damage Offset, used to compute the rupture threshold.")
-CreatePanelOption("CheckButton", CP_Subtlety, "APL.Rogue.Subtlety.VanishFlagintoBlades", "Vanish to Flag into Blades at Fyrakk at 1:00-2:40", "Check if you want to use Vanish at around 1:00-1:10 and 2:40-2:50 after Flag to Pull Blades into Flag (currently not supported since you most often have enough Damage. but maybe for better push timings)")
-CreatePanelOption("CheckButton", CP_Subtlety, "APL.Rogue.Subtlety.VanishafterSecret", "Lets you do Vanish after Secret instead of after Dance to pull Blades sooner (not in the APL, people do it tho)", "Check if you want to Vanish after Secret in Dance")
 CreatePanelOption("Dropdown", CP_Subtlety, "APL.Rogue.Subtlety.UsePriorityRotation", {"Never", "On Bosses", "Always", "Auto"}, "Use Priority Rotation", "Select when to show rotation for maximum priority damage (at the cost of overall AoE damage.)\nAuto will function as Never except on specific encounters where AoE is not recommended.")
 CreatePanelOption("Dropdown", CP_Subtlety, "APL.Rogue.Subtlety.BurnShadowDance", {"Always", "On Bosses", "On Bosses not in Dungeons"}, "Burn Shadow Dance before Death", "Use remaining Shadow Dance charges when the target is about to die.")
 CreatePanelOption("CheckButton", CP_Subtlety, "APL.Rogue.Subtlety.StealthMacro.Vanish", "Stealth Combo - Vanish", "Allow suggesting Vanish stealth ability combos (recommended)")
