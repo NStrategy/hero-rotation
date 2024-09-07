@@ -569,8 +569,8 @@ local function CDs (EnergyThreshold)
   end 
 
   -- #No Dust Symbols
-  -- actions.cds+=/symbols_of_death,if=!talent.invigorating_shadowdust&variable.snd_condition&(buff.shadow_blades.up|cooldown.shadow_blades.remains>20) note: added Dungeonslice as a check so you can choose to hold blades.
-  if S.SymbolsofDeath:IsCastable() and not S.InvigoratingShadowdust:IsAvailable() and SnDCondition and (Player:BuffUp(S.ShadowBlades) or S.ShadowBlades:CooldownRemains() > 20 or (S.ShadowBlades:IsCastable())) then
+  -- actions.cds+=/symbols_of_death,if=!talent.invigorating_shadowdust&variable.snd_condition&(buff.shadow_blades.up|cooldown.shadow_blades.remains>20) note: added "not InRaid" as a check so you can choose to hold blades in content other than raid, otherwise always sync with blades, after using flag
+  if S.SymbolsofDeath:IsCastable() and not S.InvigoratingShadowdust:IsAvailable() and SnDCondition and (Player:BuffUp(S.ShadowBlades) or S.ShadowBlades:CooldownRemains() > 20 or (S.ShadowBlades:IsCastable() and not InRaid)) then
     if HR.Cast(S.SymbolsofDeath, Settings.Subtlety.OffGCDasOffGCD.SymbolsofDeath) then return "Cast Symbols of Death No Dust" end
   end
   -- # Dust Symbols
@@ -824,8 +824,8 @@ local function APL ()
   ComboPointsDeficit = Player:ComboPointsDeficit()
   PriorityRotation = UsePriorityRotation()
   StealthEnergyRequired = Player:EnergyMax() - Stealth_Threshold()
-  DungeonSlice = Player:IsInParty() and Player:IsInDungeonArea() and not Player:IsInRaid()
-  InRaid = Player:IsInRaid() and not Player:IsInDungeonArea()
+  DungeonSlice = Player:IsInParty() and Player:IsInDungeonArea()
+  InRaid = Player:IsInRaid()
 
   -- Shuriken Tornado Combo Point Prediction
   if Player:BuffUp(S.ShurikenTornado, nil, true) and ComboPoints < Rogue.CPMaxSpend() then
@@ -1000,7 +1000,7 @@ end
 local function Init ()
   S.Rupture:RegisterAuraTracking()
 
-  HR.Print("You are using a fork [Version 2.0]: THIS IS NOT THE OFFICIAL VERSION - if there are issues, message me on Discord: kekwxqcl")
+  HR.Print("You are using a fork [Version 2.1]: THIS IS NOT THE OFFICIAL VERSION - if there are issues, message me on Discord: kekwxqcl")
 end
 
 HR.SetAPL(261, APL, Init)

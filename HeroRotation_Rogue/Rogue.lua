@@ -27,7 +27,7 @@ local Commons = {}
 --- ======= GLOBALIZE =======
 HR.Commons.Rogue = Commons
 
---- ============================ CONTENT ============================
+--- ============================ CONTENT ============================ -- You are using a fork: THIS IS NOT THE OFFICIAL VERSION - if there are issues, message me on Discord: kekwxqcl --
 -- GUI Settings
 local Settings = {
   General = HR.GUISettings.General,

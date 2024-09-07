@@ -504,7 +504,7 @@ local function CDs ()
   -- actions.cds+=/use_item,name=imperfect_ascendancy_serum,if=!stealthed.all|fight_remains<=22
   if Settings.Commons.Enabled.Trinkets then
     if I.ImperfectAscendancySerum:IsEquippedAndReady() then
-      if not Player:StealthUp(true, true) or (HL.BossFilteredFightRemains("<=", 22) and not InRaid) then
+      if not Player:StealthUp(true, true) or (HL.BossFilteredFightRemains("<=", 22) and InRaid) then
         if Cast(I.ImperfectAscendancySerum, nil, Settings.CommonsDS.DisplayStyle.Trinkets, not Target:IsItemInRange(I.ImperfectAscendancySerum)) then return "Imperfect Ascendancy Serum"; end
       end
     end
@@ -823,7 +823,7 @@ local function APL ()
 end
 
 local function Init ()
-  HR.Print("You are using a fork [Version 2.0]: THIS IS NOT THE OFFICIAL VERSION - if you are having issues, message me on Discord: kekwxqcl")
+  HR.Print("You are using a fork [Version 2.1]: THIS IS NOT THE OFFICIAL VERSION - if there are issues, message me on Discord: kekwxqcl")
 end
 
 HR.SetAPL(260, APL, Init)

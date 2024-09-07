@@ -14,7 +14,7 @@ local CreateARPanelOption = HR.GUI.CreateARPanelOption
 local CreateARPanelOptions = HR.GUI.CreateARPanelOptions
 
 
---- ============================ CONTENT ============================
+--- ============================ CONTENT ============================ -- You are using a fork: THIS IS NOT THE OFFICIAL VERSION - if there are issues, message me on Discord: kekwxqcl --
 -- Default settings
 HR.GUISettings.APL.Rogue = {
   Commons = {
@@ -159,7 +159,7 @@ CreateARPanelOptions(CP_RogueOGCD, "APL.Rogue.CommonsOGCD")
 CreatePanelOption("Slider", CP_Assassination, "APL.Rogue.Assassination.EnvenomDMGOffset", {1, 5, 0.25}, "Envenom DMG Offset", "Set the Envenom DMG Offset.")
 CreatePanelOption("Slider", CP_Assassination, "APL.Rogue.Assassination.MutilateDMGOffset", {1, 5, 0.25}, "Mutilate DMG Offset", "Set the Mutilate DMG Offset.")
 CreatePanelOption("Dropdown", CP_Assassination, "APL.Rogue.Assassination.UsePriorityRotation", {"Never", "On Bosses", "Always", "Auto"}, "Use Priority Rotation", "Select when to show rotation for maximum priority damage (at the cost of overall AoE damage.)\nAuto will function as Never except on specific encounters where AoE is not recommended.")
-CreatePanelOption("CheckButton", CP_Assassination, "APL.Rogue.Assassination.StealthMacro.Vanish", "Stealth Combo - Vanish (check the Vanish box below (under 'Potion Type') if you want Vanish to be shown as OffGCD in Dungeons (elsewhere it is used normally again))", "Allow suggesting Vanish stealth ability combos (recommended)")
+CreatePanelOption("CheckButton", CP_Assassination, "APL.Rogue.Assassination.StealthMacro.Vanish", "Stealth Combo - Vanish", "Allow suggesting Vanish stealth ability combos (recommended)")
 CreatePanelOption("CheckButton", CP_Assassination, "APL.Rogue.Assassination.VanishalwaysasOffGCD", "Must check the Vanish box below (under 'Potion Type') if you want Vanish to be actually shown as OffGCD in Dungeons (elsewhere it is used normally again))", "Allow suggesting Vanish as OffGCD in Dungeons")
 CreatePanelOption("CheckButton", CP_Assassination, "APL.Rogue.Assassination.StealthMacro.Shadowmeld", "Stealth Combo - Shadowmeld", "Allow suggesting Shadowmeld stealth ability combos (recommended)")
 CreateARPanelOptions(CP_Assassination, "APL.Rogue.Assassination")

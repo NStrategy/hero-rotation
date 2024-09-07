@@ -1,4 +1,4 @@
---- ============================ HEADER ============================
+--- ============================ HEADER ============================ -- You are using a fork: THIS IS NOT THE OFFICIAL VERSION - if there are issues, message me on Discord: kekwxqcl --
 --- ======= LOCALIZE =======
 -- Addon
 local addonName, addonTable = ...
@@ -28,7 +28,7 @@ local GetTime = GetTime
 
 
 
---- ============================ CONTENT ============================
+--- ============================ CONTENT ============================ -- You are using a fork: THIS IS NOT THE OFFICIAL VERSION - if there are issues, message me on Discord: kekwxqcl --
 
 --- Roll the Bones Tracking
 --- As buff is "hidden" from the client but we get apply/refresh events for it

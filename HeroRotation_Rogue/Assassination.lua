@@ -1,4 +1,4 @@
---- ============================ HEADER ============================
+--- ============================ HEADER ============================ -- You are using a fork: THIS IS NOT THE OFFICIAL VERSION - if there are issues, message me on Discord: kekwxqcl --
 --- ======= LOCALIZE =======
 -- Addon
 local addonName, addonTable = ...
@@ -35,7 +35,7 @@ local mathmin = math.min
 -- WoW API
 local Delay = C_Timer.After
 
---- ============================ CONTENT ============================
+--- ============================ CONTENT ============================ -- You are using a fork: THIS IS NOT THE OFFICIAL VERSION - if there are issues, message me on Discord: kekwxqcl --
 --- ======= APL LOCALS =======
 -- Commons
 local Everyone = HR.Commons.Everyone
