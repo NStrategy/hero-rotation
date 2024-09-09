@@ -235,8 +235,8 @@ local function Skip_Rupture_NPC () -- Homebrew exclude for certain NPCs -- TODO 
       or NPCID == 429037 or NPCID == 39960 or NPCID == 213607 or NPCID == 213219 or NPCID == 40923
    -- Affixes
       or NPCID == 204560 or NPCID == 174773
-   -- Raid
-      or NPCID == 210231 or NPCID == 207341 or NPCID == 208459 or NPCID == 208461 or NPCID == 214441 or NPCID == 211306 or NPCID == 214608 or NPCID == 202969 or NPCID == 202971 or NPCID == 194991 or NPCID == 194990 or NPCID == 191714 or NPCID == 194647 or NPCID == 189233 or NPCID == 187638 or NPCID == 191510
+   -- Raid: Ravenous Spawn (216205), Blood Horror (221986), Infested Spawn (439815), Blood Parasite (220626),
+      or NPCID == 216205 or NPCID == 221986 or NPCID == 439815 or NPCID == 220626 or NPCID == 214441 or NPCID == 211306 or NPCID == 214608 or NPCID == 202969 or NPCID == 202971 or NPCID == 194991 or NPCID == 194990 or NPCID == 191714 or NPCID == 194647 or NPCID == 189233 or NPCID == 187638 or NPCID == 191510
 end
 local function Ruptures_Before_Flag ()
   -- actions.cds=variable,name=ruptures_before_flag,value=variable.priority_rotation|spell_targets<=4|talent.invigorating_shadowdust&!talent.follow_the_blood|(talent.replicating_shadows&(spell_targets>=5&active_dot.rupture>=spell_targets-2))|!talent.replicating_shadows -- If NPC exlucde causes issues with this, I will look at this again (for example, a boss spawning 100 trash adds, Anduiun for example, based on this, the script would not execute Flag, and there no CDs would be used (which is retarded))
