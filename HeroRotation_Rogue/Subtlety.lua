@@ -215,15 +215,10 @@ local function Skip_Rupture (ShadowDanceBuff)
   -- actions.finish+=/variable,name=skip_rupture,value=buff.thistle_tea.up&spell_targets.shuriken_storm=1|buff.shadow_dance.up&(spell_targets.shuriken_storm=1|dot.rupture.ticking&spell_targets.shuriken_storm>=2)|buff.darkest_night.up
   return Player:BuffUp(S.ThistleTea) and MeleeEnemies10yCount == 1 or Player:BuffUp(S.ShadowDanceBuff) and (MeleeEnemies10yCount == 1 or Target:DebuffUp(S.Rupture) and MeleeEnemies10yCount >= 2) or Player:BuffUp(S.DarkestNightBuff)
 end
--- Define a table with NPC IDs that should be skipped: Ravenous Spawn (216205), Blood Horror (221986), Infested Spawn (439815), Blood Parasite (220626),
+-- Define a table with NPC IDs that should be skipped: Ravenous Spawn (216205), Blood Horror (221986), Infested Spawn (439815), Blood Parasite (220626), Caustic Skitterer (223674), Gloom Hatchling (221344)
 local NPCIDTable = {
-  [206352] = true, [203763] = true, [203799] = true, [203857] = true, [203688] = true, [205265] = true,
-  [204536] = true, [204918] = true, [135052] = true, [134024] = true, [136330] = true, [133361] = true, [131669] = true,
-  [99664] = true, [98677] = true, [102781] = true, [128435] = true, [127315] = true, [259205] = true, [125828] = true,
-  [81638] = true, [109908] = true, [107288] = true, [100529] = true, [101074] = true, [429037] = true, [39960] = true,
-  [213607] = true, [213219] = true, [40923] = true, [204560] = true, [174773] = true, [216205] = true, [221986] = true,
-  [439815] = true, [220626] = true, [214441] = true, [211306] = true, [214608] = true, [202969] = true, [202971] = true,
-  [194991] = true, [194990] = true, [191714] = true, [194647] = true, [189233] = true, [187638] = true, [191510] = true
+  [216205] = true, [221986] = true, [439815] = true, [220626] = true, [223674] = true, [221344] = true, [214608] = true, [202969] = true,
+  [202971] = true, [194991] = true, [194990] = true, [191714] = true, [194647] = true, [189233] = true, [187638] = true, [191510] = true
 }
 local function Skip_Rupture_NPC() -- Exclude Rupture Dot for certain NPCs -- TODO Function to exclude these targets in "MeleeEnemies10yCount >= 5 and S.Rupture:AuraActiveCount() >= MeleeEnemies10yCount 
   local NPCID = Target:NPCID()
