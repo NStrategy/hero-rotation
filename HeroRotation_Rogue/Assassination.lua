@@ -67,10 +67,10 @@ local Enemies30y, MeleeEnemies10y, MeleeEnemies10yCount, MeleeEnemies5y
 -- Rotation Variables
 local ShouldReturn
 local BleedTickTime, ExsanguinatedBleedTickTime = 2 * Player:SpellHaste(), 1 * Player:SpellHaste()
-local ComboPoints, ComboPointsDeficit
+local ComboPoints, ComboPointsDeficit, AcutalComboPoints
 local RuptureThreshold,GarroteThreshold, CrimsonTempestThreshold, RuptureDMGThreshold, GarroteDMGThreshold, RuptureDurationThreshold, RuptureTickTime, GarroteTickTime
 local PriorityRotation
-local NotPooling, PoisonedBleeds, EnergyRegenCombined, EnergyTimeToMaxCombined, EnergyRegenSaturated, SingleTarget, ScentSaturated, AcutalComboPoints
+local NotPooling, PoisonedBleeds, EnergyRegenCombined, EnergyTimeToMaxCombined, EnergyRegenSaturated, SingleTarget, ScentSaturated
 local TrinketSyncSlot = 0
 local EnergyIncoming = 0
 local EffectiveCPSpend
@@ -315,10 +315,6 @@ local function CheckTargetIfTarget(Mode, ModeEvaluation, IfEvaluation)
     return BestUnit
   end
   return nil
-end
---Check for real ComboPoints
-local function ActualComboPoints()
-  return Player:ComboPoints()
 end
 
 --- ======= ACTION LISTS =======
@@ -892,6 +888,7 @@ local function APL ()
   -- Rotation Variables Update
   BleedTickTime, ExsanguinatedBleedTickTime = 2 * Player:SpellHaste(), 1 * Player:SpellHaste()
   ComboPoints = Rogue.EffectiveComboPoints(Player:ComboPoints())
+  AcutalComboPoints = Player:ComboPoints()
   ComboPointsDeficit = Player:ComboPointsMax() - ComboPoints
   RuptureThreshold = (4 + ComboPoints * 4) * 0.3
   GarroteThreshold = 18 * 0.3
@@ -958,7 +955,6 @@ local function APL ()
     EnergyRegenSaturated = (EnergyRegenCombined > 35) or (EnergyIncoming >= 1 and S.CausticSpatter:IsAvailable())
     NotPooling = NotPoolingVar()
     ScentSaturated = ScentSaturatedVar()
-    AcutalComboPoints = ActualComboPoints()
 
     -- actions=/stealth
     -- actions+=/variable,name=single_target,value=spell_targets.fan_of_knives<2
