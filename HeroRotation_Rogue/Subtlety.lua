@@ -236,8 +236,8 @@ local function Used_For_Danse(Spell)
   return Player:BuffUp(S.ShadowDanceBuff) and Spell:TimeSinceLastCast() < S.ShadowDance:TimeSinceLastCast()
 end
 local function Secret_Condition ()
-  -- actions.finish=variable,name=secret_condition,value=((buff.danse_macabre.stack>=2+!talent.deathstalkers_mark)|!talent.danse_macabre|(talent.unseen_blade&buff.shadow_dance.up&buff.escalating_blade.stack>=2))
-  return ((Player:BuffStack(S.DanseMacabreBuff) >= 2 + num(not S.DeathStalkersMark:IsAvailable())) or not S.DanseMacabre:IsAvailable() or (S.UnseenBlade:IsAvailable() and Player:BuffUp(S.ShadowDanceBuff) and Player:BuffStack(S.EscalatingBlade) >= 2))
+  -- actions.finish=variable,name=secret_condition,value=((buff.danse_macabre.stack>=3)|!talent.danse_macabre|(talent.unseen_blade&buff.shadow_dance.up&(buff.escalating_blade.stack>=2|buff.shadow_blades.up))) note: based on TC channel
+  return ((Player:BuffStack(S.DanseMacabreBuff) >= 3) or not S.DanseMacabre:IsAvailable() or (S.UnseenBlade:IsAvailable() and Player:BuffUp(S.ShadowDanceBuff) and (Player:BuffStack(S.EscalatingBlade) >= 2 or Player:BuffUp(S.ShadowBlades))))
 end
 local function Trinket_Sync_Slot ()
   -- actions.precombat+=/variable,name=trinket_sync_slot,value=1,if=trinket.1.has_stat.any_dps&(!trinket.2.has_stat.any_dps|trinket.1.cooldown.duration>=trinket.2.cooldown.duration)
@@ -532,12 +532,6 @@ local function CDs (EnergyThreshold)
 
   local SnDCondition = SnD_Condition()
   local PremeditationBuff = Player:BuffUp(S.PremeditationBuff) or (StealthSpell and S.Premeditation:IsAvailable())
-  -- actions.cds+=/vanish,if=!variable.shd_threshold&(cooldown.flagellation.remains>=60|!talent.flagellation)&(cooldown.symbols_of_death.remains>3|!set_bonus.tier30_2pc)&(cooldown.secret_technique.remains>=10|!talent.secret_technique)
-  if Settings.Subtlety.VanishafterSecret and S.Vanish:IsCastable() and S.InvigoratingShadowdust:IsAvailable() and (S.Flagellation:CooldownRemains() >= 60 or not S.Flagellation:IsAvailable()) and (S.SecretTechnique:CooldownRemains() >= 10) then
-    ShouldReturn = StealthMacro(S.Vanish, EnergyThreshold)
-    if ShouldReturn then return "Vanish Macro " .. ShouldReturn end
-  end
-
   -- actions.cds+=/cold_blood,if=!talent.secret_technique&combo_points>=6
   if S.ColdBlood:IsCastable() and not S.SecretTechnique:IsAvailable() and ComboPoints >= 6 then
     if HR.Cast(S.ColdBlood, Settings.CommonsOGCD.OffGCDasOffGCD.ColdBlood) then return "Cast Cold Blood" end
