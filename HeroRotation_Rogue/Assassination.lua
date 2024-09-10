@@ -67,7 +67,7 @@ local Enemies30y, MeleeEnemies10y, MeleeEnemies10yCount, MeleeEnemies5y
 -- Rotation Variables
 local ShouldReturn
 local BleedTickTime, ExsanguinatedBleedTickTime = 2 * Player:SpellHaste(), 1 * Player:SpellHaste()
-local ComboPoints, ComboPointsDeficit, AcutalComboPoints
+local ComboPoints, ComboPointsDeficit, ActualComboPoints
 local RuptureThreshold,GarroteThreshold, CrimsonTempestThreshold, RuptureDMGThreshold, GarroteDMGThreshold, RuptureDurationThreshold, RuptureTickTime, GarroteTickTime
 local PriorityRotation
 local NotPooling, PoisonedBleeds, EnergyRegenCombined, EnergyTimeToMaxCombined, EnergyRegenSaturated, SingleTarget, ScentSaturated
@@ -378,7 +378,7 @@ local function Stealthed (ReturnSpellOnly, ForceStealth)
     local function RuptureIfFunc(TargetUnit)
       return ComboPoints >= EffectiveCPSpend 
         and Player:BuffUp(S.IndiscriminateCarnageBuff) 
-        and TargetUnit:DebuffRefreshable(S.Rupture) 
+        and IsDebuffRefreshable(TargetUnit, S.Rupture, RuptureThreshold) 
         and (not EnergyRegenSaturated or not ScentSaturated or TargetUnit:DebuffDown(S.Rupture))
         and (TargetUnit:FilteredTimeToDie(">", 15, -TargetUnit:DebuffRemains(S.Rupture)) or TargetUnit:TimeToDieIsNotValid())
     end
@@ -711,16 +711,16 @@ end
 
 -- # Damage over time abilities
 local function AoeDot ()
-  -- # Crimson Tempest on 2+ Targets if we have enough energy regen
-  -- actions.aoe_dot+=/crimson_tempest,target_if=min:remains,if=spell_targets>=(2)&!dot.crimson_tempest.ticking&effective_combo_points>=variable.effective_spend_cp&(pmultiplier<=1)&target.time_to_die>3 note: 10 sec check to not allow CT spam when chainpulling
+  -- # Crimson Tempest on 2+ Targets if we have enough energy regen note: variable.dot_finisher_condition = effective_combo_points>=variable.effective_spend_cp&(pmultiplier<=1)
+  -- actions.aoe_dot+=/crimson_tempest,target_if=min:remains,if=spell_targets>=2&variable.dot_finisher_condition&refreshable&target.time_to_die-remains>6 note: 10 sec check to not allow CT spam when chainpulling
   if HR.AoEON() and S.CrimsonTempest:IsCastable() and MeleeEnemies10yCount >= 2 and ComboPoints >= EffectiveCPSpend and (S.CrimsonTempest:TimeSinceLastCast() > 10 or S.CrimsonTempest:TimeSinceLastCast() == 0) then
     local function EvaluateCrimsonTempestTarget(TargetUnit)
       return TargetUnit:DebuffRemains(S.CrimsonTempest)
     end
     local function CrimsonTempestIfFunc(TargetUnit)
-      return (TargetUnit:DebuffDown(S.CrimsonTempest) or (TargetUnit:DebuffRemains(S.CrimsonTempest) < 1 and TargetUnit:DebuffUp(S.CrimsonTempest)))
-           and TargetUnit:TimeToDie() > 3 
+      return IsDebuffRefreshable(TargetUnit, S.CrimsonTempest, CrimsonTempestThreshold)
            and TargetUnit:PMultiplier(S.CrimsonTempest) <= 1
+           and TargetUnit:TimeToDie() > 6  
     end
     if HR.AoEON() then
       local BestUnit = CheckTargetIfTarget("min", EvaluateCrimsonTempestTarget, CrimsonTempestIfFunc)
@@ -787,7 +787,7 @@ local function Direct ()
   end
 
   -- actions.direct=envenom,if=buff.darkest_night.up&effective_combo_points>=cp_max_spend
-  if S.Envenom:IsCastable() and Player:BuffUp(S.DarkestNightBuff) and AcutalComboPoints >= Rogue.CPMaxSpend() then
+  if S.Envenom:IsCastable() and Player:BuffUp(S.DarkestNightBuff) and ActualComboPoints >= Rogue.CPMaxSpend() then
     if Cast(S.Envenom, nil, nil, not TargetInMeleeRange) then return "Cast Envenom 2" end
   end
 
@@ -888,7 +888,7 @@ local function APL ()
   -- Rotation Variables Update
   BleedTickTime, ExsanguinatedBleedTickTime = 2 * Player:SpellHaste(), 1 * Player:SpellHaste()
   ComboPoints = Rogue.EffectiveComboPoints(Player:ComboPoints())
-  AcutalComboPoints = Player:ComboPoints()
+  ActualComboPoints = Player:ComboPoints()
   ComboPointsDeficit = Player:ComboPointsMax() - ComboPoints
   RuptureThreshold = (4 + ComboPoints * 4) * 0.3
   GarroteThreshold = 18 * 0.3
