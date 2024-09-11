@@ -318,38 +318,22 @@ Spell.Rogue.Subtlety = MergeTableByKey(Spell.Rogue.Commons, {
 if not Item.Rogue then Item.Rogue = {} end
 Item.Rogue.Assassination = {
   -- Trinkets
-  AlgetharPuzzleBox       = Item(193701, {13, 14}),
-  MirrorOfFracturedTomorrows = Item(207581, {13, 14}),
-  AshesoftheEmbersoul        = Item(207167, {13, 14}),
-  IrideusFragment            = Item(193743, {13, 14}),
-  WitherbarksBranch          = Item(109999, {13, 14}),
   ImperfectAscendancySerum   = Item(225654, {13, 14}),
   TreacherousTransmitter     = Item(221023, {13, 14}),
 }
 
 Item.Rogue.Outlaw = {
   -- Trinkets
-  ManicGrieftorch         = Item(194308, {13, 14}),
-  WindscarWhetstone       = Item(137486, {13, 14}),
-  BeaconToTheBeyond       = Item(203963, {13, 14}),
-  DragonfireBombDispenser = Item(202610, {13, 14}),
   ImperfectAscendancySerum   = Item(225654, {13, 14}),
+  MadQueensMandate           = Item(212454, {13, 14}),
   TreacherousTransmitter     = Item(221023, {13, 14}),
-  BattleReadyGoggles      = Item(198326,{1}),
-  PersonalSpaceAmplifier  = Item(255940,{6}), -- If you are playing with this enchant, please put your belt item id here instead of "255940". Only then you will not get suggestions.
+  BattleReadyGoggles         = Item(198326,{1}),
+  PersonalSpaceAmplifier     = Item(255940,{6}), -- If you are playing with this enchant, please put your belt item id here instead of "255940". Only then you will not get suggestions.
 }
 
 Item.Rogue.Subtlety = {
   -- Trinkets
-  ManicGrieftorch            = Item(194308, {13, 14}),
-  StormEatersBoon            = Item(194302, {13, 14}),
-  BeaconToTheBeyond          = Item(203963, {13, 14}),
-  MirrorOfFracturedTomorrows = Item(207581, {13, 14}),
-  AshesoftheEmbersoul        = Item(207167, {13, 14}),
-  IrideusFragment            = Item(193743, {13, 14}),
   ImperfectAscendancySerum   = Item(225654, {13, 14}),
-  WitherbarksBranch          = Item(109999, {13, 14}),
-  BandolierOfTwistedBlades   = Item(207165, {13, 14}),
   TreacherousTransmitter     = Item(221023, {13, 14}),
   SkardynsGrace              = Item(56440,  {13, 14})
 }
