@@ -54,6 +54,7 @@ local I = Item.Rogue.Outlaw
 -- Create table to exclude above trinkets from On Use function
 local OnUseExcludes = {
   I.ImperfectAscendancySerum:ID(),
+  I.MadQueensMandate:ID(),
   I.BattleReadyGoggles:ID(),
   I.PersonalSpaceAmplifier:ID()
 }
@@ -380,7 +381,7 @@ local function Finish(ReturnSpellOnly)
 
 	-- # Crackshot builds use Between the Eyes outside of Stealth if we will not enter a Stealth window before the next cast
   -- actions.finish+=/between_the_eyes,if=talent.crackshot&(cooldown.vanish.remains>45|talent.underhanded_upper_hand&talent.without_a_trace&(buff.adrenaline_rush.remains>10|buff.adrenaline_rush.down&cooldown.adrenaline_rush.remains>45))
-	if S.BetweentheEyes:IsCastable() and Target:IsSpellInRange(S.BetweentheEyes) and S.Crackshot:IsAvailable() and (S.Vanish:CooldownRemains() > 45 or S.UnderhandedUpperhand:IsAvailable() and S.WithoutATrace:IsAvailable() and (Player:BuffRemains(S.AdrenalineRush) > 10 or Player:BuffDown(S.AdrenalineRush) and S.AdrenalineRush:CooldownRemains() > 45)) then
+	if S.BetweentheEyes:IsCastable() and Target:IsSpellInRange(S.BetweentheEyes) and S.Crackshot:IsAvailable() and (S.Vanish:CooldownRemains() > 45 or S.UnderhandedUpperhand:IsAvailable() and S.WithoutATrace:IsAvailable() and (Player:BuffRemains(S.AdrenalineRush) > 12 or Player:BuffDown(S.AdrenalineRush) and S.AdrenalineRush:CooldownRemains() > 45)) then
     if ReturnSpellOnly then
       return S.BetweentheEyes
     else
@@ -506,6 +507,12 @@ local function CDs ()
     if I.ImperfectAscendancySerum:IsEquippedAndReady() then
       if not Player:StealthUp(true, true) or (HL.BossFilteredFightRemains("<=", 22) and InRaid) then
         if Cast(I.ImperfectAscendancySerum, nil, Settings.CommonsDS.DisplayStyle.Trinkets, not Target:IsItemInRange(I.ImperfectAscendancySerum)) then return "Imperfect Ascendancy Serum"; end
+      end
+    end
+    -- actions.cds+=/use_item,name=mad_queens_mandate,if=!stealthed.all|fight_remains<=5
+    if I.MadQueensMandate:IsEquippedAndReady() then
+      if not Player:StealthUp(true, true) or (HL.BossFilteredFightRemains("<=", 5) and InRaid) then
+        if Cast(I.MadQueensMandate, nil, Settings.CommonsDS.DisplayStyle.Trinkets, not Target:IsItemInRange(I.MadQueensMandate)) then return "Mad Queens Mandate"; end
       end
     end
   end
