@@ -578,7 +578,7 @@ local function CDs (EnergyThreshold)
     if HR.Cast(S.SymbolsofDeath, Settings.Subtlety.OffGCDasOffGCD.SymbolsofDeath) then return "Cast Symbols of Death No Dust" end
   end
   -- # Dust Symbols
-  -- actions.cds+=/symbols_of_death,if=talent.invigorating_shadowdust&variable.snd_condition&buff.symbols_of_death.remains<=3&!buff.the_rotten.up&(cooldown.flagellation.remains>10|cooldown.flagellation.up&cooldown.shadow_blades.remains>=20|buff.shadow_dance.remains>=2)
+  -- actions.cds+=/symbols_of_death,if=talent.invigorating_shadowdust&variable.snd_condition&buff.symbols_of_death.remains<=3&!buff.the_rotten.up&(cooldown.flagellation.remains>10|cooldown.flagellation.up&cooldown.shadow_blades.remains>=20|buff.shadow_dance.remains>=2) -- may need an exlcude for Endboss
   if S.SymbolsofDeath:IsCastable() and S.InvigoratingShadowdust:IsAvailable() and SnDCondition and Player:BuffRemains(S.SymbolsofDeath) <= 3 and not Player:BuffUp(S.TheRottenBuff) and (S.Flagellation:CooldownRemains() > 10 or S.Flagellation:IsCastable() and (S.ShadowBlades:CooldownRemains() >= 20 or not InRaid) or Player:BuffRemains(S.ShadowDanceBuff) >= 2) then
      if HR.Cast(S.SymbolsofDeath, Settings.Subtlety.OffGCDasOffGCD.SymbolsofDeath) then return "Cast Symbols of Death With Dust" end
   end
@@ -612,9 +612,9 @@ local function CDs (EnergyThreshold)
        if ShouldReturn then return "Vanish Macro " .. ShouldReturn end
     end
     -- # Use shadow dance during subterfuge in CDs or if the fight ends in <8s
-    -- actions.cds+=/shadow_dance,if=!buff.shadow_dance.up&(talent.invigorating_shadowdust&buff.shadow_blades.up&((talent.deathstalkers_mark&buff.subterfuge.up)|(dot.rupture.ticking&variable.snd_condition&talent.unseen_blade)))|fight_remains<=8 note: potentially deleting fight remains check
+    -- actions.cds+=/shadow_dance,if=!buff.shadow_dance.up&(talent.invigorating_shadowdust&buff.shadow_blades.up&((talent.deathstalkers_mark&buff.subterfuge.up)|(dot.rupture.ticking&variable.snd_condition&talent.unseen_blade)))|fight_remains<=8 note: deleted fight remains check
     if S.ShadowDance:IsCastable() and not Player:BuffUp(S.ShadowDanceBuff) and 
-      (S.InvigoratingShadowdust:IsAvailable() and Player:BuffUp(S.ShadowBlades) and ((S.DeathStalkersMark:IsAvailable() and Player:BuffUp(S.SubterfugeBuff)) or ((Target:DebuffUp(S.Rupture) or Skip_Rupture_NPC(Target)) and SnDCondition and S.UnseenBlade:IsAvailable()))) or (S.ShadowDance:IsCastable() and HL.BossFilteredFightRemains("<=", 8) and InRaid) then
+      (S.InvigoratingShadowdust:IsAvailable() and Player:BuffUp(S.ShadowBlades) and ((S.DeathStalkersMark:IsAvailable() and Player:BuffUp(S.SubterfugeBuff)) or ((Target:DebuffUp(S.Rupture) or Skip_Rupture_NPC(Target)) and SnDCondition and S.UnseenBlade:IsAvailable()))) then
       ShouldReturn = StealthMacro(S.ShadowDance, EnergyThreshold)
       if ShouldReturn then return "Shadow Dance Macro " .. ShouldReturn end
     end
@@ -643,7 +643,7 @@ local function CDs (EnergyThreshold)
     end
     -- Racials
     -- actions.cds+=/variable,name=racial_sync,value=buff.shadow_blades.up|!talent.shadow_blades&buff.symbols_of_death.up|fight_remains<20
-    if Player:BuffUp(S.ShadowBlades) or (not S.ShadowBlades:IsAvailable() and Player:BuffUp(S.SymbolsofDeath)) or HL.BossFilteredFightRemains("<", 20) then
+    if Player:BuffUp(S.ShadowBlades) or (not S.ShadowBlades:IsAvailable() and Player:BuffUp(S.SymbolsofDeath)) or (HL.BossFilteredFightRemains("<", 20) and InRaid) then
       -- actions.cds+=/blood_fury,if=variable.racial_sync
       if S.BloodFury:IsCastable() then
         if HR.Cast(S.BloodFury, Settings.CommonsOGCD.OffGCDasOffGCD.Racials) then return "Cast Blood Fury" end
@@ -727,8 +727,8 @@ local function Stealth_CDs (EnergyThreshold)
     end
   end
   if TargetInMeleeRange and S.ShadowDance:IsCastable() and HR.CDsON() then
-    -- actions.stealth_cds+=/shadow_dance,if=dot.rupture.ticking&variable.snd_condition&(buff.symbols_of_death.remains>=6&!buff.flagellation_buff.up|buff.symbols_of_death.up&buff.shadow_blades.up|buff.shadow_blades.up&!talent.invigorating_shadowdust)&cooldown.secret_technique.remains<10+12*!talent.invigorating_shadowdust&(!talent.the_first_dance|(combo_points.deficit>=7&!buff.shadow_blades.up|buff.shadow_blades.up))
-    if (Target:DebuffUp(S.Rupture) or Skip_Rupture_NPC(Target)) and SnD_Condition() and (Player:BuffRemains(S.SymbolsofDeath) >= 6 and not Player:BuffUp(S.Flagellation) or Player:BuffUp(S.SymbolsofDeath) and Player:BuffUp(S.ShadowBlades) or Player:BuffUp(S.ShadowBlades) and not S.InvigoratingShadowdust:IsAvailable()) and S.SecretTechnique:CooldownRemains() < 10 + 12 * num(not S.InvigoratingShadowdust:IsAvailable()) and (not S.TheFirstDance:IsAvailable() or (ComboPointsDeficit >= 7 and not Player:BuffUp(S.ShadowBlades) or Player:BuffUp(S.ShadowBlades))) then
+    -- actions.stealth_cds+=/shadow_dance,if=dot.rupture.ticking&variable.snd_condition&(buff.symbols_of_death.remains>=7&!buff.flagellation_buff.up|buff.symbols_of_death.up&buff.shadow_blades.up|buff.shadow_blades.up&!talent.invigorating_shadowdust)&cooldown.secret_technique.remains<10+12*!talent.invigorating_shadowdust&(!talent.the_first_dance|(combo_points.deficit>=7&!buff.shadow_blades.up|buff.shadow_blades.up)) increased "buff.symbols_of_death.remains>=6" to 7 to reduce likelyhood of somehow having Dance up to soon after triple dance.
+    if (Target:DebuffUp(S.Rupture) or Skip_Rupture_NPC(Target)) and SnD_Condition() and (Player:BuffRemains(S.SymbolsofDeath) >= 7 and not Player:BuffUp(S.Flagellation) or Player:BuffUp(S.SymbolsofDeath) and Player:BuffUp(S.ShadowBlades) or Player:BuffUp(S.ShadowBlades) and not S.InvigoratingShadowdust:IsAvailable()) and S.SecretTechnique:CooldownRemains() < 10 + 12 * num(not S.InvigoratingShadowdust:IsAvailable()) and (not S.TheFirstDance:IsAvailable() or (ComboPointsDeficit >= 7 and not Player:BuffUp(S.ShadowBlades) or Player:BuffUp(S.ShadowBlades))) then
         ShouldReturn = StealthMacro(S.ShadowDance, EnergyThreshold)
         if ShouldReturn then return "ShadowDance Macro " .. ShouldReturn end
     end
