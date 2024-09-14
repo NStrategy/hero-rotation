@@ -58,6 +58,7 @@ local I = Item.Rogue.Assassination
 local OnUseExcludeTrinkets = {
   I.ImperfectAscendancySerum:ID(),
   I.TreacherousTransmitter:ID(),
+  I.ConcoctionKissOfDeath:ID()
 }
 
 -- Enemies
@@ -496,6 +497,12 @@ local function CDs ()
     if I.ImperfectAscendancySerum:IsEquippedAndReady() then
       if (Target:DebuffUp(S.Rupture) and S.Deathmark:CooldownRemains() <= 2 or HL.BossFilteredFightRemains("<", 22)) then
         if Cast(I.ImperfectAscendancySerum, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Imperfect Ascendancy Serum"; end
+      end
+    end
+    -- custom check for ConcoctionKissOfDeath Trinket
+    if I.ConcoctionKissOfDeath:IsEquippedAndReady() then
+      if (Target:DebuffUp(S.Rupture) and S.Deathmark:AnyDebuffUp() and (I.ConcoctionKissOfDeath:TimeSinceLastCast() == 0 or I.ConcoctionKissOfDeath:TimeSinceLastCast() > 35)) or (I.ConcoctionKissOfDeath:TimeSinceLastCast() > 28 and not S.Deathmark:AnyDebuffUp() and I.ConcoctionKissOfDeath:TimeSinceLastCast() < 35) then
+        if Cast(I.ConcoctionKissOfDeath, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Concoction Kiss of Death" end
       end
     end
 

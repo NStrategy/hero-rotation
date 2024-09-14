@@ -320,6 +320,7 @@ Item.Rogue.Assassination = {
   -- Trinkets
   ImperfectAscendancySerum   = Item(225654, {13, 14}),
   TreacherousTransmitter     = Item(221023, {13, 14}),
+  ConcoctionKissOfDeath      = Item(215174, {13, 14}),
 }
 
 Item.Rogue.Outlaw = {
@@ -335,7 +336,8 @@ Item.Rogue.Subtlety = {
   -- Trinkets
   ImperfectAscendancySerum   = Item(225654, {13, 14}),
   TreacherousTransmitter     = Item(221023, {13, 14}),
-  SkardynsGrace              = Item(56440,  {13, 14})
+  SkardynsGrace              = Item(56440,  {13, 14}),
+  ConcoctionKissOfDeath      = Item(215174, {13, 14})
 }
 
 function Commons.StealthSpell()

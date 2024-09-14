@@ -45,7 +45,8 @@ local I = Item.Rogue.Subtlety
 local OnUseExcludes = {
   I.TreacherousTransmitter:ID(),
   I.ImperfectAscendancySerum:ID(),
-  I.SkardynsGrace:ID()
+  I.SkardynsGrace:ID(),
+  I.ConcoctionKissOfDeath:ID()
 }
 -- Rotation Var
 local MeleeRange, AoERange, TargetInMeleeRange, TargetInAoERange
@@ -680,6 +681,13 @@ local function Items()
     if I.ImperfectAscendancySerum:IsEquippedAndReady() then
       if (Target:DebuffUp(S.Rupture) or Skip_Rupture_NPC(Target)) and Player:BuffUp(S.Flagellation) then
         if Cast(I.ImperfectAscendancySerum, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Imperfect Ascendancy Serum" end
+      end
+    end
+
+    -- custom check for ConcoctionKissOfDeath Trinket
+    if I.ConcoctionKissOfDeath:IsEquippedAndReady() then
+      if (Player:BuffUp(S.ShadowBlades) and (I.ConcoctionKissOfDeath:TimeSinceLastCast() == 0 or I.ConcoctionKissOfDeath:TimeSinceLastCast() > 35)) or (I.ConcoctionKissOfDeath:TimeSinceLastCast() > 28 and not Player:BuffUp(S.ShadowBlades) and I.ConcoctionKissOfDeath:TimeSinceLastCast() < 35) then
+        if Cast(I.ConcoctionKissOfDeath, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Concoction Kiss of Death" end
       end
     end
 

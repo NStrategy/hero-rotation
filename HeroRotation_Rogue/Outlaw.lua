@@ -56,6 +56,7 @@ local OnUseExcludes = {
   I.ImperfectAscendancySerum:ID(),
   I.MadQueensMandate:ID(),
   I.BattleReadyGoggles:ID(),
+   -- I.ConcoctionKissOfDeath:ID(), Left code cause doesnt work
   I.PersonalSpaceAmplifier:ID()
 }
 
@@ -451,55 +452,6 @@ local function SpellQueueMacro (BaseSpell)
   return false
 end
 
-local function StealthCDs ()
-  -- # Builds with Underhanded Upper Hand and Subterfuge (and Without a Trace for Crackshot) must use Vanish while Adrenaline Rush is active
-  -- actions.stealth_cds=vanish,if=talent.underhanded_upper_hand&talent.subterfuge&(buff.adrenaline_rush.up|!talent.without_a_trace&talent.crackshot)&(variable.finish_condition|!talent.crackshot&(variable.ambush_condition|!talent.hidden_opportunity))
-  if S.Vanish:IsCastable() and S.UnderhandedUpperhand:IsAvailable() and S.Subterfuge:IsAvailable() and ((Player:BuffUp(S.AdrenalineRush) or S.AdrenalineRush:IsCastable()) or not S.WithoutATrace:IsAvailable() and S.Crackshot:IsAvailable()) and (Finish_Condition() or not S.Crackshot:IsAvailable() and (Ambush_Condition() or not S.HiddenOpportunity:IsAvailable())) then
-    -- if HR.Cast(S.Vanish, Settings.CommonsOGCD.OffGCDasOffGCD.Vanish) then return "Cast Vanish (UHU&Subte&CSwithoutWaT)" end
-    ShouldReturn = SpellQueueMacro(S.Vanish)
-    if ShouldReturn then return "Vanish Macro 1 " .. ShouldReturn end
-  end
-
-  -- # Builds without Underhanded Upper Hand but with Crackshot must still use Vanish into Between the Eyes on cooldown
-  -- actions.stealth_cds+=/vanish,if=!talent.underhanded_upper_hand&talent.crackshot&variable.finish_condition
-  if S.Vanish:IsCastable() and not S.UnderhandedUpperhand:IsAvailable() and S.Crackshot:IsAvailable() and Finish_Condition() then
-    -- if HR.Cast(S.Vanish, Settings.CommonsOGCD.OffGCDasOffGCD.Vanish) then return "Cast Vanish (NoUHUwCS)" end
-    ShouldReturn = SpellQueueMacro(S.Vanish)
-    if ShouldReturn then return "Vanish Macro 2 " .. ShouldReturn end
-  end
-
-  -- # Builds without Underhanded Upper Hand and Crackshot but still Hidden Opportunity use Vanish into Ambush when Audacity is not active and under max Opportunity stacks
-  -- actions.stealth_cds+=/vanish,if=!talent.underhanded_upper_hand&!talent.crackshot&talent.hidden_opportunity&!buff.audacity.up&buff.opportunity.stack<buff.opportunity.max_stack&variable.ambush_condition
-  if S.Vanish:IsCastable() and not S.UnderhandedUpperhand:IsAvailable() and not S.Crackshot:IsAvailable() and S.HiddenOpportunity:IsAvailable() and not Player:BuffUp(S.AudacityBuff) and Player:BuffStack(S.Opportunity) < 6 and Ambush_Condition() then
-    -- if HR.Cast(S.Vanish, Settings.CommonsOGCD.OffGCDasOffGCD.Vanish) then return "Cast Vanish (HO)" end
-    ShouldReturn = SpellQueueMacro(S.Vanish)
-    if ShouldReturn then return "Vanish Macro 3 " .. ShouldReturn end
-  end
-
-  -- # Builds without Underhanded Upper Hand, Crackshot, and Hidden Opportunity but with Fatebound use Vanish at five stacks of either Fatebound coin in order to proc the Lucky Coin if it's not already active, and otherwise continue to Vanish into a Dispatch to proc Double Jeopardy on a biased coin
-  -- actions.stealth_cds+=/vanish,if=!talent.underhanded_upper_hand&!talent.crackshot&!talent.hidden_opportunity&talent.fateful_ending&(!buff.fatebound_lucky_coin.up&(buff.fatebound_coin_tails.stack>=5|buff.fatebound_coin_heads.stack>=5)|buff.fatebound_lucky_coin.up&!cooldown.between_the_eyes.ready)
-  if S.Vanish:IsCastable() and not S.UnderhandedUpperhand:IsAvailable() and not S.Crackshot:IsAvailable() and not S.HiddenOpportunity:IsAvailable() and S.FatefulEnding:IsAvailable() and (not Player:BuffUp(S.FateboundLuckyCoin) and (Player:BuffStack(S.FateboundCoinTails) >= 5 or Player:BuffStack(S.FateboundCoinHeads) >=5) or Player:BuffUp(S.FateboundLuckyCoin) and not S.BetweentheEyes:IsCastable()) then
-    -- if HR.Cast(S.Vanish, Settings.CommonsOGCD.OffGCDasOffGCD.Vanish) then return "Cast Vanish (JeopardyorTakeembysurprise)" end
-    ShouldReturn = SpellQueueMacro(S.Vanish)
-    if ShouldReturn then return "Vanish Macro 4 " .. ShouldReturn end
-  end
-
-  -- # Builds with none of the above can use Vanish to maintain Take 'em By Surprise
-  -- actions.stealth_cds+=/vanish,if=!talent.underhanded_upper_hand&!talent.crackshot&!talent.hidden_opportunity&!talent.fateful_ending&talent.take_em_by_surprise&!buff.take_em_by_surprise.up
-  if S.Vanish:IsCastable() and not S.UnderhandedUpperhand:IsAvailable() and not S.Crackshot:IsAvailable() and not S.HiddenOpportunity:IsAvailable() and not S.FatefulEnding:IsAvailable() and S.TakeEmBySurprise:IsAvailable() and not Player:BuffUp(S.TakeEmBySurpriseBuff) then
-    -- if HR.Cast(S.Vanish, Settings.CommonsOGCD.OffGCDasOffGCD.Vanish) then return "Cast Vanish (Last Resort)" end
-    ShouldReturn = SpellQueueMacro(S.Vanish)
-    if ShouldReturn then return "Vanish Macro 5 " .. ShouldReturn end
-  end
-
-  -- actions.stealth_cds+=/shadowmeld,if=variable.finish_condition&!cooldown.vanish.ready
-  if S.Shadowmeld:IsAvailable() and S.Shadowmeld:IsReady() then
-    if Finish_Condition() and not S.Vanish:IsReady() then
-      if HR.Cast(S.Shadowmeld, Settings.CommonsOGCD.OffGCDasOffGCD.Racials) then return "Cast Shadowmeld" end
-    end
-  end
-end
-
 local function CDs ()
   -- # Cooldowns
   -- actions.cds+=/use_item,name=imperfect_ascendancy_serum,if=!stealthed.all|fight_remains<=22
@@ -515,6 +467,12 @@ local function CDs ()
         if Cast(I.MadQueensMandate, nil, Settings.CommonsDS.DisplayStyle.Trinkets, not Target:IsItemInRange(I.MadQueensMandate)) then return "Mad Queens Mandate"; end
       end
     end
+    -- custom check for ConcoctionKissOfDeath Trinket Left code cause doesnt work
+    -- if I.ConcoctionKissOfDeath:IsEquippedAndReady() then
+      -- if (Player:StealthUp(true, false) and (I.ConcoctionKissOfDeath:TimeSinceLastCast() == 0 or I.ConcoctionKissOfDeath:TimeSinceLastCast() > 35)) or (I.ConcoctionKissOfDeath:TimeSinceLastCast() > 28 and I.ConcoctionKissOfDeath:TimeSinceLastCast() < 35) then
+        -- if Cast(I.ConcoctionKissOfDeath, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Concoction Kiss of Death" end
+      -- end
+    -- end
   end
   -- # Use Adrenaline Rush if it is not active and the finisher condition is not met, but Crackshot builds can refresh it with 2cp or lower inside stealth
   -- actions.cds+=/adrenaline_rush,if=!buff.adrenaline_rush.up&(!variable.finish_condition|!talent.improved_adrenaline_rush)|stealthed.all&talent.crackshot&talent.improved_adrenaline_rush&combo_points<=2
@@ -563,10 +521,50 @@ local function CDs ()
     if HR.Cast(S.KillingSpree, Settings.Outlaw.OffGCDasOffGCD.KillingSpree) then return "Cast Killing Spree" end
   end
 
+  -- local function StealthCDs () moved stealthCds in CDs
   -- actions.cds+=/call_action_list,name=stealth_cds,if=!stealthed.all&(!talent.crackshot|cooldown.between_the_eyes.ready)
   if not Player:StealthUp(true, true) and (not S.Crackshot:IsAvailable() or S.BetweentheEyes:IsCastable()) then
-    ShouldReturn = StealthCDs()
-    if ShouldReturn then return ShouldReturn end
+    -- # Builds with Underhanded Upper Hand and Subterfuge (and Without a Trace for Crackshot) must use Vanish while Adrenaline Rush is active
+    -- actions.stealth_cds=vanish,if=talent.underhanded_upper_hand&talent.subterfuge&(buff.adrenaline_rush.up|!talent.without_a_trace&talent.crackshot)&(variable.finish_condition|!talent.crackshot&(variable.ambush_condition|!talent.hidden_opportunity))
+    if S.Vanish:IsCastable() and S.UnderhandedUpperhand:IsAvailable() and S.Subterfuge:IsAvailable() and ((Player:BuffUp(S.AdrenalineRush) or S.AdrenalineRush:IsCastable()) or not S.WithoutATrace:IsAvailable() and S.Crackshot:IsAvailable()) and (Finish_Condition() or not S.Crackshot:IsAvailable() and (Ambush_Condition() or not S.HiddenOpportunity:IsAvailable())) then
+      -- if HR.Cast(S.Vanish, Settings.CommonsOGCD.OffGCDasOffGCD.Vanish) then return "Cast Vanish (UHU&Subte&CSwithoutWaT)" end
+      ShouldReturn = SpellQueueMacro(S.Vanish)
+      if ShouldReturn then return "Vanish Macro 1 " .. ShouldReturn end
+    end
+    -- # Builds without Underhanded Upper Hand but with Crackshot must still use Vanish into Between the Eyes on cooldown
+    -- actions.stealth_cds+=/vanish,if=!talent.underhanded_upper_hand&talent.crackshot&variable.finish_condition
+    if S.Vanish:IsCastable() and not S.UnderhandedUpperhand:IsAvailable() and S.Crackshot:IsAvailable() and Finish_Condition() then
+      -- if HR.Cast(S.Vanish, Settings.CommonsOGCD.OffGCDasOffGCD.Vanish) then return "Cast Vanish (NoUHUwCS)" end
+      ShouldReturn = SpellQueueMacro(S.Vanish)
+      if ShouldReturn then return "Vanish Macro 2 " .. ShouldReturn end
+    end
+    -- # Builds without Underhanded Upper Hand and Crackshot but still Hidden Opportunity use Vanish into Ambush when Audacity is not active and under max Opportunity stacks
+    -- actions.stealth_cds+=/vanish,if=!talent.underhanded_upper_hand&!talent.crackshot&talent.hidden_opportunity&!buff.audacity.up&buff.opportunity.stack<buff.opportunity.max_stack&variable.ambush_condition
+    if S.Vanish:IsCastable() and not S.UnderhandedUpperhand:IsAvailable() and not S.Crackshot:IsAvailable() and S.HiddenOpportunity:IsAvailable() and not Player:BuffUp(S.AudacityBuff) and Player:BuffStack(S.Opportunity) < 6 and Ambush_Condition() then
+      -- if HR.Cast(S.Vanish, Settings.CommonsOGCD.OffGCDasOffGCD.Vanish) then return "Cast Vanish (HO)" end
+      ShouldReturn = SpellQueueMacro(S.Vanish)
+      if ShouldReturn then return "Vanish Macro 3 " .. ShouldReturn end
+    end
+    -- # Builds without Underhanded Upper Hand, Crackshot, and Hidden Opportunity but with Fatebound use Vanish at five stacks of either Fatebound coin in order to proc the Lucky Coin if it's not already active, and otherwise continue to Vanish into a Dispatch to proc Double Jeopardy on a biased coin
+    -- actions.stealth_cds+=/vanish,if=!talent.underhanded_upper_hand&!talent.crackshot&!talent.hidden_opportunity&talent.fateful_ending&(!buff.fatebound_lucky_coin.up&(buff.fatebound_coin_tails.stack>=5|buff.fatebound_coin_heads.stack>=5)|buff.fatebound_lucky_coin.up&!cooldown.between_the_eyes.ready)
+    if S.Vanish:IsCastable() and not S.UnderhandedUpperhand:IsAvailable() and not S.Crackshot:IsAvailable() and not S.HiddenOpportunity:IsAvailable() and S.FatefulEnding:IsAvailable() and (not Player:BuffUp(S.FateboundLuckyCoin) and (Player:BuffStack(S.FateboundCoinTails) >= 5 or Player:BuffStack(S.FateboundCoinHeads) >=5) or Player:BuffUp(S.FateboundLuckyCoin) and not S.BetweentheEyes:IsCastable()) then
+      -- if HR.Cast(S.Vanish, Settings.CommonsOGCD.OffGCDasOffGCD.Vanish) then return "Cast Vanish (JeopardyorTakeembysurprise)" end
+      ShouldReturn = SpellQueueMacro(S.Vanish)
+      if ShouldReturn then return "Vanish Macro 4 " .. ShouldReturn end
+    end
+    -- # Builds with none of the above can use Vanish to maintain Take 'em By Surprise
+    -- actions.stealth_cds+=/vanish,if=!talent.underhanded_upper_hand&!talent.crackshot&!talent.hidden_opportunity&!talent.fateful_ending&talent.take_em_by_surprise&!buff.take_em_by_surprise.up
+    if S.Vanish:IsCastable() and not S.UnderhandedUpperhand:IsAvailable() and not S.Crackshot:IsAvailable() and not S.HiddenOpportunity:IsAvailable() and not S.FatefulEnding:IsAvailable() and S.TakeEmBySurprise:IsAvailable() and not Player:BuffUp(S.TakeEmBySurpriseBuff) then
+      -- if HR.Cast(S.Vanish, Settings.CommonsOGCD.OffGCDasOffGCD.Vanish) then return "Cast Vanish (Last Resort)" end
+      ShouldReturn = SpellQueueMacro(S.Vanish)
+      if ShouldReturn then return "Vanish Macro 5 " .. ShouldReturn end
+    end
+    -- actions.stealth_cds+=/shadowmeld,if=variable.finish_condition&!cooldown.vanish.ready
+    if S.Shadowmeld:IsAvailable() and S.Shadowmeld:IsReady() then
+      if Finish_Condition() and not S.Vanish:IsReady() then
+        if HR.Cast(S.Shadowmeld, Settings.CommonsOGCD.OffGCDasOffGCD.Racials) then return "Cast Shadowmeld" end
+      end
+    end
   end
 
   -- actions.cds+=/thistle_tea,if=!buff.thistle_tea.up&(energy.base_deficit>=150|fight_remains<charges*6)
@@ -610,7 +608,7 @@ local function CDs ()
 
   -- # Default conditions for usable items.
   if Settings.Commons.Enabled.Trinkets then
-    -- actions.cds+=/use_items,slots=trinket1,if=debuff.between_the_eyes.up|trinket.1.has_stat.any_dps|fight_remains<=20 -- maybe add that generic trinket will not be suggested till Torch is on cd?
+    -- actions.cds+=/use_items,slots=trinket1,if=debuff.between_the_eyes.up|trinket.1.has_stat.any_dps|fight_remains<=20
     -- actions.cds+=/use_items,slots=trinket2,if=debuff.between_the_eyes.up|trinket.2.has_stat.any_dps|fight_remains<=20
     local TrinketToUse = Player:GetUseableItems(OnUseExcludes, 13) or Player:GetUseableItems(OnUseExcludes, 14)
     if TrinketToUse and (Player:BuffUp(S.BetweentheEyes) or (HL.BossFilteredFightRemains("<", 20) and InRaid) or TrinketToUse:HasStatAnyDps()) then
