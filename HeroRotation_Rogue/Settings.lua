@@ -103,7 +103,8 @@ HR.GUISettings.APL.Rogue = {
     SpellQueueMacro = {
       Vanish = true,
       Shadowmeld = true
-    }
+    },
+    UseBtEOutsideOfStealth = true
   },
   Subtlety = {
     EviscerateDMGOffset = 3, -- Used to compute the rupture threshold
@@ -168,6 +169,7 @@ CreateARPanelOptions(CP_Assassination, "APL.Rogue.Assassination")
 CreatePanelOption("Dropdown", CP_Outlaw, "APL.Rogue.Outlaw.RolltheBonesLogic", {"SimC", "1+ Buff", "Broadside", "Buried Treasure", "Grand Melee", "Skull and Crossbones", "Ruthless Precision", "True Bearing"}, "Roll the Bones Logic", "Define the Roll the Bones logic to follow.\n(SimC highly recommended!)")
 CreatePanelOption("Dropdown", CP_Outlaw, "APL.Rogue.Outlaw.KillingSpreeDisplayStyle", {"Main Icon", "Suggested", "SuggestedRight", "Cooldown"}, "Killing Spree Display Style", "Define which icon display style to use for Killing Spree.")
 CreatePanelOption("CheckButton", CP_Outlaw, "APL.Rogue.Outlaw.SpellQueueMacro.Vanish", "Stealth Combo - Vanish", "Allow suggesting Vanish stealth ability combos (recommended)")
+CreatePanelOption("CheckButton", CP_Outlaw, "APL.Rogue.Outlaw.UseBtEOutsideOfStealth", "Use Between The Eyes Out of Stealth", "Prevents Between the eyes being used outside of stealth (not recommended, this is a work around to avoid current bugs)")
 CreatePanelOption("CheckButton", CP_Outlaw, "APL.Rogue.Outlaw.SpellQueueMacro.Shadowmeld", "Stealth Combo - Shadowmeld", "Allow suggesting Shadowmeld stealth ability combos (recommended)")
 CreateARPanelOptions(CP_Outlaw, "APL.Rogue.Outlaw")
 
