@@ -666,11 +666,11 @@ local function CDs ()
       if ShouldReturn then return "Cast Vanish (Improved Garrote during Deathmark)" .. ShouldReturn end
     end
     -- Vanish for slightly more mark uptime since you can apply mark and have darkest night at the same time
-    -- actions.vanish+=/vanish,if=!talent.improved_garrote&buff.darkest_night.up&combo_points.deficit>=3&variable.single_target
-    if S.Vanish:IsCastable() and not S.ImprovedGarrote:IsAvailable() and Player:BuffUp(S.DarkestNightBuff) and ComboPointsDeficit >= 3 and SingleTarget then
-      ShouldReturn = StealthMacro(S.Vanish)
-      if ShouldReturn then return "Cast Vanish (More Mark Uptime)" .. ShouldReturn end
-    end
+    -- actions.vanish+=/vanish,if=!talent.improved_garrote&buff.darkest_night.up&combo_points.deficit>=3&variable.single_target - currently bugged, so deleted till fixed.
+    --if S.Vanish:IsCastable() and not S.ImprovedGarrote:IsAvailable() and Player:BuffUp(S.DarkestNightBuff) and ComboPointsDeficit >= 3 and SingleTarget then
+      --ShouldReturn = StealthMacro(S.Vanish)
+      --if ShouldReturn then return "Cast Vanish (More Mark Uptime)" .. ShouldReturn end
+    --end
     -- # Cold Blood with similar conditions to Envenom, avoiding munching Edge Case
     -- actions.cds+=/cold_blood,if=!buff.edge_case.up&cooldown.deathmark.remains>10&!buff.darkest_night.up&effective_combo_points>=variable.effective_spend_cp&(variable.not_pooling|debuff.amplifying_poison.stack>=20|!variable.single_target)&!buff.vanish.up&(!cooldown.kingsbane.up|!variable.single_target)&!cooldown.deathmark.up Note: !buff.edge_case.up does not exist
     if S.ColdBlood:IsCastable() and not HasEdgeCase() and S.Deathmark:CooldownRemains() > 10 and Player:BuffDown(S.DarkestNightBuff) and ComboPoints >= EffectiveCPSpend and (NotPooling or Target:DebuffStack(S.AmplifyingPoisonDebuff) >= 20 or not SingleTarget) and Player:BuffDown(Rogue.VanishBuffSpell()) and (not S.Kingsbane:CooldownUp() or not SingleTarget) and not S.Deathmark:CooldownUp() then
