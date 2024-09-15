@@ -57,8 +57,8 @@ local S = Spell.Rogue.Assassination
 local I = Item.Rogue.Assassination
 local OnUseExcludeTrinkets = {
   I.ImperfectAscendancySerum:ID(),
-  I.TreacherousTransmitter:ID(),
-  I.ConcoctionKissOfDeath:ID()
+  I.TreacherousTransmitter:ID() --,
+  -- I.ConcoctionKissOfDeath:ID()
 }
 
 -- Enemies
@@ -500,11 +500,11 @@ local function CDs ()
       end
     end
     -- custom check for ConcoctionKissOfDeath Trinket
-    if I.ConcoctionKissOfDeath:IsEquippedAndReady() then
-      if (Target:DebuffUp(S.Rupture) and S.Deathmark:AnyDebuffUp() and (I.ConcoctionKissOfDeath:TimeSinceLastCast() == 0 or I.ConcoctionKissOfDeath:TimeSinceLastCast() > 35)) or (I.ConcoctionKissOfDeath:TimeSinceLastCast() > 28 and not S.Deathmark:AnyDebuffUp() and I.ConcoctionKissOfDeath:TimeSinceLastCast() < 35) then
-        if Cast(I.ConcoctionKissOfDeath, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Concoction Kiss of Death" end
-      end
-    end
+    -- if I.ConcoctionKissOfDeath:IsEquippedAndReady() then
+      -- if (Target:DebuffUp(S.Rupture) and S.Deathmark:AnyDebuffUp() and (I.ConcoctionKissOfDeath:TimeSinceLastCast() == 0 or I.ConcoctionKissOfDeath:TimeSinceLastCast() > 35)) or (I.ConcoctionKissOfDeath:TimeSinceLastCast() > 28 and not S.Deathmark:AnyDebuffUp() and I.ConcoctionKissOfDeath:TimeSinceLastCast() < 35) then
+        -- if Cast(I.ConcoctionKissOfDeath, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Concoction Kiss of Death" end
+      -- end
+    -- end
 
     -- actions.items+=/use_items,slots=trinket1,if=(variable.trinket_sync_slot=1&(debuff.deathmark.up|fight_remains<=20)|(variable.trinket_sync_slot=2&(!trinket.2.cooldown.ready|!debuff.deathmark.up&cooldown.deathmark.remains>20))|!variable.trinket_sync_slot)
     -- actions.items+=/use_items,slots=trinket2,if=(variable.trinket_sync_slot=2&(debuff.deathmark.up|fight_remains<=20)|(variable.trinket_sync_slot=1&(!trinket.1.cooldown.ready|!debuff.deathmark.up&cooldown.deathmark.remains>20))|!variable.trinket_sync_slot)
