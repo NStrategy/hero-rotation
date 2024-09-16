@@ -44,6 +44,7 @@ local I = Item.Rogue.Subtlety
 -- Create table to exclude above trinkets from On Use function
 local OnUseExcludes = {
   I.TreacherousTransmitter:ID(),
+  I.BottledFlayedwingToxin:ID(),
   I.ImperfectAscendancySerum:ID(),
   I.SkardynsGrace:ID() --,
   -- I.ConcoctionKissOfDeath:ID()
@@ -865,6 +866,12 @@ local function APL ()
   -- Poisons
   Rogue.Poisons()
 
+  -- Bottled Flayedwing Toxin
+  if I.BottledFlayedwingToxin:IsEquippedAndReady() and Player:BuffDown(S.FlayedwingToxin) then
+    if Cast(I.BottledFlayedwingToxin, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then
+      return "Bottle Of Flayedwing Toxin";
+    end
+  end
   --- Out of Combat
   if not Player:AffectingCombat() then
     -- actions=stealth

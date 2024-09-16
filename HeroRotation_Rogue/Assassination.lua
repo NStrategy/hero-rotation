@@ -56,6 +56,7 @@ local S = Spell.Rogue.Assassination
 -- Items
 local I = Item.Rogue.Assassination
 local OnUseExcludeTrinkets = {
+  I.BottledFlayedwingToxin:ID(),
   I.ImperfectAscendancySerum:ID(),
   I.TreacherousTransmitter:ID() --,
   -- I.ConcoctionKissOfDeath:ID()
@@ -552,9 +553,9 @@ local function CDs ()
       if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv (Arterial Precision AoE)" end
     end
     -- # Shiv cases for Kingsbane
-    -- actions.shiv+=/shiv,if=!talent.lightweight_shiv.enabled&variable.shiv_kingsbane_condition&(dot.kingsbane.ticking&dot.kingsbane.remains<8|cooldown.kingsbane.remains>=24)&(!talent.crimson_tempest.enabled|variable.single_target|dot.crimson_tempest.ticking)|fight_remains<=charges*8
+    -- actions.shiv+=/shiv,if=!talent.lightweight_shiv.enabled&variable.shiv_kingsbane_condition&(dot.kingsbane.ticking&dot.kingsbane.remains<8|!dot.kingsbane.ticking&cooldown.kingsbane.remains>=24)&(!talent.crimson_tempest.enabled|variable.single_target|dot.crimson_tempest.ticking)|fight_remains<=charges*8
     if ShivKingsbaneCondition then
-      if not S.LightweightShiv:IsAvailable() and (Target:DebuffUp(S.Kingsbane) and Target:DebuffRemains(S.Kingsbane) < 8 or S.Kingsbane:CooldownRemains() >= 24) and (not S.CrimsonTempest:IsAvailable() or SingleTarget or Target:DebuffUp(S.CrimsonTempest)) then
+      if not S.LightweightShiv:IsAvailable() and (Target:DebuffUp(S.Kingsbane) and Target:DebuffRemains(S.Kingsbane) < 8 or not Target:DebuffUp(S.Kingsbane) and S.Kingsbane:CooldownRemains() >= 24) and (not S.CrimsonTempest:IsAvailable() or SingleTarget or Target:DebuffUp(S.CrimsonTempest)) then
          if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv (Kingsbane)" end
       end
       -- actions.shiv+=/shiv,if=talent.lightweight_shiv.enabled&variable.shiv_kingsbane_condition&(dot.kingsbane.ticking|cooldown.kingsbane.remains<=1)|fight_remains<=charges*8 
@@ -914,6 +915,13 @@ local function APL ()
 
   -- Poisons
   Rogue.Poisons()
+
+  -- Bottled Flayedwing Toxin
+  if I.BottledFlayedwingToxin:IsEquippedAndReady() and Player:BuffDown(S.FlayedwingToxin) then
+    if Cast(I.BottledFlayedwingToxin, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then
+      return "Bottle Of Flayedwing Toxin";
+    end
+  end
 
   -- Out of Combat
   if not Player:AffectingCombat() then

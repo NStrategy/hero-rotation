@@ -61,6 +61,8 @@ Spell.Rogue.Commons = {
   -- Utility
   Blind                   = Spell(2094),
   CheapShot               = Spell(1833),
+  FlayedwingToxin         = Spell(345545),
+  FullMomentum            = Spell(459228),
   Kick                    = Spell(1766),
   KidneyShot              = Spell(408),
   PickPocket              = Spell(921),
@@ -318,6 +320,7 @@ Spell.Rogue.Subtlety = MergeTableByKey(Spell.Rogue.Commons, {
 if not Item.Rogue then Item.Rogue = {} end
 Item.Rogue.Assassination = {
   -- Trinkets
+  BottledFlayedwingToxin     = Item(178742, {13, 14}),
   ImperfectAscendancySerum   = Item(225654, {13, 14}),
   TreacherousTransmitter     = Item(221023, {13, 14}),
   ConcoctionKissOfDeath      = Item(215174, {13, 14}),
@@ -325,15 +328,18 @@ Item.Rogue.Assassination = {
 
 Item.Rogue.Outlaw = {
   -- Trinkets
+  BottledFlayedwingToxin     = Item(178742, {13, 14}),
   ImperfectAscendancySerum   = Item(225654, {13, 14}),
   MadQueensMandate           = Item(212454, {13, 14}),
   TreacherousTransmitter     = Item(221023, {13, 14}),
+  ScrollOfMomentum           = Item(226539, {13, 14}),
   BattleReadyGoggles         = Item(198326,{1}),
   PersonalSpaceAmplifier     = Item(255940,{6}), -- If you are playing with this enchant, please put your belt item id here instead of "255940". Only then you will not get suggestions.
 }
 
 Item.Rogue.Subtlety = {
   -- Trinkets
+  BottledFlayedwingToxin     = Item(178742, {13, 14}),
   ImperfectAscendancySerum   = Item(225654, {13, 14}),
   TreacherousTransmitter     = Item(221023, {13, 14}),
   SkardynsGrace              = Item(56440,  {13, 14}),

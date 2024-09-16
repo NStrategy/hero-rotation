@@ -54,6 +54,7 @@ local I = Item.Rogue.Outlaw
 -- Create table to exclude above trinkets from On Use function
 local OnUseExcludes = {
   I.ImperfectAscendancySerum:ID(),
+  I.BottledFlayedwingToxin:ID(),
   I.MadQueensMandate:ID(),
   I.BattleReadyGoggles:ID(),
    -- I.ConcoctionKissOfDeath:ID(), Left code cause doesnt work
@@ -481,7 +482,14 @@ local function CDs ()
        if Cast(S.AdrenalineRush, Settings.Outlaw.OffGCDasOffGCD.AdrenalineRush) then return "Cast Adrenaline Rush" end
     end
   end
-
+  -- # Sprint to further benefit from Scroll of Momentum trinket
+  -- actions.cds+=/sprint,if=(trinket.1.is.scroll_of_momentum|trinket.2.is.scroll_of_momentum)&buff.full_momentum.up
+  if S.Sprint:IsCastable() and not Player:BuffUp(S.Sprint) and
+    (trinket1:ID() == I.ScrollOfMomentum:ID() or trinket2:ID() == I.ScrollOfMomentum:ID()) and Player:BuffUp(S.FullMomentum) then
+    if Cast(S.Sprint, Settings.CommonsOGCD.OffGCDasOffGCD.Sprint) then
+      return "Cast Sprint"
+    end
+  end
   -- # Maintain Blade Flurry on 2+ targets
   -- actions.cds+=/blade_flurry,if=spell_targets>=2&buff.blade_flurry.remains<gcd
   if S.BladeFlurry:IsCastable() then
@@ -695,6 +703,12 @@ local function APL ()
   -- Poisons
   Rogue.Poisons()
 
+  -- Bottled Flayedwing Toxin
+  if I.BottledFlayedwingToxin:IsEquippedAndReady() and Player:BuffDown(S.FlayedwingToxin) then
+    if Cast(I.BottledFlayedwingToxin, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then
+      return "Bottled Flayedwing Toxin";
+    end
+  end
   -- Out of Combat
   if not Player:AffectingCombat() and S.Vanish:TimeSinceLastCast() > 1 then
     -- actions.precombat+=/blade_flurry,precombat_seconds=4,if=talent.underhanded_upper_hand
