@@ -608,14 +608,21 @@ local function CDs (EnergyThreshold)
     end
     -- # Vanish during dance if trickster
     -- actions.cds+=/vanish,if=buff.shadow_dance.up&talent.invigorating_shadowdust&talent.unseen_blade&(combo_points.deficit>1)&(cooldown.flagellation.remains>=60|!talent.flagellation)&(cooldown.secret_technique.remains>=10&!raid_event.adds.up)
-    if S.Vanish:IsCastable() and Player:BuffUp(S.ShadowDanceBuff) and S.InvigoratingShadowdust:IsAvailable() and S.UnseenBlade:IsAvailable() and (ComboPointsDeficit > 1) and (S.Flagellation:CooldownRemains() >= 60 or not S.Flagellation:IsAvailable()) and (S.SecretTechnique:CooldownRemains() >= 10) then
+    if not Settings.Subtlety.TwoDancewithTSandDust and S.Vanish:IsCastable() and Player:BuffUp(S.ShadowDanceBuff) and S.InvigoratingShadowdust:IsAvailable() and S.UnseenBlade:IsAvailable() and (ComboPointsDeficit > 1) and (S.Flagellation:CooldownRemains() >= 60 or not S.Flagellation:IsAvailable()) and (S.SecretTechnique:CooldownRemains() >= 10) then
        ShouldReturn = StealthMacro(S.Vanish, EnergyThreshold)
        if ShouldReturn then return "Vanish Macro " .. ShouldReturn end
     end
     -- # Use shadow dance during subterfuge in CDs or if the fight ends in <8s
     -- actions.cds+=/shadow_dance,if=!buff.shadow_dance.up&(talent.invigorating_shadowdust&buff.shadow_blades.up&((talent.deathstalkers_mark&buff.subterfuge.up)|(dot.rupture.ticking&variable.snd_condition&talent.unseen_blade)))|fight_remains<=8 note: deleted fight remains check
-    if S.ShadowDance:IsCastable() and not Player:BuffUp(S.ShadowDanceBuff) and 
+    if not Settings.Subtlety.TwoDancewithTSandDust and S.ShadowDance:IsCastable() and not Player:BuffUp(S.ShadowDanceBuff) and 
       (S.InvigoratingShadowdust:IsAvailable() and Player:BuffUp(S.ShadowBlades) and ((S.DeathStalkersMark:IsAvailable() and Player:BuffUp(S.SubterfugeBuff)) or ((Target:DebuffUp(S.Rupture) or Skip_Rupture_NPC(Target)) and SnDCondition and S.UnseenBlade:IsAvailable()))) then
+      ShouldReturn = StealthMacro(S.ShadowDance, EnergyThreshold)
+      if ShouldReturn then return "Shadow Dance Macro " .. ShouldReturn end
+    end
+    -- # 2 Dance condition
+    -- shadow_dance,if=!buff.shadow_dance.up&(talent.invigorating_shadowdust&buff.shadow_blades.up&buff.subterfuge.up)|fight_remains<=8
+    if Settings.Subtlety.TwoDancewithTSandDust and S.ShadowDance:IsCastable() and not Player:BuffUp(S.ShadowDanceBuff) and 
+      (S.InvigoratingShadowdust:IsAvailable() and Player:BuffUp(S.ShadowBlades) and Player:BuffUp(S.SubterfugeBuff)) then
       ShouldReturn = StealthMacro(S.ShadowDance, EnergyThreshold)
       if ShouldReturn then return "Shadow Dance Macro " .. ShouldReturn end
     end

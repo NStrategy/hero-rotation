@@ -109,6 +109,7 @@ HR.GUISettings.APL.Rogue = {
   Subtlety = {
     EviscerateDMGOffset = 3, -- Used to compute the rupture threshold
     BurnShadowDance = "On Bosses not in Dungeons", -- Burn Shadow Dance charges when the target is about to die
+    TwoDancewithTSandDust = false,
     UsePriorityRotation = "Auto", -- Only for Assassination / Subtlety
     PotionType = {
       Selected = "Power",
@@ -176,6 +177,7 @@ CreateARPanelOptions(CP_Outlaw, "APL.Rogue.Outlaw")
 -- Subtlety
 CreatePanelOption("Slider", CP_Subtlety, "APL.Rogue.Subtlety.EviscerateDMGOffset", {1, 5, 0.25}, "Eviscerate Damage Offset", "Set the Eviscerate Damage Offset, used to compute the rupture threshold.")
 CreatePanelOption("Dropdown", CP_Subtlety, "APL.Rogue.Subtlety.UsePriorityRotation", {"Never", "On Bosses", "Always", "Auto"}, "Use Priority Rotation", "Select when to show rotation for maximum priority damage (at the cost of overall AoE damage.)\nAuto will function as Never except on specific encounters where AoE is not recommended.")
+CreatePanelOption("CheckButton", CP_Subtlety, "APL.Rogue.Subtlety.TwoDancewithTSandDust", "Opt for only two dances instead of three while playing Trickster and Dust", "With this enabled, HR will not suggest triple Dance when playing TS and Dust (0.2% worse)")
 CreatePanelOption("Dropdown", CP_Subtlety, "APL.Rogue.Subtlety.BurnShadowDance", {"Always", "On Bosses", "On Bosses not in Dungeons"}, "Burn Shadow Dance before Death", "Use remaining Shadow Dance charges when the target is about to die.")
 CreatePanelOption("CheckButton", CP_Subtlety, "APL.Rogue.Subtlety.StealthMacro.Vanish", "Stealth Combo - Vanish", "Allow suggesting Vanish stealth ability combos (recommended)")
 CreatePanelOption("CheckButton", CP_Subtlety, "APL.Rogue.Subtlety.StealthMacro.Shadowmeld", "Stealth Combo - Shadowmeld", "Allow suggesting Shadowmeld stealth ability combos (recommended)")
