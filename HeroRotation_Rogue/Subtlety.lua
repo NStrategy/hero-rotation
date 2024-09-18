@@ -46,6 +46,7 @@ local OnUseExcludes = {
   I.TreacherousTransmitter:ID(),
   I.BottledFlayedwingToxin:ID(),
   I.ImperfectAscendancySerum:ID(),
+  I.MadQueensMandate:ID(),
   I.SkardynsGrace:ID() --,
   -- I.ConcoctionKissOfDeath:ID()
 }
@@ -221,15 +222,15 @@ end
 -- Ravenous Spawn (216205), Blood Horror (221986), Infested Spawn (439815), Blood Parasite (220626), Caustic Skitterer (223674), Gloom Hatchling (221344),
 -- Battle Scarab (220199), Congealed Droplet (216329), Umbral Weave (222700) or/and (220065), Hungry Scarab (222974), Ravenous Scarab (219198),
 -- Ravenous Crawler (216336) or/and (219221), Jabbing Flyer (216341), Swarming Flyer (218325), Starved Crawler (218961), Bloodworker (216337) or (215826),
--- Bloodstained Webmage (223253) or/and (220599), Black Blood (215968) or/and (216856), Crystal Shard (214443), Earth Burst Totem (214287),
+-- Black Blood (215968) or/and (216856), Crystal Shard (214443), Earth Burst Totem (214287),
 -- Spinemaw Larva (167117), Gormling Larva (165560), Carrion Worm (164702), Brittlebone Warrior (163122) or/and (168445), Brittlebone Mage (163126),
 -- Brittlebone Crossbowman (166079), Shuffling Corpse (171500), Spare Parts (166266), Invoked Shadowflame Spirit (40357), Mutated Hatchling (224853) or/and (39388)
 -- Scrimshaw Gutter (133990), Irontide Curseblade (138247), Irontide Powdershot (138254)
 local NPCIDTable = {
   [216205] = true, [221986] = true, [439815] = true, [220626] = true, [223674] = true, [221344] = true,
   [220199] = true, [216329] = true, [222700] = true, [220065] = true, [222974] = true, [219198] = true,
-  [216336] = true, [219221] = true, [216341] = true, [218325] = true, [218961] = true, [216337] = true, [215826] = true,
-  [223253] = true, [220599] = true, [215968] = true, [216856] = true, [214443] = true, [214287] = true,
+  [216336] = true, [219221] = true, [216341] = true, [218325] = true, [218961] = true, [216337] = true,
+  [215826] = true, [215968] = true, [216856] = true, [214443] = true, [214287] = true,
   [167117] = true, [165560] = true, [164702] = true, [163122] = true, [168445] = true, [163126] = true,
   [166079] = true, [171500] = true, [166266] = true,  [40357] = true, [224853] = true,  [39388] = true,
   [133990] = true, [138247] = true, [138254] = true
@@ -678,13 +679,19 @@ end
 -- # Items
 local function Items()
   if Settings.Commons.Enabled.Trinkets then
-    -- actions.items+=/use_item,name=treacherous_transmitter,if=buff.shadow_blades.up|fight_remains<=15
+    -- actions.items=use_item,name=treacherous_transmitter,if=cooldown.shadow_blades.remains<=2|fight_remains<=15
     if I.TreacherousTransmitter:IsEquippedAndReady() then
-      if Player:BuffUp(S.ShadowBlades) then
+      if S.ShadowBlades:CooldownRemains() <= 2 then
         if Cast(I.TreacherousTransmitter, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Treacherous Transmitter" end
       end
     end
-
+    -- actions.items+=/use_item,name=mad_queens_mandate,use_off_gcd=1,if=(buff.symbols_of_death.up&!talent.lingering_darkness|buff.lingering_darkness.up)&dot.rupture.ticking&(!equipped.treacherous_transmitter|trinket.treacherous_transmitter.cooldown.remains>20)|fight_remains<=15
+    if I.MadQueensMandate:IsEquippedAndReady() then
+      if (Player:BuffUp(S.SymbolsofDeath) and not S.LingeringDarkness:IsAvailable() or Player:BuffUp(S.LingeringDarknessBuff)) and 
+        (Target:DebuffUp(S.Rupture) or Skip_Rupture_NPC(Target)) and (not I.TreacherousTransmitter:IsEquipped() or I.TreacherousTransmitter:CooldownRemains() > 20) then
+        if Cast(I.MadQueensMandate, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Mad Queen's Mandate" end
+      end
+    end
     --actions.items+=/use_item,name=imperfect_ascendancy_serum,use_off_gcd=1,if=dot.rupture.ticking&buff.flagellation_buff.up
     if I.ImperfectAscendancySerum:IsEquippedAndReady() then
       if (Target:DebuffUp(S.Rupture) or Skip_Rupture_NPC(Target)) and Player:BuffUp(S.Flagellation) then

@@ -113,6 +113,8 @@ Spell.Rogue.Commons = {
   FateboundLuckyCoin      = Spell(461818),
   FazedDebuff             = Spell(441224),
   FollowTheBlood          = Spell(457068),
+  LingeringDarkness       = Spell(457056),
+  LingeringDarknessBuff   = Spell(457273),
   MomentumOfDespair       = Spell(457067),
   MomentumOfDespairBuff   = Spell(457115),
   TakeEmBySurprise        = Spell(382742),
@@ -342,6 +344,7 @@ Item.Rogue.Subtlety = {
   BottledFlayedwingToxin     = Item(178742, {13, 14}),
   ImperfectAscendancySerum   = Item(225654, {13, 14}),
   TreacherousTransmitter     = Item(221023, {13, 14}),
+  MadQueensMandate           = Item(212454, {13, 14}),
   SkardynsGrace              = Item(56440,  {13, 14}),
   ConcoctionKissOfDeath      = Item(215174, {13, 14})
 }
