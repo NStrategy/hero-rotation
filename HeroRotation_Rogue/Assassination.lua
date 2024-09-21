@@ -372,7 +372,7 @@ local function Stealthed (ReturnSpellOnly, ForceStealth)
   end
 
   -- # Rupture during Indiscriminate Carnage
-  -- actions.stealthed+=/rupture,target_if=effective_combo_points>=variable.effective_spend_cp&buff.indiscriminate_carnage.up&refreshable&(!variable.regen_saturated|!variable.scent_saturation|!dot.rupture.ticking)&target.time_to_die-remains>15
+  -- actions.stealthed+=/rupture,target_if=effective_combo_points>=variable.effective_spend_cp&buff.indiscriminate_carnage.up&(refreshable||(buff.indiscriminate_carnage.up&active_dot.rupture<spell_targets.fan_of_knives&!variable.single_target))&(!variable.regen_saturated|!variable.scent_saturation|!dot.rupture.ticking)&target.time_to_die-remains>15
   if S.Rupture:IsCastable() or ForceStealth then
     local function RuptureTargetIfFunc(TargetUnit)
       return TargetUnit:DebuffRemains(S.Rupture)
@@ -380,7 +380,7 @@ local function Stealthed (ReturnSpellOnly, ForceStealth)
     local function RuptureIfFunc(TargetUnit)
       return ComboPoints >= EffectiveCPSpend 
         and Player:BuffUp(S.IndiscriminateCarnageBuff) 
-        and IsDebuffRefreshable(TargetUnit, S.Rupture, RuptureThreshold) 
+        and (IsDebuffRefreshable(TargetUnit, S.Rupture, RuptureThreshold) or (IndiscriminateCarnageRemains() > 0.5 and S.Rupture:AuraActiveCount() < MeleeEnemies10yCount and not SingleTarget))
         and (not EnergyRegenSaturated or not ScentSaturated or TargetUnit:DebuffDown(S.Rupture))
         and (TargetUnit:FilteredTimeToDie(">", 15, -TargetUnit:DebuffRemains(S.Rupture)) or TargetUnit:TimeToDieIsNotValid())
     end
@@ -409,7 +409,7 @@ local function Stealthed (ReturnSpellOnly, ForceStealth)
     end
   end
 
-  -- actions.stealthed+=/garrote,target_if=min:remains,if=stealthed.improved_garrote&(remains<12|pmultiplier<=1|(buff.indiscriminate_carnage.up&active_dot.garrote<spell_targets.fan_of_knives))&!variable.single_target&target.time_to_die-remains>2
+  -- actions.stealthed+=/garrote,target_if=min:remains,if=stealthed.improved_garrote&(remains<12|pmultiplier<=1|(buff.indiscriminate_carnage.up&active_dot.garrote<spell_targets.fan_of_knives&combo_points.deficit>=1))&!variable.single_target&target.time_to_die-remains>2
   -- actions.stealthed+=/garrote,if=stealthed.improved_garrote&(pmultiplier<=1|remains<12|!variable.single_target&buff.master_assassin_aura.remains<3)&combo_points.deficit>=1+2*talent.shrouded_suffocation
   if (S.Garrote:IsCastable() and ImprovedGarroteRemains() > 0) or ForceStealth then
     local function GarroteTargetIfFunc(TargetUnit)
@@ -417,7 +417,7 @@ local function Stealthed (ReturnSpellOnly, ForceStealth)
     end
     local function GarroteIfFunc(TargetUnit)
       return (TargetUnit:PMultiplier(S.Garrote) <= 1 or TargetUnit:DebuffRemains(S.Garrote) < 12
-      or (IndiscriminateCarnageRemains() > 0 and S.Garrote:AuraActiveCount() < MeleeEnemies10yCount)) and not SingleTarget
+      or (IndiscriminateCarnageRemains() > 0.5 and S.Garrote:AuraActiveCount() < MeleeEnemies10yCount and ComboPointsDeficit >= 1)) and not SingleTarget
       and (TargetUnit:FilteredTimeToDie(">", 2, -TargetUnit:DebuffRemains(S.Garrote)) or TargetUnit:TimeToDieIsNotValid())
     end
     -- Handle AoE logic with Indiscriminate Carnage and check the setting for CastLeftNameplate usage
@@ -1069,6 +1069,7 @@ end
 local function Init ()
   S.Deathmark:RegisterAuraTracking()
   S.Garrote:RegisterAuraTracking()
+  S.Rupture:RegisterAuraTracking()
 
   HR.Print("You are using a fork [Version 2.1]: THIS IS NOT THE OFFICIAL VERSION - if there are issues, message me on Discord: kekwxqcl")
 end
