@@ -384,11 +384,21 @@ local function Stealthed (ReturnSpellOnly, ForceStealth)
         and (not EnergyRegenSaturated or not ScentSaturated or TargetUnit:DebuffDown(S.Rupture))
         and (TargetUnit:FilteredTimeToDie(">", 15, -TargetUnit:DebuffRemains(S.Rupture)) or TargetUnit:TimeToDieIsNotValid())
     end
+    -- Handle AoE logic with Indiscriminate Carnage and check the setting for CastLeftNameplate usage
     if HR.AoEON() then
-      local TargetIfUnit = CheckTargetIfTarget("min", RuptureTargetIfFunc, RuptureIfFunc)
-      if TargetIfUnit and TargetIfUnit:GUID() ~= Target:GUID() then
-        CastLeftNameplate(TargetIfUnit, S.Rupture)
-      end
+        local TargetIfUnit = CheckTargetIfTarget("min", RuptureTargetIfFunc, RuptureIfFunc)
+        -- Spread Rupture with or without CastLeftNameplate based on settings
+        if TargetIfUnit and IndiscriminateCarnageRemains() > 0.5 then
+            if Settings.Assassination.NoLeftNameplatewhenICupRupture then
+                -- Simplified logic: No CastLeftNameplate, still ensure main target gets Rupture
+                RuptureIfFunc(Target)
+            else
+                -- Original behavior: use CastLeftNameplate for other targets
+                if TargetIfUnit:GUID() ~= Target:GUID() then
+                   CastLeftNameplate(TargetIfUnit, S.Rupture)
+                end
+            end
+        end
     end
     if RuptureIfFunc(Target) then
       if ReturnSpellOnly then
@@ -409,13 +419,22 @@ local function Stealthed (ReturnSpellOnly, ForceStealth)
       return (TargetUnit:PMultiplier(S.Garrote) <= 1 or TargetUnit:DebuffRemains(S.Garrote) < 12
       or (IndiscriminateCarnageRemains() > 0 and S.Garrote:AuraActiveCount() < MeleeEnemies10yCount)) and not SingleTarget
       and (TargetUnit:FilteredTimeToDie(">", 2, -TargetUnit:DebuffRemains(S.Garrote)) or TargetUnit:TimeToDieIsNotValid())
-      and Rogue.CanDoTUnit(TargetUnit, GarroteDMGThreshold)
     end
-    if HR.AoEON() and S.Kingsbane:CooldownRemains() < 46 and S.Deathmark:CooldownRemains() < 104 then
-      local TargetIfUnit = CheckTargetIfTarget("min", GarroteTargetIfFunc, GarroteIfFunc)
-      if TargetIfUnit and TargetIfUnit:GUID() ~= Target:GUID() then
-        return CastLeftNameplate(TargetIfUnit, S.Garrote)
-      end
+    -- Handle AoE logic with Indiscriminate Carnage and check the setting for CastLeftNameplate usage
+    if HR.AoEON() then
+        local TargetIfUnit = CheckTargetIfTarget("min", GarroteTargetIfFunc, GarroteIfFunc)
+        -- Spread Garrote with or without CastLeftNameplate based on settings
+        if TargetIfUnit and IndiscriminateCarnageRemains() > 0.5 then
+            if Settings.Assassination.NoLeftNameplatewhenICupGarrote then
+                -- Simplified logic: No CastLeftNameplate, still ensure main target gets Garrote
+                GarroteIfFunc(Target)
+            else
+                -- Original behavior: use CastLeftNameplate for other targets
+                if TargetIfUnit:GUID() ~= Target:GUID() then
+                   CastLeftNameplate(TargetIfUnit, S.Garrote)
+                end
+            end
+        end
     end
     if GarroteIfFunc(Target) then
       if ReturnSpellOnly then
@@ -424,7 +443,7 @@ local function Stealthed (ReturnSpellOnly, ForceStealth)
         if Cast(S.Garrote, nil, nil, not TargetInMeleeRange) then return "Cast Garrote (Improved Garrote)" end
       end
     end
-    if ComboPointsDeficit >= (1 + 2 * num(S.ShroudedSuffocation:IsAvailable())) and (Target:PMultiplier(S.Garrote) <= 1 or Target:DebuffRemains(S.Garrote) < 12 or not SingleTarget and MasterAssassinRemains() < 3) then
+    if ComboPointsDeficit >= (1 + 2 * num(S.ShroudedSuffocation:IsAvailable())) and (Target:PMultiplier(S.Garrote) <= 1 or Target:DebuffRemains(S.Garrote) < 12 or not SingleTarget and MasterAssassinRemains() < 3 and MasterAssassinRemains() > 0.5) then
       if ReturnSpellOnly then
         return S.Garrote
       else
@@ -779,7 +798,7 @@ local function AoeDot ()
 
   -- # Backup-line to Garrote at full CP if Debuff is gone
   -- actions.dot+=/garrote,if=combo_points.deficit=0&!dot.garrote.ticking&dot.rupture.ticking&variable.single_target&!(buff.envenom.up&buff.envenom.remains<=2)
-  if S.Garrote:IsCastable() and ComboPointsDeficit == 0 and not Target:DebuffUp(S.Garrote) and Target:DebuffUp(S.Rupture) and SingleTarget and not (Player:BuffUp(S.Envenom) and Player:BuffRemains(S.Envenom) <= 2)
+  if S.Garrote:IsCastable() and ComboPointsDeficit == 0 and not Target:DebuffUp(S.Garrote) and Target:DebuffUp(S.Rupture) and SingleTarget and not (Player:BuffUp(S.Envenom) and Player:BuffRemains(S.Envenom) <= 1)
      and (Target:FilteredTimeToDie(">", 4, -Target:DebuffRemains(S.Garrote)) or Target:TimeToDieIsNotValid()) then
       if Cast(S.Garrote, nil, nil, not TargetInMeleeRange) then return "Garrote (MaxCP)" end
   end
