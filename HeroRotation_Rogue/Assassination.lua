@@ -211,6 +211,7 @@ local function UsePriorityRotation()
   return false
 end
 
+-- note potentially adding tracking for active aura and AnyDebuffUp when in m+?
 -- actions+=/variable,name=not_pooling,value=(dot.deathmark.ticking|dot.kingsbane.ticking|debuff.shiv.up)|(buff.envenom.up&buff.envenom.remains<=1)|energy.pct>=(40+30*talent.hand_of_fate-15*talent.vicious_venoms)|fight_remains<=20
 local function NotPoolingVar()
   if (Target:DebuffUp(S.Deathmark) or Target:DebuffUp(S.Kingsbane) or Target:DebuffUp(S.ShivDebuff)) or (Player:BuffUp(S.Envenom) and Player:BuffRemains(S.Envenom) <= 1) or Player:EnergyPercentage() >= (40 + 30 * num(S.HandOfFate:IsAvailable()) - 15 * num(S.ViciousVenoms:IsAvailable())) or (HL.BossFilteredFightRemains("<=", 20) and InRaid) then
@@ -733,6 +734,13 @@ local function CoreDot()
     if Cast(S.CrimsonTempest) then return "Cast Crimson Tempest (Core)" end
   end
 
+  -- # Backup-line to Garrote at full CP if Debuff is gone
+  -- actions.core_dot+=/garrote,if=combo_points.deficit=0&!dot.garrote.ticking&dot.rupture.ticking&variable.single_target&!(buff.envenom.up&buff.envenom.remains<=1.5)
+  if S.Garrote:IsCastable() and ComboPointsDeficit == 0 and not Target:DebuffUp(S.Garrote) and Target:DebuffUp(S.Rupture) and SingleTarget and not (Player:BuffUp(S.Envenom) and Player:BuffRemains(S.Envenom) <= 1.5)
+     and (Target:FilteredTimeToDie(">", 4, -Target:DebuffRemains(S.Garrote)) or Target:TimeToDieIsNotValid()) then
+     if Cast(S.Garrote, nil, nil, not TargetInMeleeRange) then return "Garrote (MaxCP)" end
+  end
+
   return false
 end
 
@@ -766,41 +774,39 @@ local function AoeDot ()
       SuggestCycleDoT(S.Garrote, Evaluate_Garrote_Target, 12, MeleeEnemies5y)
     end
   end
-  -- OFFICAL APL DOES RUPTURE A BIT DIFFERENT CURRENTLY; A BIGGER CHANGE; WILL DO IF NEEDED
-  -- # Rupture upkeep for Caustic Spatter
-  -- actions.aoe_dot+=/rupture,if=effective_combo_points>=variable.effective_spend_cp&(pmultiplier<=1)&remains<=3&(target.time_to_die>debuff.caustic_spatter.remains+2)&talent.caustic_spatter&target.time_to_die>4
-  if S.Rupture:IsCastable() and ComboPoints >= EffectiveCPSpend and Target:PMultiplier(S.Rupture) <= 1 
-    and Target:DebuffRemains(S.Rupture) <= 3 and S.CausticSpatter:IsAvailable() 
-    and Target:TimeToDie() > Target:DebuffRemains(S.CausticSpatterDebuff) + 2 and Target:TimeToDie() > 4 then
-    if Cast(S.Rupture, nil, nil, not TargetInMeleeRange) then return "Cast Rupture (Caustic Spatter)" end
-  end
+
   -- # Rupture upkeep, also uses it in AoE to reach energy or Scent of Blood saturation and spread Serrated Bone Spike
-  -- actions.aoe_dot+=/rupture,cycle_targets=1,if=effective_combo_points>=variable.effective_spend_cp&(pmultiplier<=1)&refreshable&((buff.serrated_bone_spike_charges.up&!dot.serrated_bone_spike.ticking)|!variable.regen_saturated|!variable.scent_saturation&(talent.scent_of_blood.rank=2|(talent.scent_of_blood.rank=1&buff.indiscriminate_carnage.up)|!talent.scent_of_blood))&target.time_to_die-remains>15&!buff.darkest_night.up
+  -- actions.aoe_dot+=/rupture,cycle_targets=1,if=variable.dot_finisher_condition&refreshable&(!dot.kingsbane.ticking|buff.cold_blood.up)&(!variable.regen_saturated&(talent.scent_of_blood.rank=2|talent.scent_of_blood.rank<=1&(buff.indiscriminate_carnage.up|target.time_to_die-remains>15)))&target.time_to_die-remains>(7+(talent.dashing_scoundrel*5)+(variable.regen_saturated*6))&!buff.darkest_night.up
   if S.Rupture:IsCastable() and ComboPoints >= EffectiveCPSpend and Player:BuffDown(S.DarkestNightBuff) then
     local function Evaluate_Rupture_Target(TargetUnit)
       return IsDebuffRefreshable(TargetUnit, S.Rupture, RuptureThreshold) and TargetUnit:PMultiplier(S.Rupture) <= 1
-        and ((Player:BuffUp(S.SerratedBoneSpikeChargesBuff) and not TargetUnit:DebuffUp(S.SerratedBoneSpike))
-          or not EnergyRegenSaturated
-          or not ScentSaturated and (S.ScentOfBlood:TalentRank() == 2 or (S.ScentOfBlood:TalentRank() == 1 and Player:BuffUp(S.IndiscriminateCarnageBuff)) or not S.ScentOfBlood:IsAvailable()))
-        and (TargetUnit:FilteredTimeToDie(">", 15, -TargetUnit:DebuffRemains(S.Rupture)) or TargetUnit:TimeToDieIsNotValid())
+       and (not TargetUnit:DebuffUp(S.Kingsbane) or Player:BuffUp(S.ColdBlood))
+       and (not EnergyRegenSaturated and (S.ScentOfBlood:TalentRank() == 2 or S.ScentOfBlood:TalentRank() <= 1 and (IndiscriminateCarnageRemains() > 0.5  or (TargetUnit:FilteredTimeToDie(">", 15, -TargetUnit:DebuffRemains(S.Rupture))))) or TargetUnit:TimeToDieIsNotValid())
+       and (TargetUnit:FilteredTimeToDie(">", (7 + (S.DashingScoundrel:TalentRank() * 5) + (EnergyRegenSaturated and 6 or 0)), -TargetUnit:DebuffRemains(S.Rupture)) or TargetUnit:TimeToDieIsNotValid())
     end
+    -- AoE and cycle logic
     if HR.AoEON() and S.Kingsbane:CooldownRemains() < 46 and S.Deathmark:CooldownRemains() < 104 then
-      SuggestCycleDoT(S.Rupture, Evaluate_Rupture_Target, 15, MeleeEnemies5y)
+        SuggestCycleDoT(S.Rupture, Evaluate_Rupture_Target, 15, MeleeEnemies5y)
+    end
+  end
+  -- actions.aoe_dot+=/rupture,cycle_targets=1,if=variable.dot_finisher_condition&refreshable&(!dot.kingsbane.ticking|buff.cold_blood.up)&variable.regen_saturated&!variable.scent_saturation&target.time_to_die-remains>19&!buff.darkest_night.up
+  if S.Rupture:IsCastable() and ComboPoints >= EffectiveCPSpend and Player:BuffDown(S.DarkestNightBuff) then
+    local function Evaluate_Rupture_Target(TargetUnit)
+      return IsDebuffRefreshable(TargetUnit, S.Rupture, RuptureThreshold) and TargetUnit:PMultiplier(S.Rupture) <= 1
+        and (not TargetUnit:DebuffUp(S.Kingsbane) or Player:BuffUp(S.ColdBlood))
+        and EnergyRegenSaturated and not ScentSaturated and TargetUnit:FilteredTimeToDie(">", 19, -TargetUnit:DebuffRemains(S.Rupture))
+    end
+    -- AoE and cycle logic
+    if HR.AoEON() and S.Kingsbane:CooldownRemains() < 46 and S.Deathmark:CooldownRemains() < 104 then
+        SuggestCycleDoT(S.Rupture, Evaluate_Rupture_Target, 19, MeleeEnemies5y)
     end
   end
   -- actions.aoe_dot+=/garrote,if=refreshable&combo_points.deficit>=1&(pmultiplier<=1|remains<=tick_time&spell_targets.fan_of_knives>=3)&(remains<=tick_time*2&spell_targets.fan_of_knives>=3)&(target.time_to_die-remains)>4&master_assassin_remains=0
-  if S.Garrote:IsCastable() and ComboPointsDeficit >= 1 and MasterAssassinRemains() <= 0
-    and (Target:PMultiplier(S.Garrote) <= 1 or Target:DebuffRemains(S.Garrote) < BleedTickTime and MeleeEnemies10yCount >= 3)
-    and (Target:DebuffRemains(S.Garrote) < BleedTickTime * 2 and MeleeEnemies10yCount >= 3)
+  if S.Garrote:IsCastable() and IsDebuffRefreshable(Target, S.Garrote, GarroteThreshold) and ComboPointsDeficit >= 1 and MasterAssassinRemains() <= 0
+    and (Target:PMultiplier(S.Garrote) <= 1 or Target:DebuffRemains(S.Garrote) <= BleedTickTime and MeleeEnemies10yCount >= 3)
+    and (Target:DebuffRemains(S.Garrote) <= BleedTickTime * 2 and MeleeEnemies10yCount >= 3)
     and (Target:FilteredTimeToDie(">", 4, -Target:DebuffRemains(S.Garrote)) or Target:TimeToDieIsNotValid()) then
     if Cast(S.Garrote, nil, nil, not TargetInMeleeRange) then return "Garrote (Fallback)" end
-  end
-
-  -- # Backup-line to Garrote at full CP if Debuff is gone
-  -- actions.dot+=/garrote,if=combo_points.deficit=0&!dot.garrote.ticking&dot.rupture.ticking&variable.single_target&!(buff.envenom.up&buff.envenom.remains<=2)
-  if S.Garrote:IsCastable() and ComboPointsDeficit == 0 and not Target:DebuffUp(S.Garrote) and Target:DebuffUp(S.Rupture) and SingleTarget and not (Player:BuffUp(S.Envenom) and Player:BuffRemains(S.Envenom) <= 1)
-     and (Target:FilteredTimeToDie(">", 4, -Target:DebuffRemains(S.Garrote)) or Target:TimeToDieIsNotValid()) then
-      if Cast(S.Garrote, nil, nil, not TargetInMeleeRange) then return "Garrote (MaxCP)" end
   end
 
   return false
@@ -1070,8 +1076,10 @@ local function Init ()
   S.Deathmark:RegisterAuraTracking()
   S.Garrote:RegisterAuraTracking()
   S.Rupture:RegisterAuraTracking()
+  S.Kingsbane:RegisterAuraTracking()
+  S.Shiv:RegisterAuraTracking()
 
-  HR.Print("You are using a fork [Version 2.1]: THIS IS NOT THE OFFICIAL VERSION - if there are issues, message me on Discord: kekwxqcl")
+  HR.Print("You are using a fork [Version 2.2]: THIS IS NOT THE OFFICIAL VERSION - if there are issues, message me on Discord: kekwxqcl")
 end
 
 HR.SetAPL(259, APL, Init)
