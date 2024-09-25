@@ -84,8 +84,8 @@ local VarTrinketFailures = 0
 local function SetTrinketVariables ()
   local T1, T2 = Player:GetTrinketData()
 
-  -- If we don't have trinket items, try again in 2 seconds.
-  if VarTrinketFailures < 5 and (T1.ID == 0 or T2.ID == 0) then
+  -- If we don't have trinket items, try again in 5 seconds.
+  if VarTrinketFailures < 5 and ((T1.ID == 0 or T2.ID == 0) or (T1.SpellID > 0 and not T1.Usable or T2.SpellID > 0 and not T2.Usable)) then
     VarTrinketFailures = VarTrinketFailures + 1
     Delay(5, function()
         SetTrinketVariables()
@@ -214,7 +214,7 @@ end
 -- note potentially adding tracking for active aura and AnyDebuffUp when in m+?
 -- actions+=/variable,name=not_pooling,value=(dot.deathmark.ticking|dot.kingsbane.ticking|debuff.shiv.up)|(buff.envenom.up&buff.envenom.remains<=1)|energy.pct>=(40+30*talent.hand_of_fate-15*talent.vicious_venoms)|fight_remains<=20
 local function NotPoolingVar()
-  if (Target:DebuffUp(S.Deathmark) or Target:DebuffUp(S.Kingsbane) or Target:DebuffUp(S.ShivDebuff)) or (Player:BuffUp(S.Envenom) and Player:BuffRemains(S.Envenom) <= 1) or Player:EnergyPercentage() >= (40 + 30 * num(S.HandOfFate:IsAvailable()) - 15 * num(S.ViciousVenoms:IsAvailable())) or (HL.BossFilteredFightRemains("<=", 20) and InRaid) then
+  if (Target:DebuffUp(S.Deathmark) or Target:DebuffUp(S.Kingsbane) or Target:DebuffUp(S.ShivDebuff)) or (Player:BuffUp(S.Envenom) and Player:BuffRemains(S.Envenom) <= 1.5) or Player:EnergyPercentage() >= (40 + 30 * num(S.HandOfFate:IsAvailable()) - 15 * num(S.ViciousVenoms:IsAvailable())) or HL.BossFilteredFightRemains("<=", 20) then
       return true
   end
   return false
@@ -727,10 +727,10 @@ local function CoreDot()
   end
 
   -- # Crimson Tempest with Momentum of Despair
-  -- actions.core_dot+=/crimson_tempest,if=effective_combo_points>=variable.effective_spend_cp&refreshable&buff.momentum_of_despair.remains>6&variable.single_target
+  -- crimson_tempest,if=effective_combo_points>=variable.effective_spend_cp&refreshable&buff.momentum_of_despair.remains>6&variable.single_target&!buff.darkest_night.up
   if S.CrimsonTempest:IsCastable() and ComboPoints >= EffectiveCPSpend  
     and IsDebuffRefreshable(Target, S.CrimsonTempest, CrimsonTempestThreshold) 
-    and Player:BuffRemains(S.MomentumOfDespairBuff) > 6 and SingleTarget then
+    and Player:BuffRemains(S.MomentumOfDespairBuff) > 6 and SingleTarget and Player:BuffDown(S.DarkestNightBuff) then
     if Cast(S.CrimsonTempest) then return "Cast Crimson Tempest (Core)" end
   end
 
@@ -747,15 +747,15 @@ end
 -- # Damage over time abilities
 local function AoeDot ()
   -- # Crimson Tempest on 2+ Targets if we have enough energy regen note: variable.dot_finisher_condition = effective_combo_points>=variable.effective_spend_cp&(pmultiplier<=1)
-  -- actions.aoe_dot+=/crimson_tempest,target_if=min:remains,if=spell_targets>=2&variable.dot_finisher_condition&refreshable&target.time_to_die-remains>6 note: 10 sec check to not allow CT spam when chainpulling
-  if HR.AoEON() and S.CrimsonTempest:IsCastable() and MeleeEnemies10yCount >= 2 and ComboPoints >= EffectiveCPSpend and (S.CrimsonTempest:TimeSinceLastCast() > 10 or S.CrimsonTempest:TimeSinceLastCast() == 0) then
+  -- crimson_tempest,target_if=min:remains,if=spell_targets>=2&variable.dot_finisher_condition&refreshable&target.time_to_die-remains>6&!buff.darkest_night.up note: 10 sec check to not allow CT spam when chainpulling
+  if HR.AoEON() and S.CrimsonTempest:IsCastable() and MeleeEnemies10yCount >= 2 and Player:BuffDown(S.DarkestNightBuff) and ComboPoints >= EffectiveCPSpend and (S.CrimsonTempest:TimeSinceLastCast() > 10 or S.CrimsonTempest:TimeSinceLastCast() == 0) then
     local function EvaluateCrimsonTempestTarget(TargetUnit)
       return TargetUnit:DebuffRemains(S.CrimsonTempest)
     end
     local function CrimsonTempestIfFunc(TargetUnit)
       return IsDebuffRefreshable(TargetUnit, S.CrimsonTempest, CrimsonTempestThreshold)
            and TargetUnit:PMultiplier(S.CrimsonTempest) <= 1
-           and TargetUnit:TimeToDie() > 6  
+           and (TargetUnit:FilteredTimeToDie(">", 6, -TargetUnit:DebuffRemains(S.CrimsonTempest)) or TargetUnit:TimeToDieIsNotValid())  
     end
     if HR.AoEON() then
       local BestUnit = CheckTargetIfTarget("min", EvaluateCrimsonTempestTarget, CrimsonTempestIfFunc)
@@ -824,18 +824,13 @@ local function Direct ()
     if Cast(S.Envenom, nil, nil, not TargetInMeleeRange) then return "Cast Envenom 2" end
   end
 
-  --- !!!! ---
-  -- actions.direct+=/variable,name=use_filler,value=combo_points.deficit>1|variable.not_pooling|!variable.single_target
+  --- !!!! --- TODO
+  -- actions.direct+=/variable,name=use_filler,value=combo_points.deficit>1|variable.not_pooling|!variable.single_target|(buff.darkest_night.up&cp_max_spend)
   -- Note: This is used in all following fillers, so we just return false if not true and won't consider these.
-  if not (ComboPointsDeficit > 1 or NotPooling or not SingleTarget) then
+  if not (ComboPointsDeficit > 1 or NotPooling or not SingleTarget or (Player:BuffUp(S.DarkestNightBuff) and Rogue.CPMaxSpend())) then
     return false
   end
   --- !!!! ---
-  -- # Blindside Fallback
-  -- actions.direct+=/ambush,if=buff.blindside.remains<=2&buff.blindside.up
-  if (S.Ambush:IsReady() or S.AmbushOverride:IsReady()) and Player:BuffUp(S.BlindsideBuff) and Player:BuffRemains(S.BlindsideBuff) <= 2 then
-       if Cast(S.Ambush, nil, nil, not TargetInMeleeRange) then return "Cast Ambush Fallback" end
-  end
   -- # Maintain Caustic Spatter
   -- actions.direct+=/variable,name=use_caustic_filler,value=talent.caustic_spatter&dot.rupture.ticking&(!debuff.caustic_spatter.up|debuff.caustic_spatter.remains<=2)&!variable.single_target&target.time_to_die>2
   local UseCausticFiller = S.CausticSpatter:IsAvailable() and Target:DebuffUp(S.Rupture) and (Target:DebuffDown(S.CausticSpatterDebuff) or Target:DebuffRemains(S.CausticSpatterDebuff) <= 2) and not SingleTarget and Target:TimeToDie() > 2
