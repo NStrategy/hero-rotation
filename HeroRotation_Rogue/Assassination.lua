@@ -58,8 +58,8 @@ local I = Item.Rogue.Assassination
 local OnUseExcludeTrinkets = {
   I.BottledFlayedwingToxin:ID(),
   I.ImperfectAscendancySerum:ID(),
-  I.TreacherousTransmitter:ID() --,
-  -- I.ConcoctionKissOfDeath:ID()
+  I.TreacherousTransmitter:ID(),
+  I.MadQueensMandate:ID()
 }
 
 -- Enemies
@@ -82,7 +82,7 @@ local InRaid
 -- Equipment
 local VarTrinketFailures = 0
 local function SetTrinketVariables ()
-  local T1, T2 = Player:GetTrinketData()
+  local T1, T2 = Player:GetTrinketData(OnUseExcludeTrinkets)
 
   -- If we don't have trinket items, try again in 5 seconds.
   if VarTrinketFailures < 5 and ((T1.ID == 0 or T2.ID == 0) or (T1.SpellID > 0 and not T1.Usable or T2.SpellID > 0 and not T2.Usable)) then
@@ -114,6 +114,14 @@ HL:RegisterForEvent(function()
   VarTrinketFailures = 0
   SetTrinketVariables()
 end, "PLAYER_EQUIPMENT_CHANGED" )
+
+HL:RegisterForEvent(function()
+  if S.FateboundInevitability:IsAvailable() then
+    S.ColdBlood = Spell(456330)
+  else
+    S.ColdBlood = Spell(382245)
+  end
+end, "SPELLS_CHANGED", "LEARNED_SPELL_IN_TAB", "PLAYER_LOGIN", "PLAYER_TALENT_UPDATE", "PLAYER_SPECIALIZATION_CHANGED")
 
 -- Interrupts
 local Interrupts = {
@@ -489,9 +497,6 @@ end
 
 -- # Cooldowns
 local function CDs ()
-  if not TargetInAoERange then
-    return
-  end
 
   if not HR.CDsON() then
     return
@@ -506,26 +511,28 @@ local function CDs ()
     and DeathmarkMACondition and DeathmarkKingsbaneCondition
 
   -- actions.cds+=/call_action_list,name=items
+  -- actions.items=variable,name=base_trinket_condition,value=dot.rupture.ticking&cooldown.deathmark.remains<2|dot.deathmark.ticking|fight_remains<=22
   if Settings.Commons.Enabled.Trinkets then
     -- actions.items+=/use_item,name=treacherous_transmitter,use_off_gcd=1,if=variable.base_trinket_condition
     if I.TreacherousTransmitter:IsEquippedAndReady() then
-      if (Target:DebuffUp(S.Rupture) and S.Deathmark:CooldownRemains() <= 2 or HL.BossFilteredFightRemains("<", 22)) then
+      if (Target:DebuffUp(S.Rupture) and S.Deathmark:CooldownRemains() <= 2 or Target:DebuffUp(S.Deathmark) or HL.BossFilteredFightRemains("<", 22)) then
         if Cast(I.TreacherousTransmitter, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Treacherous Transmitter"; end
       end
     end
-
+    -- actions.items+=/use_item,name=mad_queens_mandate,if=cooldown.deathmark.remains>=30&!dot.deathmark.ticking|fight_remains<=3
+    if I.MadQueensMandate:IsEquippedAndReady() then
+      if (S.Deathmark:CooldownRemains() >= 30 and Target:DebuffDown(S.Deathmark) or HL.BossFilteredFightRemains("<=", 3)) then
+        if Cast(I.MadQueensMandate, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then
+          return "Mad Queen's Mandate";
+        end
+      end
+    end
     -- actions.items+=/use_item,name=imperfect_ascendancy_serum,use_off_gcd=1,if=variable.base_trinket_condition
     if I.ImperfectAscendancySerum:IsEquippedAndReady() then
       if (Target:DebuffUp(S.Rupture) and S.Deathmark:CooldownRemains() <= 2 or HL.BossFilteredFightRemains("<", 22)) then
         if Cast(I.ImperfectAscendancySerum, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Imperfect Ascendancy Serum"; end
       end
     end
-    -- custom check for ConcoctionKissOfDeath Trinket
-    -- if I.ConcoctionKissOfDeath:IsEquippedAndReady() then
-      -- if (Target:DebuffUp(S.Rupture) and S.Deathmark:AnyDebuffUp() and (I.ConcoctionKissOfDeath:TimeSinceLastCast() == 0 or I.ConcoctionKissOfDeath:TimeSinceLastCast() > 35)) or (I.ConcoctionKissOfDeath:TimeSinceLastCast() > 28 and not S.Deathmark:AnyDebuffUp() and I.ConcoctionKissOfDeath:TimeSinceLastCast() < 35) then
-        -- if Cast(I.ConcoctionKissOfDeath, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Concoction Kiss of Death" end
-      -- end
-    -- end
 
     -- actions.items+=/use_items,slots=trinket1,if=(variable.trinket_sync_slot=1&(debuff.deathmark.up|fight_remains<=20)|(variable.trinket_sync_slot=2&(!trinket.2.cooldown.ready|!debuff.deathmark.up&cooldown.deathmark.remains>20))|!variable.trinket_sync_slot)
     -- actions.items+=/use_items,slots=trinket2,if=(variable.trinket_sync_slot=2&(debuff.deathmark.up|fight_remains<=20)|(variable.trinket_sync_slot=1&(!trinket.1.cooldown.ready|!debuff.deathmark.up&cooldown.deathmark.remains>20))|!variable.trinket_sync_slot)
@@ -647,12 +654,9 @@ local function CDs ()
   end
 
   -- # Vanish Handling here
+  -- local function Vanish ()
   -- actions.cds+=/call_action_list,name=vanish,if=!stealthed.all&master_assassin_remains=0
   if not Player:StealthUp(true, true) and MasterAssassinRemains() <= 0 then
-    -- actions.vanish=pool_resource,for_next=1,extra_amount=45
-    if Settings.Commons.ShowPooling and Player:EnergyPredicted() < 45 then
-      if Cast(S.PoolEnergy) then return "Pool for Vanish" end
-    end
 
     -- # Vanish to fish for Fateful Ending if possible
     -- actions.vanish+=/vanish,if=!buff.fatebound_lucky_coin.up&(buff.fatebound_coin_tails.stack>=5|buff.fatebound_coin_heads.stack>=5)
@@ -666,11 +670,6 @@ local function CDs ()
     if S.Vanish:IsCastable() and not S.MasterAssassin:IsAvailable() and not S.IndiscriminateCarnage:IsAvailable() and S.ImprovedGarrote:IsAvailable() and S.Garrote:CooldownUp() and (Target:PMultiplier(S.Garrote) <= 1 or IsDebuffRefreshable(Target, S.Garrote, GarroteThreshold)) and (Target:DebuffUp(S.Deathmark) or S.Deathmark:CooldownRemains() < 4) and ComboPointsDeficit >= mathmin(MeleeEnemies10yCount, 4) then
       ShouldReturn = StealthMacro(S.Vanish)
       if ShouldReturn then return "Cast Vanish Garrote Deathmark (No Carnage)" .. ShouldReturn end
-    end
-
-    -- actions.vanish=pool_resource,for_next=1,extra_amount=45
-    if Settings.Commons.ShowPooling and Player:EnergyPredicted() < 45 then
-      if Cast(S.PoolEnergy) then return "Pool for Vanish" end
     end
 
     -- # Vanish for cleaving Garrotes with Indiscriminate Carnage
@@ -701,7 +700,7 @@ local function CDs ()
     --end
     -- # Cold Blood with similar conditions to Envenom, avoiding munching Edge Case
     -- actions.cds+=/cold_blood,if=!buff.edge_case.up&cooldown.deathmark.remains>10&!buff.darkest_night.up&effective_combo_points>=variable.effective_spend_cp&(variable.not_pooling|debuff.amplifying_poison.stack>=20|!variable.single_target)&!buff.vanish.up&(!cooldown.kingsbane.up|!variable.single_target)&!cooldown.deathmark.up Note: !buff.edge_case.up does not exist
-    if S.ColdBlood:IsCastable() and not HasEdgeCase() and S.Deathmark:CooldownRemains() > 10 and Player:BuffDown(S.DarkestNightBuff) and ComboPoints >= EffectiveCPSpend and (NotPooling or Target:DebuffStack(S.AmplifyingPoisonDebuff) >= 20 or not SingleTarget) and Player:BuffDown(Rogue.VanishBuffSpell()) and (not S.Kingsbane:CooldownUp() or not SingleTarget) and not S.Deathmark:CooldownUp() then
+    if S.ColdBlood:IsCastable() and not HasEdgeCase() and S.Deathmark:CooldownRemains() > 10 and Player:BuffDown(S.DarkestNightBuff) and ComboPoints >= EffectiveCPSpend and (NotPooling or (Target:DebuffStack(S.AmplifyingPoisonDebuff) + Target:DebuffStack(S.AmplifyingPoisonDebuffDeathmark)) >= 20 or not SingleTarget) and Player:BuffDown(Rogue.VanishBuffSpell()) and (not S.Kingsbane:CooldownUp() or not SingleTarget) and not S.Deathmark:CooldownUp() then
       if Cast(S.ColdBlood, Settings.CommonsOGCD.OffGCDasOffGCD.ColdBlood) then return "Cast Cold Blood" end
     end
   end
@@ -1044,19 +1043,19 @@ local function APL ()
     -- Racials
     if HR.CDsON() then
       -- actions+=/arcane_torrent,if=energy.deficit>=15+energy.regen_combined
-      if S.ArcaneTorrent:IsCastable() and TargetInMeleeRange and Player:EnergyDeficit() >= 15 + EnergyRegenCombined then
+      if S.ArcaneTorrent:IsCastable() and Player:EnergyDeficit() >= 15 + EnergyRegenCombined then
         if Cast(S.ArcaneTorrent, Settings.CommonsOGCD.OffGCDasOffGCD.Racials) then return "Cast Arcane Torrent" end
       end
       -- actions+=/arcane_pulse
-      if S.ArcanePulse:IsCastable() and TargetInMeleeRange then
+      if S.ArcanePulse:IsCastable() then
         if Cast(S.ArcanePulse, Settings.CommonsOGCD.OffGCDasOffGCD.Racials) then return "Cast Arcane Pulse" end
       end
       -- actions+=/lights_judgment
-      if S.LightsJudgment:IsCastable() and TargetInMeleeRange then
+      if S.LightsJudgment:IsCastable() then
         if Cast(S.LightsJudgment, Settings.CommonsOGCD.OffGCDasOffGCD.Racials) then return "Cast Lights Judgment" end
       end
       -- actions+=/bag_of_tricks
-      if S.BagofTricks:IsCastable() and TargetInMeleeRange then
+      if S.BagofTricks:IsCastable() then
         if Cast(S.BagofTricks, Settings.CommonsOGCD.OffGCDasOffGCD.Racials) then return "Cast Bag of Tricks" end
       end
     end
@@ -1074,7 +1073,7 @@ local function Init ()
   S.Kingsbane:RegisterAuraTracking()
   S.Shiv:RegisterAuraTracking()
 
-  HR.Print("You are using a fork [Version 2.2]: THIS IS NOT THE OFFICIAL VERSION - if there are issues, message me on Discord: kekwxqcl")
+  HR.Print("You are using a fork [Version 2.3]: THIS IS NOT THE OFFICIAL VERSION - if there are issues, message me on Discord: kekwxqcl")
 end
 
 HR.SetAPL(259, APL, Init)
