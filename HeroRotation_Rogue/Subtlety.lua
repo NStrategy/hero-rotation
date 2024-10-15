@@ -62,19 +62,29 @@ local DungeonSlice
 local InRaid
 
 -- Trinkets
-local trinket1, trinket2 = Player:GetTrinketItems()
--- If we don't have trinket items, try again in 2 seconds.
-if trinket1:ID() == 0 or trinket2:ID() == 0 then
-  Delay(2, function()
-    trinket1, trinket2 = Player:GetTrinketItems()
+local trinket1, trinket2
+local VarTrinketFailures = 0
+local function SetTrinketVariables()
+  local T1, T2 = Player:GetTrinketData(OnUseExcludes)
+
+  -- If we don't have trinket items, try again in 5 seconds.
+  if VarTrinketFailures < 5 and ((T1.ID == 0 or T2.ID == 0) or (T1.SpellID > 0 and not T1.Usable or T2.SpellID > 0 and not T2.Usable)) then
+    VarTrinketFailures = VarTrinketFailures + 1
+    Delay(5, function()
+      SetTrinketVariables()
+    end
+    )
+    return
   end
-  )
+
+  trinket1 = T1.Object
+  trinket2 = T2.Object
 end
+SetTrinketVariables()
 
 HL:RegisterForEvent(function()
-  trinket1, trinket2 = Player:GetTrinketItems()
-end, "PLAYER_EQUIPMENT_CHANGED" )
-
+  SetTrinketVariables()
+end, "PLAYER_EQUIPMENT_CHANGED")
 
 S.Eviscerate:RegisterDamageFormula(
   -- Eviscerate DMG Formula (Pre-Mitigation):
@@ -206,10 +216,6 @@ local function Stealth_Threshold ()
   return 20 + S.Vigor:TalentRank() * 25 + num(S.ThistleTea:IsAvailable()) * 20 + num(S.Shadowcraft:IsAvailable()) * 20
 end
 
-local function ShD_Threshold ()
-  -- actions.stealth_cds=variable,name=shd_threshold,value=cooldown.shadow_dance.charges_fractional>=0.75+talent.double_dance
-  return S.ShadowDance:ChargesFractional() >= 0.75 + BoolToInt(S.DoubleDance:IsAvailable())
-end
 local function SnD_Condition ()
   -- actions+=/variable,name=snd_condition,value=buff.slice_and_dice.up
   return Player:BuffUp(S.SliceandDice)
@@ -275,7 +281,10 @@ local function Trinket_Sync_Slot ()
   elseif trinket2:HasStatAnyDps() and (not trinket1:HasStatAnyDps() or trinket2:Cooldown() > trinket2:Cooldown()) then
     TrinketSyncSlot = 2
   end
-
+  -- actions.precombat+=/variable,name=trinket_sync_slot,value=1,if=trinket.1.is.treacherous_transmitter
+  if trinket1:ID() == I.TreacherousTransmitter:ID() then
+    TrinketSyncSlot = 1
+  end
   return TrinketSyncSlot
 end
 
@@ -326,8 +335,8 @@ local function Finish (ReturnSpellOnly, StealthSpell)
       end
     end
   end
-  -- actions.finish+=/coup_de_grace,if=debuff.fazed.up&(buff.shadow_dance.up|(buff.symbols_of_death.up&cooldown.shadow_dance.charges_fractional<=0.85))
-  if S.CoupDeGrace:IsCastable() and TargetInMeleeRange and Target:DebuffUp(S.FazedDebuff) and (ShadowDanceBuff or (Player:BuffUp(S.SymbolsofDeath) and S.ShadowDance:ChargesFractional() <= 0.85)) then
+  -- actions.finish+=/coup_de_grace,if=debuff.fazed.up&buff.shadow_dance.up
+  if S.CoupDeGrace:IsCastable() and TargetInMeleeRange and Target:DebuffUp(S.FazedDebuff) and Player:BuffUp(S.ShadowDanceBuff) then
     if ReturnSpellOnly then
       return S.CoupDeGrace
     else
@@ -386,8 +395,8 @@ local function Finish (ReturnSpellOnly, StealthSpell)
     end
   end
   -- # TS BP
-  -- actions.finish+=/black_powder,if=!variable.priority_rotation&talent.unseen_blade&((buff.escalating_blade.stack=4&!buff.shadow_dance.up)|spell_targets>=3&!buff.flawless_form.up|(!used_for_danse&buff.shadow_dance.up&talent.shuriken_tornado&spell_targets>=3))
-  if S.BlackPowder:IsCastable() and not PriorityRotation and S.UnseenBlade:IsAvailable() and ((Player:BuffStack(S.EscalatingBlade) == 4 and not ShadowDanceBuff) or MeleeEnemies10yCount >= 3 and not Player:BuffUp(S.FlawlessFormBuff) or (not Used_For_Danse(S.BlackPowder) and ShadowDanceBuff and S.ShurikenTornado:IsAvailable() and MeleeEnemies10yCount >= 3)) then
+  --actions.finish+=/black_powder,if=!variable.priority_rotation&talent.unseen_blade&((buff.escalating_blade.stack=4&!buff.shadow_dance.up&cooldown.shadow_blades.remains<25)|spell_targets>=3&!buff.flawless_form.up|(!used_for_danse&buff.shadow_dance.up&talent.shuriken_tornado&spell_targets>=3))
+  if S.BlackPowder:IsCastable() and not PriorityRotation and S.UnseenBlade:IsAvailable() and ((Player:BuffStack(S.EscalatingBlade) == 4 and not ShadowDanceBuff and S.ShadowBlades:CooldownRemains() < 25)  or MeleeEnemies10yCount >= 3 and not Player:BuffUp(S.FlawlessFormBuff) or (not Used_For_Danse(S.BlackPowder) and ShadowDanceBuff and S.ShurikenTornado:IsAvailable() and MeleeEnemies10yCount >= 3)) then
     if ReturnSpellOnly then
       return S.BlackPowder
     else
@@ -679,16 +688,15 @@ end
 -- # Items
 local function Items()
   if Settings.Commons.Enabled.Trinkets then
-    -- actions.items=use_item,name=treacherous_transmitter,if=cooldown.shadow_blades.remains<=2|fight_remains<=15
+    -- actions.items+=/use_item,name=treacherous_transmitter,if=buff.flaggellation_buff.up|fight_remains<=15
     if I.TreacherousTransmitter:IsEquippedAndReady() then
-      if S.ShadowBlades:CooldownRemains() <= 2 then
+      if Player:BuffUp(S.FlagellationBuff) or (HL.BossFilteredFightRemains("<=", 15) and InRaid) then
         if Cast(I.TreacherousTransmitter, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Treacherous Transmitter" end
       end
     end
-    -- actions.items+=/use_item,name=mad_queens_mandate,use_off_gcd=1,if=(buff.symbols_of_death.up&!talent.lingering_darkness|buff.lingering_darkness.up)&dot.rupture.ticking&(!equipped.treacherous_transmitter|trinket.treacherous_transmitter.cooldown.remains>20)|fight_remains<=15
+    -- actions.items+=/use_item,name=mad_queens_mandate,if=(!talent.lingering_darkness|buff.lingering_darkness.up)&(!equipped.treacherous_transmitter|trinket.treacherous_transmitter.cooldown.remains>20)|fight_remains<=15
     if I.MadQueensMandate:IsEquippedAndReady() then
-      if (Player:BuffUp(S.SymbolsofDeath) and not S.LingeringDarkness:IsAvailable() or Player:BuffUp(S.LingeringDarknessBuff)) and 
-        (Target:DebuffUp(S.Rupture) or Skip_Rupture_NPC(Target)) and (not I.TreacherousTransmitter:IsEquipped() or I.TreacherousTransmitter:CooldownRemains() > 20) then
+      if ((not S.LingeringDarkness:IsAvailable() or Player:BuffUp(S.LingeringDarknessBuff)) and (not I.TreacherousTransmitter:IsEquipped() or I.TreacherousTransmitter:CooldownRemains() > 20)) or (HL.BossFilteredFightRemains("<=", 15) and InRaid) then
         if Cast(I.MadQueensMandate, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Mad Queen's Mandate" end
       end
     end
@@ -699,12 +707,6 @@ local function Items()
       end
     end
 
-    -- custom check for ConcoctionKissOfDeath Trinket
-    -- if I.ConcoctionKissOfDeath:IsEquippedAndReady() then
-      -- if (Player:BuffUp(S.ShadowBlades) and (I.ConcoctionKissOfDeath:TimeSinceLastCast() == 0 or I.ConcoctionKissOfDeath:TimeSinceLastCast() > 35)) or (I.ConcoctionKissOfDeath:TimeSinceLastCast() > 28 and not Player:BuffUp(S.ShadowBlades) and I.ConcoctionKissOfDeath:TimeSinceLastCast() < 35) then
-        -- if Cast(I.ConcoctionKissOfDeath, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Concoction Kiss of Death" end
-      -- end
-    -- end
 
     local TrinketSpell
     local TrinketRange = 100
@@ -1024,7 +1026,7 @@ end
 local function Init ()
   S.Rupture:RegisterAuraTracking()
 
-  HR.Print("You are using a fork [Version 2.2]: THIS IS NOT THE OFFICIAL VERSION - if there are issues, message me on Discord: kekwxqcl")
+  HR.Print("You are using a fork [Version 2.3]: THIS IS NOT THE OFFICIAL VERSION - if there are issues, message me on Discord: kekwxqcl")
 end
 
 HR.SetAPL(261, APL, Init)

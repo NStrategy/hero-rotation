@@ -515,7 +515,7 @@ local function CDs ()
   if Settings.Commons.Enabled.Trinkets then
     -- actions.items+=/use_item,name=treacherous_transmitter,use_off_gcd=1,if=variable.base_trinket_condition
     if I.TreacherousTransmitter:IsEquippedAndReady() then
-      if (Target:DebuffUp(S.Rupture) and S.Deathmark:CooldownRemains() <= 2 or Target:DebuffUp(S.Deathmark) or HL.BossFilteredFightRemains("<", 22)) then
+      if (Target:DebuffUp(S.Rupture) and S.Deathmark:CooldownRemains() <= 2 or Target:DebuffUp(S.Deathmark) or (HL.BossFilteredFightRemains("<", 22) and InRaid)) then
         if Cast(I.TreacherousTransmitter, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Treacherous Transmitter"; end
       end
     end
@@ -529,7 +529,7 @@ local function CDs ()
     end
     -- actions.items+=/use_item,name=imperfect_ascendancy_serum,use_off_gcd=1,if=variable.base_trinket_condition
     if I.ImperfectAscendancySerum:IsEquippedAndReady() then
-      if (Target:DebuffUp(S.Rupture) and S.Deathmark:CooldownRemains() <= 2 or HL.BossFilteredFightRemains("<", 22)) then
+      if (Target:DebuffUp(S.Rupture) and S.Deathmark:CooldownRemains() <= 2 or (HL.BossFilteredFightRemains("<", 22) and InRaid)) then
         if Cast(I.ImperfectAscendancySerum, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Imperfect Ascendancy Serum"; end
       end
     end
