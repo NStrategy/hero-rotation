@@ -61,6 +61,7 @@ Spell.Rogue.Commons = {
   -- Utility
   Blind                   = Spell(2094),
   CheapShot               = Spell(1833),
+  ColdBlood               = Spell(382245),
   FlayedwingToxin         = Spell(345545),
   FullMomentum            = Spell(459228),
   Kick                    = Spell(1766),
@@ -74,7 +75,6 @@ Spell.Rogue.Commons = {
   TricksoftheTrade        = Spell(57934),
   -- Talents
   Alacrity                = Spell(193539),
-  ColdBlood               = Spell(382245),
   DeeperStratagem         = Spell(193531),
   EchoingReprimand        = Spell(385616),
   EchoingReprimand2       = Spell(323558),
@@ -111,6 +111,8 @@ Spell.Rogue.Commons = {
   FateboundCoinHeads      = Spell(456479),
   FateboundCoinTails      = Spell(452538),
   FateboundLuckyCoin      = Spell(461818),
+  FateboundInevitability  = Spell(454434),
+  Inevitability           = Spell(382512),
   FazedDebuff             = Spell(441224),
   FollowTheBlood          = Spell(457068),
   LingeringDarkness       = Spell(457056),
@@ -281,6 +283,7 @@ Spell.Rogue.Subtlety = MergeTableByKey(Spell.Rogue.Commons, {
   FinalityEviscerateBuff  = Spell(385949),
   FinalityRuptureBuff     = Spell(385951),
   Flagellation            = Spell(384631),
+  FlagellationBuff        = Spell(384631),
   FlagellationPersistBuff = Spell(394758),
   Gloomblade              = Spell(200758),
   GoremawsBite            = Spell(426591),
@@ -326,6 +329,7 @@ Item.Rogue.Assassination = {
   ImperfectAscendancySerum   = Item(225654, {13, 14}),
   TreacherousTransmitter     = Item(221023, {13, 14}),
   ConcoctionKissOfDeath      = Item(215174, {13, 14}),
+  MadQueensMandate           = Item(212454, {13, 14}),
 }
 
 Item.Rogue.Outlaw = {
