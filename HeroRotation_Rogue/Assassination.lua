@@ -88,8 +88,8 @@ local function SetTrinketVariables ()
   if VarTrinketFailures < 5 and ((T1.ID == 0 or T2.ID == 0) or (T1.SpellID > 0 and not T1.Usable or T2.SpellID > 0 and not T2.Usable)) then
     VarTrinketFailures = VarTrinketFailures + 1
     Delay(5, function()
-        SetTrinketVariables()
-      end
+      SetTrinketVariables()
+    end
     )
     return
   end
@@ -97,11 +97,11 @@ local function SetTrinketVariables ()
   TrinketItem1 = T1.Object
   TrinketItem2 = T2.Object
 
-  -- actions.precombat+=/variable,name=trinket_sync_slot,value=1,if=trinket.1.has_stat.any_dps&(!trinket.2.has_stat.any_dps|trinket.1.cooldown.duration>=trinket.2.cooldown.duration)&!trinket.2.is.witherbarks_branch|trinket.1.is.witherbarks_branch
-  -- actions.precombat+=/variable,name=trinket_sync_slot,value=2,if=trinket.2.has_stat.any_dps&(!trinket.1.has_stat.any_dps|trinket.2.cooldown.duration>trinket.1.cooldown.duration)&!trinket.1.is.witherbarks_branch|trinket.2.is.witherbarks_branch
-  if TrinketItem1:HasStatAnyDps() and (not TrinketItem2:HasStatAnyDps() or T1.Cooldown >= T2.Cooldown) then
+  -- actions.precombat+=/variable,name=trinket_sync_slot,value=1,if=trinket.1.has_stat.any_dps&(!trinket.2.has_stat.any_dps|trinket.1.cooldown.duration>=trinket.2.cooldown.duration)&!trinket.2.is.treacherous_transmitter|trinket.1.is.treacherous_transmitter
+  -- actions.precombat+=/variable,name=trinket_sync_slot,value=2,if=trinket.2.has_stat.any_dps&(!trinket.1.has_stat.any_dps|trinket.2.cooldown.duration>trinket.1.cooldown.duration)&!trinket.1.is.treacherous_transmitter|trinket.2.is.treacherous_transmitter
+  if TrinketItem1:HasStatAnyDps() and (not TrinketItem2:HasStatAnyDps() or T1.Cooldown >= T2.Cooldown) and T2.ID ~= I.TreacherousTransmitter:ID() or T1.ID == I.TreacherousTransmitter:ID() then
     TrinketSyncSlot = 1
-  elseif TrinketItem2:HasStatAnyDps() and (not TrinketItem1:HasStatAnyDps() or T2.Cooldown > T1.Cooldown) then
+  elseif TrinketItem2:HasStatAnyDps() and (not TrinketItem1:HasStatAnyDps() or T2.Cooldown > T1.Cooldown) and T1.ID ~= I.TreacherousTransmitter:ID() or T2.ID == I.TreacherousTransmitter:ID() then
     TrinketSyncSlot = 2
   else
     TrinketSyncSlot = 0
@@ -109,11 +109,10 @@ local function SetTrinketVariables ()
 end
 SetTrinketVariables()
 
-
 HL:RegisterForEvent(function()
   VarTrinketFailures = 0
   SetTrinketVariables()
-end, "PLAYER_EQUIPMENT_CHANGED" )
+end, "PLAYER_EQUIPMENT_CHANGED")
 
 HL:RegisterForEvent(function()
   if S.FateboundInevitability:IsAvailable() then
@@ -352,10 +351,8 @@ local function Stealthed (ReturnSpellOnly, ForceStealth)
     end
   end
   -- actions.stealthed+=/cold_blood,if=effective_combo_points>=variable.effective_spend_cp&!buff.edge_case.up&cooldown.deathmark.remains>10&!buff.darkest_night.up&(dot.kingsbane.ticking&buff.envenom.remains<=3|buff.master_assassin_aura.up&variable.single_target)
-  if S.ColdBlood:IsCastable() and ComboPoints >= EffectiveCPSpend 
-    and not HasEdgeCase() 
-    and S.Deathmark:CooldownRemains() > 10 
-    and Player:BuffDown(S.DarkestNightBuff) 
+  if (S.ColdBlood:IsCastable() and not Player:BuffUp(S.ColdBlood)) and ComboPoints >= EffectiveCPSpend 
+    and not HasEdgeCase() and S.Deathmark:CooldownRemains() > 10 and Player:BuffDown(S.DarkestNightBuff) 
     and ((Target:DebuffUp(S.Kingsbane) and Player:BuffRemains(S.Envenom) <= 3) or (MasterAssassinAuraUp() and SingleTarget)) then
     if Cast(S.ColdBlood, Settings.CommonsOGCD.OffGCDasOffGCD.ColdBlood) then 
       return "Cast Cold Blood (Stealthed)" 
@@ -534,21 +531,23 @@ local function CDs ()
       end
     end
 
-    -- actions.items+=/use_items,slots=trinket1,if=(variable.trinket_sync_slot=1&(debuff.deathmark.up|fight_remains<=20)|(variable.trinket_sync_slot=2&(!trinket.2.cooldown.ready|!debuff.deathmark.up&cooldown.deathmark.remains>20))|!variable.trinket_sync_slot)
+    -- actions.items+=/use_items,slots=trinket1,if=(variable.trinket_sync_slot=1&(debuff.deathmark.up|fight_remains<=20)|(variable.trinket_sync_slot=2&(!trinket.2.cooldown.ready&dot.kingsbane.ticking|!debuff.deathmark.up&cooldown.deathmark.remains>20&dot.kingsbane.ticking))|!variable.trinket_sync_slot)
     -- actions.items+=/use_items,slots=trinket2,if=(variable.trinket_sync_slot=2&(debuff.deathmark.up|fight_remains<=20)|(variable.trinket_sync_slot=1&(!trinket.1.cooldown.ready|!debuff.deathmark.up&cooldown.deathmark.remains>20))|!variable.trinket_sync_slot)
     if TrinketItem1:IsReady() then
       if not Player:IsItemBlacklisted(TrinketItem1) and not ValueIsInArray(OnUseExcludeTrinkets, TrinketItem1:ID())
-        and (TrinketSyncSlot == 1 and (S.Deathmark:AnyDebuffUp() or (HL.BossFilteredFightRemains("<", 20) and InRaid))
-        or (TrinketSyncSlot == 2 and (not TrinketItem2:IsReady() or not S.Deathmark:AnyDebuffUp() and S.Deathmark:CooldownRemains() > 20)) or TrinketSyncSlot == 0) then
-        if Cast(TrinketItem1, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Trinket 1"; end
+        and (TrinketSyncSlot == 1 and (S.Deathmark:AnyDebuffUp() or (HL.BossFilteredFightRemains("<", 20) and InRaid)) or (TrinketSyncSlot == 2 and (not TrinketItem2:IsReady() and Target:DebuffUp(S.Kingsbane) or not S.Deathmark:AnyDebuffUp() and S.Deathmark:CooldownRemains() > 20 and Target:DebuffUp(S.Kingsbane))) or TrinketSyncSlot == 0) then
+        if Cast(TrinketItem1, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then
+         return "Trinket 1";
+        end
       end
     end
 
     if TrinketItem2:IsReady() then
       if not Player:IsItemBlacklisted(TrinketItem2) and not ValueIsInArray(OnUseExcludeTrinkets, TrinketItem2:ID())
-        and (TrinketSyncSlot == 2 and (S.Deathmark:AnyDebuffUp() or (HL.BossFilteredFightRemains("<", 20) and InRaid))
-        or (TrinketSyncSlot == 1 and (not TrinketItem1:IsReady() or not S.Deathmark:AnyDebuffUp() and S.Deathmark:CooldownRemains() > 20)) or TrinketSyncSlot == 0) then
-        if Cast(TrinketItem2, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Trinket 2"; end
+        and (TrinketSyncSlot == 2 and (S.Deathmark:AnyDebuffUp() or (HL.BossFilteredFightRemains("<", 20) and InRaid)) or (TrinketSyncSlot == 1 and (not TrinketItem1:IsReady() and Target:DebuffUp(S.Kingsbane) or not S.Deathmark:AnyDebuffUp() and S.Deathmark:CooldownRemains() > 20 and Target:DebuffUp(S.Kingsbane))) or TrinketSyncSlot == 0) then
+        if Cast(TrinketItem2, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then
+          return "Trinket 2";
+        end
       end
     end
   end
@@ -700,7 +699,7 @@ local function CDs ()
     --end
     -- # Cold Blood with similar conditions to Envenom, avoiding munching Edge Case
     -- actions.cds+=/cold_blood,if=!buff.edge_case.up&cooldown.deathmark.remains>10&!buff.darkest_night.up&effective_combo_points>=variable.effective_spend_cp&(variable.not_pooling|debuff.amplifying_poison.stack>=20|!variable.single_target)&!buff.vanish.up&(!cooldown.kingsbane.up|!variable.single_target)&!cooldown.deathmark.up Note: !buff.edge_case.up does not exist
-    if S.ColdBlood:IsCastable() and not HasEdgeCase() and S.Deathmark:CooldownRemains() > 10 and Player:BuffDown(S.DarkestNightBuff) and ComboPoints >= EffectiveCPSpend and (NotPooling or (Target:DebuffStack(S.AmplifyingPoisonDebuff) + Target:DebuffStack(S.AmplifyingPoisonDebuffDeathmark)) >= 20 or not SingleTarget) and Player:BuffDown(Rogue.VanishBuffSpell()) and (not S.Kingsbane:CooldownUp() or not SingleTarget) and not S.Deathmark:CooldownUp() then
+    if (S.ColdBlood:IsCastable() and not Player:BuffUp(S.ColdBlood)) and not HasEdgeCase() and S.Deathmark:CooldownRemains() > 10 and Player:BuffDown(S.DarkestNightBuff) and ComboPoints >= EffectiveCPSpend and (NotPooling or (Target:DebuffStack(S.AmplifyingPoisonDebuff) + Target:DebuffStack(S.AmplifyingPoisonDebuffDeathmark)) >= 20 or not SingleTarget) and Player:BuffDown(Rogue.VanishBuffSpell()) and (not S.Kingsbane:CooldownUp() or not SingleTarget) and not S.Deathmark:CooldownUp() then
       if Cast(S.ColdBlood, Settings.CommonsOGCD.OffGCDasOffGCD.ColdBlood) then return "Cast Cold Blood" end
     end
   end
@@ -716,9 +715,9 @@ local function CoreDot()
   end
 
   -- Maintain Rupture unless darkest night is up
-  -- actions.core_dot+=/rupture,if=effective_combo_points>=variable.effective_spend_cp&(pmultiplier<=1)&refreshable&target.time_to_die-remains>(4+(talent.dashing_scoundrel*5)+(variable.regen_saturated*6))&!buff.darkest_night.up
+  -- actions.core_dot+=/rupture,if=effective_combo_points>=variable.effective_spend_cp&(pmultiplier<=1)&refreshable&target.time_to_die-remains>(4+(talent.dashing_scoundrel*5)+(variable.regen_saturated*6))&(!buff.darkest_night.up|talent.caustic_spatter&!debuff.caustic_spatter.up)
   if S.Rupture:IsCastable() and ComboPoints >= EffectiveCPSpend and Target:PMultiplier(S.Rupture) <= 1 
-    and IsDebuffRefreshable(Target, S.Rupture, RuptureThreshold) and Player:BuffDown(S.DarkestNightBuff) then
+    and IsDebuffRefreshable(Target, S.Rupture, RuptureThreshold) and (Player:BuffDown(S.DarkestNightBuff) or S.CausticSpatter:IsAvailable() and Target:DebuffDown(S.CausticSpatterDebuff)) then
     local RuptureDurationThreshold = 4 + (S.DashingScoundrel:IsAvailable() and 5 or 0) + (EnergyRegenSaturated and 6 or 0)
     if Target:FilteredTimeToDie(">", RuptureDurationThreshold, -Target:DebuffRemains(S.Rupture)) or Target:TimeToDieIsNotValid() then
       if CastPooling(S.Rupture, nil, nil, not TargetInMeleeRange) then return "Cast Rupture (Core)" end
@@ -726,9 +725,9 @@ local function CoreDot()
   end
 
   -- # Crimson Tempest with Momentum of Despair
-  -- crimson_tempest,if=effective_combo_points>=variable.effective_spend_cp&refreshable&buff.momentum_of_despair.remains>6&variable.single_target&!buff.darkest_night.up
+  -- actions.core_dot+=/crimson_tempest,if=effective_combo_points>=variable.effective_spend_cp&refreshable&target.time_to_die-remains>8&buff.momentum_of_despair.remains>6&variable.single_target
   if S.CrimsonTempest:IsCastable() and ComboPoints >= EffectiveCPSpend  
-    and IsDebuffRefreshable(Target, S.CrimsonTempest, CrimsonTempestThreshold) 
+    and IsDebuffRefreshable(Target, S.CrimsonTempest, CrimsonTempestThreshold) and (Target:FilteredTimeToDie(">", 8, -Target:DebuffRemains(S.CrimsonTempest)) or Target:TimeToDieIsNotValid()) 
     and Player:BuffRemains(S.MomentumOfDespairBuff) > 6 and SingleTarget and Player:BuffDown(S.DarkestNightBuff) then
     if Cast(S.CrimsonTempest) then return "Cast Crimson Tempest (Core)" end
   end
