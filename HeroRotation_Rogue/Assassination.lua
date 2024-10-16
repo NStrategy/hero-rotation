@@ -371,7 +371,7 @@ end
 local function Stealthed (ReturnSpellOnly, ForceStealth)
   -- actions.stealthed=pool_resource,for_next=1
   -- actions.stealthed+=/ambush,if=!debuff.deathstalkers_mark.up&talent.deathstalkers_mark
-  if (S.Ambush:IsReady() or ForceStealth) and Target:DebuffDown(S.DeathStalkersMarkDebuff) and S.DeathStalkersMark:IsAvailable() then
+  if (S.Ambush:IsReady() or ForceStealth) and (Target:DebuffDown(S.DeathStalkersMarkDebuff) and Player:BuffRemains(S.DarkestNightBuff) < 10) and S.DeathStalkersMark:IsAvailable() then
     if ReturnSpellOnly then
       return S.Ambush
     else
