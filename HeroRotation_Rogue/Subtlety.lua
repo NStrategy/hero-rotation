@@ -288,6 +288,45 @@ local function Trinket_Sync_Slot ()
   return TrinketSyncSlot
 end
 
+-- Functions for calculating trinket damage
+local function GetMadQueensBaseDamage()
+  local baseDamageMap = {
+    [584] = 2414811,
+    [587] = 2489600,
+    [590] = 2566685,
+    [593] = 2646114,
+    [597] = 2755894,
+    [600] = 2841156,
+    [603] = 2929054,
+    [606] = 3019638,
+    [610] = 3144769,
+    [613] = 3241983,
+    [616] = 3342181,
+    [619] = 3445456,
+    [623] = 3588099,
+    [626] = 3698923,
+    [629] = 3813138,
+    [632] = 3930865,
+    [636] = 4093467,
+    [639] = 4219779
+  }
+  -- Get the item level of Mad Queen's Mandate
+  local itemLevel = I.MadQueensMandate:Level()
+  return baseDamageMap[itemLevel] or 0
+end
+
+local function CalculateMadQueensDamage()
+  local currentHealth = Target:Health()
+  local maxHealth = Target:MaxHealth()
+
+  if currentHealth == 0 or not currentHealth then return 0 end
+  
+  -- Get base damage based on item level
+  local baseDamage = GetMadQueensBaseDamage()
+  -- Calculate damage scaling with missing health
+  local healthFactor = 1 + ((maxHealth - currentHealth) / (maxHealth * 2)) -- 1% per 2% missing health
+  return baseDamage * healthFactor
+end
 -- # Finishers
 -- ReturnSpellOnly and StealthSpell parameters are to Predict Finisher in case of Stealth Macros
 local function Finish (ReturnSpellOnly, StealthSpell)
@@ -698,6 +737,16 @@ local function Items()
     if I.MadQueensMandate:IsEquippedAndReady() then
       if ((not S.LingeringDarkness:IsAvailable() or Player:BuffUp(S.LingeringDarknessBuff)) and (not I.TreacherousTransmitter:IsEquipped() or I.TreacherousTransmitter:CooldownRemains() > 20)) or (HL.BossFilteredFightRemains("<=", 15) and InRaid) then
         if Cast(I.MadQueensMandate, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then return "Mad Queen's Mandate" end
+      end
+    end
+    -- Reset Check 
+    if I.MadQueensMandate:IsEquippedAndReady() then
+      local calculatedDamage = CalculateMadQueensDamage()
+      -- Only cast the trinket if the calculated damage exceeds the target's current health
+      if calculatedDamage >= Target:Health() then
+          if Cast(I.MadQueensMandate, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then
+              return "Mad Queen's Mandate";
+          end
       end
     end
     --actions.items+=/use_item,name=imperfect_ascendancy_serum,use_off_gcd=1,if=dot.rupture.ticking&buff.flagellation_buff.up
