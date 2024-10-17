@@ -324,7 +324,7 @@ local function CalculateMadQueensDamage()
   -- Get base damage based on item level
   local baseDamage = GetMadQueensBaseDamage()
   -- Calculate damage scaling with missing health
-  local healthFactor = 1 + ((maxHealth - currentHealth) / (maxHealth * 2)) -- 1% per 2% missing health
+  local healthFactor = 1 + (math.min((maxHealth - currentHealth) / maxHealth, 0.5) / 2) -- 1% per 2% missing health, capped at 50%
   return baseDamage * healthFactor
 end
 -- # Finishers
