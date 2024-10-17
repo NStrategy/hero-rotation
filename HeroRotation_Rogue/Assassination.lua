@@ -874,7 +874,7 @@ local function Direct ()
   --- !!!! --- TODO
   -- actions.direct+=/variable,name=use_filler,value=combo_points.deficit>1|variable.not_pooling|!variable.single_target|(buff.darkest_night.up&cp_max_spend)
   -- Note: This is used in all following fillers, so we just return false if not true and won't consider these.
-  if not (ComboPointsDeficit > 1 or NotPooling or not SingleTarget or (Player:BuffUp(S.DarkestNightBuff) and Rogue.CPMaxSpend())) then
+  if not (ComboPointsDeficit > 2 or NotPooling or not SingleTarget or (Player:BuffUp(S.DarkestNightBuff) and Rogue.CPMaxSpend())) then
     return false
   end
   --- !!!! ---
@@ -974,6 +974,7 @@ local function APL ()
   EffectiveCPSpend = mathmax(Player:ComboPointsMax() - 2, 5 * num(S.HandOfFate:IsAvailable()))
   DungeonSlice = Player:IsInParty() and Player:IsInDungeonArea() and not Player:IsInRaid()
   InRaid = Player:IsInRaid() and not Player:IsInDungeonArea()
+  
 
   -- Defensives
   -- Crimson Vial
