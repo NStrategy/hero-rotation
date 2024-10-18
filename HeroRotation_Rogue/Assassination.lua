@@ -431,32 +431,30 @@ local function Stealthed (ReturnSpellOnly, ForceStealth)
     end
     -- Handle AoE logic with Indiscriminate Carnage and check the setting for CastLeftNameplate usage
     if HR.AoEON() then
-        local TargetIfUnit = CheckTargetIfTarget("min", RuptureTargetIfFunc, RuptureIfFunc)
-        -- Spread Rupture with or without CastLeftNameplate based on settings
-        if TargetIfUnit and IndiscriminateCarnageRemains() > 0.5 then
-            if Settings.Assassination.NoLeftNameplatewhenICupRupture then
-                -- Simplified logic: No CastLeftNameplate, still ensure main target gets Rupture
-                RuptureIfFunc(Target)
-            else
-                -- Original behavior: use CastLeftNameplate for other targets
-                if TargetIfUnit:GUID() ~= Target:GUID() then
-                   CastLeftNameplate(TargetIfUnit, S.Rupture)
-                end
+      local TargetIfUnit = CheckTargetIfTarget("min", RuptureTargetIfFunc, RuptureIfFunc)
+      -- Spread Rupture with or without CastLeftNameplate based on settings
+      if TargetIfUnit and IndiscriminateCarnageRemains() > 0.5 then
+        if Settings.Assassination.NoLeftNameplatewhenICupRupture then
+          -- Simplified logic: No CastLeftNameplate, still ensure main target gets Rupture
+          if RuptureIfFunc(Target) then
+            if ReturnSpellOnly then
+              return S.Rupture
+          else
+            if Cast(S.Rupture, nil, nil, not TargetInMeleeRange) then return "Cast Rupture (Stealth Indiscriminate Carnage)" end
             end
-        end
-    end
-    if RuptureIfFunc(Target) then
-      if ReturnSpellOnly then
-       return S.Rupture
+          end
       else
-        if Cast(S.Rupture, nil, nil, not TargetInMeleeRange) then return "Cast Rupture (Stealth Indiscriminate Carnage)" end
+        -- Original behavior: use CastLeftNameplate for other targets
+        if TargetIfUnit:GUID() ~= Target:GUID() then
+          CastLeftNameplate(TargetIfUnit, S.Rupture) end
+        end
       end
     end
   end
 
   -- actions.stealthed+=/garrote,target_if=min:remains,if=stealthed.improved_garrote&(remains<12|pmultiplier<=1|(buff.indiscriminate_carnage.up&active_dot.garrote<spell_targets.fan_of_knives&combo_points.deficit>=1))&!variable.single_target&target.time_to_die-remains>2
   -- actions.stealthed+=/garrote,if=stealthed.improved_garrote&(pmultiplier<=1|remains<12|!variable.single_target&buff.master_assassin_aura.remains<3)&combo_points.deficit>=1+2*talent.shrouded_suffocation
-  if (S.Garrote:IsCastable() and ImprovedGarroteRemains() > 0) or ForceStealth then
+  if (S.Garrote:IsCastable() and ImprovedGarroteRemains() > 0.5) or ForceStealth then
     local function GarroteTargetIfFunc(TargetUnit)
       return TargetUnit:DebuffRemains(S.Garrote)
     end
@@ -470,22 +468,23 @@ local function Stealthed (ReturnSpellOnly, ForceStealth)
         local TargetIfUnit = CheckTargetIfTarget("min", GarroteTargetIfFunc, GarroteIfFunc)
         -- Spread Garrote with or without CastLeftNameplate based on settings
         if TargetIfUnit and IndiscriminateCarnageRemains() > 0.5 then
-            if Settings.Assassination.NoLeftNameplatewhenICupGarrote then
-                -- Simplified logic: No CastLeftNameplate, still ensure main target gets Garrote
-                GarroteIfFunc(Target)
-            else
-                -- Original behavior: use CastLeftNameplate for other targets
-                if TargetIfUnit:GUID() ~= Target:GUID() then
-                   CastLeftNameplate(TargetIfUnit, S.Garrote)
-                end
-            end
-        end
-    end
-    if GarroteIfFunc(Target) then
-      if ReturnSpellOnly then
-        return S.Garrote
-      else
-        if Cast(S.Garrote, nil, nil, not TargetInMeleeRange) then return "Cast Garrote (Improved Garrote)" end
+          if Settings.Assassination.NoLeftNameplatewhenICupGarrote then
+              -- If NoLeftNameplatewhenICupGarrote is enabled, apply Garrote only on the main target
+              if GarroteIfFunc(Target) then
+                  if ReturnSpellOnly then
+                      return S.Garrote
+                  else
+                      if Cast(S.Garrote, nil, nil, not TargetInMeleeRange) then 
+                          return "Cast Garrote (Improved Garrote)"
+                      end
+                  end
+              end
+          else
+              -- If NoLeftNameplatewhenICupGarrote is disabled, use CastLeftNameplate on other targets
+              if TargetIfUnit:GUID() ~= Target:GUID() then
+                  CastLeftNameplate(TargetIfUnit, S.Garrote)
+              end
+          end
       end
     end
     if ComboPointsDeficit >= (1 + 2 * num(S.ShroudedSuffocation:IsAvailable())) and (Target:PMultiplier(S.Garrote) <= 1 or Target:DebuffRemains(S.Garrote) < 12 or not SingleTarget and MasterAssassinRemains() < 3 and MasterAssassinRemains() > 0.5) then
@@ -760,7 +759,7 @@ local function CoreDot()
   if S.Garrote:IsCastable() and ComboPointsDeficit >= 1 and Target:PMultiplier(S.Garrote) <= 1 
     and IsDebuffRefreshable(Target, S.Garrote, GarroteThreshold) 
     and (Target:FilteredTimeToDie(">", 12, -Target:DebuffRemains(S.Garrote)) or Target:TimeToDieIsNotValid()) then
-    if CastPooling(S.Garrote, nil, nil, not TargetInMeleeRange) then return "Cast Garrote (Core)" end
+    if CastPooling(S.Garrote, nil, not TargetInMeleeRange) then return "Cast Garrote (Core)" end
   end
 
   -- Maintain Rupture unless darkest night is up
@@ -769,7 +768,7 @@ local function CoreDot()
     and IsDebuffRefreshable(Target, S.Rupture, RuptureThreshold) and (Player:BuffDown(S.DarkestNightBuff) or S.CausticSpatter:IsAvailable() and Target:DebuffDown(S.CausticSpatterDebuff)) then
     local RuptureDurationThreshold = 4 + (S.DashingScoundrel:IsAvailable() and 5 or 0) + (EnergyRegenSaturated and 6 or 0)
     if Target:FilteredTimeToDie(">", RuptureDurationThreshold, -Target:DebuffRemains(S.Rupture)) or Target:TimeToDieIsNotValid() then
-      if CastPooling(S.Rupture, nil, nil, not TargetInMeleeRange) then return "Cast Rupture (Core)" end
+      if CastPooling(S.Rupture, nil, not TargetInMeleeRange) then return "Cast Rupture (Core)" end
     end
   end
 
@@ -778,7 +777,7 @@ local function CoreDot()
   if S.CrimsonTempest:IsCastable() and ComboPoints >= EffectiveCPSpend  
     and IsDebuffRefreshable(Target, S.CrimsonTempest, CrimsonTempestThreshold) and (Target:FilteredTimeToDie(">", 8, -Target:DebuffRemains(S.CrimsonTempest)) or Target:TimeToDieIsNotValid()) 
     and Player:BuffRemains(S.MomentumOfDespairBuff) > 6 and SingleTarget and Player:BuffDown(S.DarkestNightBuff) then
-    if Cast(S.CrimsonTempest) then return "Cast Crimson Tempest (Core)" end
+    if Cast(S.CrimsonTempest, nil, nil, not TargetInAoERange) then return "Cast Crimson Tempest (Core)" end
   end
 
   -- # Backup-line to Garrote at full CP if Debuff is gone
@@ -807,7 +806,7 @@ local function AoeDot ()
     if HR.AoEON() then
       local BestUnit = CheckTargetIfTarget("min", EvaluateCrimsonTempestTarget, CrimsonTempestIfFunc)
       if BestUnit then
-        if Cast(S.CrimsonTempest) then return "Cast Crimson Tempest (AoE)" end
+        if Cast(S.CrimsonTempest, nil, nil, not TargetInAoERange) then return "Cast Crimson Tempest (AoE)" end
       end
     end
   end
