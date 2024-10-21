@@ -70,7 +70,7 @@ local Enemies30y, MeleeEnemies10y, MeleeEnemies10yCount, MeleeEnemies5y
 local ShouldReturn
 local BleedTickTime, ExsanguinatedBleedTickTime = 2 * Player:SpellHaste(), 1 * Player:SpellHaste()
 local ComboPoints, ComboPointsDeficit, ActualComboPoints
-local RuptureThreshold,GarroteThreshold, CrimsonTempestThreshold, RuptureDMGThreshold, GarroteDMGThreshold, RuptureDurationThreshold, RuptureTickTime, GarroteTickTime
+local RuptureThreshold, GarroteThreshold, CrimsonTempestThreshold, RuptureDMGThreshold, GarroteDMGThreshold, RuptureDurationThreshold, RuptureTickTime, GarroteTickTime
 local PriorityRotation
 local NotPooling, PoisonedBleeds, EnergyRegenCombined, EnergyTimeToMaxCombined, EnergyRegenSaturated, SingleTarget, ScentSaturated
 local TrinketSyncSlot = 0
@@ -436,7 +436,7 @@ local function Stealthed (ReturnSpellOnly, ForceStealth)
       if TargetIfUnit and IndiscriminateCarnageRemains() > 0.5 then
         if Settings.Assassination.NoLeftNameplatewhenICupRupture then
           -- Simplified logic: No CastLeftNameplate, still ensure main target gets Rupture
-          if RuptureIfFunc(Target) then
+          if RuptureIfFunc(TargetIfUnit) then
             if ReturnSpellOnly then
               return S.Rupture
           else
@@ -451,7 +451,6 @@ local function Stealthed (ReturnSpellOnly, ForceStealth)
       end
     end
   end
-
   -- actions.stealthed+=/garrote,target_if=min:remains,if=stealthed.improved_garrote&(remains<12|pmultiplier<=1|(buff.indiscriminate_carnage.up&active_dot.garrote<spell_targets.fan_of_knives&combo_points.deficit>=1))&!variable.single_target&target.time_to_die-remains>2
   -- actions.stealthed+=/garrote,if=stealthed.improved_garrote&(pmultiplier<=1|remains<12|!variable.single_target&buff.master_assassin_aura.remains<3)&combo_points.deficit>=1+2*talent.shrouded_suffocation
   if (S.Garrote:IsCastable() and ImprovedGarroteRemains() > 0.5) or ForceStealth then
@@ -470,7 +469,7 @@ local function Stealthed (ReturnSpellOnly, ForceStealth)
         if TargetIfUnit and IndiscriminateCarnageRemains() > 0.5 then
           if Settings.Assassination.NoLeftNameplatewhenICupGarrote then
               -- If NoLeftNameplatewhenICupGarrote is enabled, apply Garrote only on the main target
-              if GarroteIfFunc(Target) then
+              if GarroteIfFunc(TargetIfUnit) then
                   if ReturnSpellOnly then
                       return S.Garrote
                   else
@@ -627,9 +626,9 @@ local function CDs ()
       if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv (Arterial Precision AoE)" end
     end
     -- # Shiv cases for Kingsbane
-    -- actions.shiv+=/shiv,if=!talent.lightweight_shiv.enabled&variable.shiv_kingsbane_condition&(dot.kingsbane.ticking&dot.kingsbane.remains<8|!dot.kingsbane.ticking&cooldown.kingsbane.remains>=24)&(!talent.crimson_tempest.enabled|variable.single_target|dot.crimson_tempest.ticking)|fight_remains<=charges*8
+    -- actions.shiv+=/shiv,if=!talent.lightweight_shiv.enabled&variable.shiv_kingsbane_condition&(dot.kingsbane.ticking&dot.kingsbane.remains<8|!dot.kingsbane.ticking&cooldown.kingsbane.remains>=20)&(!talent.crimson_tempest.enabled|variable.single_target|dot.crimson_tempest.ticking)|fight_remains<=charges*8
     if ShivKingsbaneCondition then
-      if not S.LightweightShiv:IsAvailable() and (Target:DebuffUp(S.Kingsbane) and Target:DebuffRemains(S.Kingsbane) < 8 or not Target:DebuffUp(S.Kingsbane) and S.Kingsbane:CooldownRemains() >= 24) and (not S.CrimsonTempest:IsAvailable() or SingleTarget or Target:DebuffUp(S.CrimsonTempest)) then
+      if not S.LightweightShiv:IsAvailable() and (Target:DebuffUp(S.Kingsbane) and Target:DebuffRemains(S.Kingsbane) < 8 or not Target:DebuffUp(S.Kingsbane) and S.Kingsbane:CooldownRemains() >= 20) and (not S.CrimsonTempest:IsAvailable() or SingleTarget or Target:DebuffUp(S.CrimsonTempest)) then
          if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv (Kingsbane)" end
       end
       -- actions.shiv+=/shiv,if=talent.lightweight_shiv.enabled&variable.shiv_kingsbane_condition&(dot.kingsbane.ticking|cooldown.kingsbane.remains<=1)|fight_remains<=charges*8 
@@ -958,7 +957,6 @@ local function APL ()
     MeleeEnemies10yCount = 1
     MeleeEnemies5y = {}
   end
-
   -- Rotation Variables Update
   BleedTickTime, ExsanguinatedBleedTickTime = 2 * Player:SpellHaste(), 1 * Player:SpellHaste()
   ComboPoints = Rogue.EffectiveComboPoints(Player:ComboPoints())
