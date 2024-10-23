@@ -65,6 +65,7 @@ HR.GUISettings.APL.Rogue = {
     VanishalwaysasOffGCD = true,
     NoLeftNameplatewhenICupGarrote = false,
     NoLeftNameplatewhenICupRupture = false,
+    AvoidTeaEnabled = true,
     UsePriorityRotation = "Never", -- Only for Assassination / Subtlety
     PotionType = {
       Selected = "Power",
@@ -161,12 +162,11 @@ CreateARPanelOptions(CP_RogueDS, "APL.Rogue.CommonsDS")
 CreateARPanelOptions(CP_RogueOGCD, "APL.Rogue.CommonsOGCD")
 
 -- Assassination
-CreatePanelOption("Slider", CP_Assassination, "APL.Rogue.Assassination.EnvenomDMGOffset", {1, 5, 0.25}, "Envenom DMG Offset", "Set the Envenom DMG Offset.")
-CreatePanelOption("Slider", CP_Assassination, "APL.Rogue.Assassination.MutilateDMGOffset", {1, 5, 0.25}, "Mutilate DMG Offset", "Set the Mutilate DMG Offset.")
 CreatePanelOption("Dropdown", CP_Assassination, "APL.Rogue.Assassination.UsePriorityRotation", {"Never", "On Bosses", "Always", "Auto"}, "Use Priority Rotation", "Select when to show rotation for maximum priority damage (at the cost of overall AoE damage.)\nAuto will function as Never except on specific encounters where AoE is not recommended.")
 CreatePanelOption("CheckButton", CP_Assassination, "APL.Rogue.Assassination.StealthMacro.Vanish", "Stealth Combo - Vanish", "Allow suggesting Vanish stealth ability combos (recommended)")
 CreatePanelOption("CheckButton", CP_Assassination, "APL.Rogue.Assassination.NoLeftNameplatewhenICupGarrote", "Check if you do not want to have left nameplate suggestions of Garrote when spreading with IC", "Disabled left nameplate cast options for Garrote while stealthed")
 CreatePanelOption("CheckButton", CP_Assassination, "APL.Rogue.Assassination.NoLeftNameplatewhenICupRupture", "Check if you do not want to have left nameplate suggestions of Rupture when spreading with IC", "Disabled left nameplate cast options for Rupture while stealthed")
+CreatePanelOption("CheckButton", CP_Assassination, "APL.Rogue.Assassination.AvoidTeaEnabled", "Enable Avoid Tea", "When enabled, you will always try to be above 90 energy. Disabling it results in a 0.2% dmg loss, but will restrict you less")
 CreatePanelOption("CheckButton", CP_Assassination, "APL.Rogue.Assassination.VanishalwaysasOffGCD", "Must check the Vanish box below (under 'Potion Type') if you want Vanish to be actually shown as OffGCD in Dungeons (elsewhere it is used normally again))", "Allow suggesting Vanish as OffGCD in Dungeons")
 CreatePanelOption("CheckButton", CP_Assassination, "APL.Rogue.Assassination.StealthMacro.Shadowmeld", "Stealth Combo - Shadowmeld", "Allow suggesting Shadowmeld stealth ability combos (recommended)")
 CreateARPanelOptions(CP_Assassination, "APL.Rogue.Assassination")
