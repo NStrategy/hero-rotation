@@ -274,28 +274,28 @@ local function Trinket_Sync_Slot ()
   return TrinketSyncSlot
 end
 
+local baseDamageMap = {
+  [584] = 2414811,
+  [587] = 2489600,
+  [590] = 2566685,
+  [593] = 2646114,
+  [597] = 2755894,
+  [600] = 2841156,
+  [603] = 2929054,
+  [606] = 3019638,
+  [610] = 3144769,
+  [613] = 3241983,
+  [616] = 3342181,
+  [619] = 3445456,
+  [623] = 3588099,
+  [626] = 3698923,
+  [629] = 3813138,
+  [632] = 3930865,
+  [636] = 4093467,
+  [639] = 4219779
+}
 -- Functions for calculating trinket damage
 local function GetMadQueensBaseDamage()
-  local baseDamageMap = {
-    [584] = 2414811,
-    [587] = 2489600,
-    [590] = 2566685,
-    [593] = 2646114,
-    [597] = 2755894,
-    [600] = 2841156,
-    [603] = 2929054,
-    [606] = 3019638,
-    [610] = 3144769,
-    [613] = 3241983,
-    [616] = 3342181,
-    [619] = 3445456,
-    [623] = 3588099,
-    [626] = 3698923,
-    [629] = 3813138,
-    [632] = 3930865,
-    [636] = 4093467,
-    [639] = 4219779
-  }
   -- Get the item level of Mad Queen's Mandate
   local itemLevel = I.MadQueensMandate:Level()
   return baseDamageMap[itemLevel] or 0
@@ -329,20 +329,15 @@ local function Finish (ReturnSpellOnly, StealthSpell)
     ShadowDanceBuffRemains = 6 + (S.ImprovedShadowDance:IsAvailable() and 2 or 0)
   end
 
-  -- actions.finish+=/cold_blood,if=variable.secret&cooldown.secret_technique.ready -- keeping this to check if needed.
-  if S.ColdBlood:IsCastable() and Secret() and S.SecretTechnique:IsCastable() then
-    if Settings.CommonsOGCD.OffGCDasOffGCD.ColdBlood then
-      HR.Cast(S.ColdBlood, Settings.CommonsOGCD.OffGCDasOffGCD.ColdBlood)
-    else
-      if ReturnSpellOnly then return S.ColdBlood end
-      if HR.Cast(S.ColdBlood) then return "Cast Cold Blood (SecTec)" end
-    end
-  end
   -- actions.finish=secret_technique,if=variable.secret
   -- Attention: Due to the SecTec/ColdBlood interaction, this adaption has additional checks not found in the APL string 
   if S.SecretTechnique:IsCastable() and Secret() then
-      if ReturnSpellOnly then return S.SecretTechnique end
-      if HR.Cast(S.SecretTechnique) then return "Cast Secret Technique" end
+    if ReturnSpellOnly then 
+      return S.SecretTechnique
+    else
+      if S.SecretTechnique:IsCastable() and HR.Cast(S.SecretTechnique) then return "Cast Secret Technique" end
+      SetPoolingFinisher(S.SecretTechnique)
+    end
   end
   -- # Maintenance Finisher
   local SkipRupture = Skip_Rupture(ShadowDanceBuff)
@@ -352,7 +347,7 @@ local function Finish (ReturnSpellOnly, StealthSpell)
       if ReturnSpellOnly then
         return S.Rupture
       else
-        if S.Rupture:IsReady() and HR.Cast(S.Rupture) then return "Cast Rupture" end
+        if S.Rupture:IsCastable() and HR.Cast(S.Rupture) then return "Cast Rupture" end
         SetPoolingFinisher(S.Rupture)
       end
     end
@@ -384,7 +379,7 @@ local function Finish (ReturnSpellOnly, StealthSpell)
     if ReturnSpellOnly then
       return S.CoupDeGrace
     else
-      if S.CoupDeGrace:IsReady() and HR.Cast(S.CoupDeGrace) then return "Cast Coup De Grace" end
+      if S.CoupDeGrace:IsCastable() and HR.Cast(S.CoupDeGrace) then return "Cast Coup De Grace" end
       SetPoolingFinisher(S.CoupDeGrace)
     end
   end
@@ -447,7 +442,7 @@ local function Stealthed (ReturnSpellOnly, StealthSpell)
       if ReturnSpellOnly then
         return S.ShurikenTornado
       else
-        if HR.Cast(S.ShurikenTornado) then return "Cast Shuriken Storm" end
+        if HR.Cast(S.ShurikenTornado) then return "Cast Shuriken Tornado" end
       end
     end
   end 
@@ -528,32 +523,32 @@ local function CDs (EnergyThreshold)
     -- actions.cds+=/cold_blood,if=cooldown.secret_technique.up&buff.shadow_dance.up&combo_points>=6&variable.secret
     if S.ColdBlood:IsCastable() and S.SecretTechnique:CooldownUp() and Player:BuffUp(S.ShadowDanceBuff) 
       and ComboPoints >= 6 and Secret() then
-      if HR.Cast(S.ColdBlood, Settings.CommonsOGCD.OffGCDasOffGCD.ColdBlood) then return "Cast Cold Blood" end
+      if HR.Cast(S.ColdBlood, Settings.CommonsOGCD.OffGCDasOffGCD.ColdBlood, EnergyThreshold) then return "Cast Cold Blood" end
     end
     -- actions.cds+=/potion,if=buff.bloodlust.react|fight_remains<30|buff.flagellation_buff.up
     if Settings.Commons.Enabled.Potions then
       local PotionSelected = Everyone.PotionSelected()
       if PotionSelected and PotionSelected:IsReady() and (Player:BloodlustUp() or (HL.BossFilteredFightRemains("<", 30) and InRaid) or Player:BuffUp(S.FlagellationBuff)) then
-        if Cast(PotionSelected, nil, Settings.CommonsDS.DisplayStyle.Potions) then return "Cast Potion"; end
+        if Cast(PotionSelected, nil, Settings.CommonsDS.DisplayStyle.Potions, EnergyThreshold) then return "Cast Potion"; end
       end
     end
     -- actions.cds+=/symbols_of_death,if=(buff.symbols_of_death.remains<=3&variable.maintenance&(buff.flagellation_buff.up|!talent.flagellation|cooldown.flagellation.remains>=30-15*!talent.death_perception&cooldown.secret_technique.remains<=8|!talent.death_perception)|fight_remains<=15)
     if S.SymbolsofDeath:IsCastable() and (Player:BuffRemains(S.SymbolsofDeath) <= 3 and Maintenance() and (Player:BuffUp(S.FlagellationBuff) or not S.Flagellation:IsAvailable() or S.Flagellation:CooldownRemains() >= 30 - (not S.DeathPerception:IsAvailable() and 15 or 0) and S.SecretTechnique:CooldownRemains() <= 8 or not S.DeathPerception:IsAvailable()) or (HL.BossFilteredFightRemains("<=", 15) and InRaid)) then
-      if HR.Cast(S.SymbolsofDeath, Settings.Subtlety.OffGCDasOffGCD.SymbolsofDeath) then return "Cast Symbols of Death No Dust" end
+      if HR.Cast(S.SymbolsofDeath, Settings.Subtlety.OffGCDasOffGCD.SymbolsofDeath, EnergyThreshold) then return "Cast Symbols of Death No Dust" end
     end
     -- actions.cds+=/shadow_blades,if=variable.maintenance&variable.shd_cp&buff.shadow_dance.up&!buff.premeditation.up
     if S.ShadowBlades:IsCastable() then
       if Maintenance() and ShdCP() and Player:BuffUp(S.ShadowDanceBuff) and not Player:BuffUp(S.Premeditation) then 
-        if HR.Cast(S.ShadowBlades, Settings.Subtlety.OffGCDasOffGCD.ShadowBlades) then return "Cast Shadow Blades" end
+        if HR.Cast(S.ShadowBlades, Settings.Subtlety.OffGCDasOffGCD.ShadowBlades, EnergyThreshold) then return "Cast Shadow Blades" end
       end
     end
     -- actions.cds+=/thistle_tea,if=buff.shadow_dance.remains>2&!buff.thistle_tea.up
     if S.ThistleTea:IsCastable() and not Player:BuffUp(S.ThistleTea) and Player:BuffRemains(S.ShadowDanceBuff) > 2 then
-      if HR.Cast(S.ThistleTea, Settings.CommonsOGCD.OffGCDasOffGCD.ThistleTea) then return "Cast Thistle Tea" end
+      if HR.Cast(S.ThistleTea, Settings.CommonsOGCD.OffGCDasOffGCD.ThistleTea, EnergyThreshold) then return "Cast Thistle Tea" end
     end
     -- actions.cds+=/flagellation,if=combo_points>=5|fight_remains<=25
     if S.Flagellation:IsCastable() and ComboPoints >= 5 or (HL.BossFilteredFightRemains("<=", 25) and InRaid) then
-      if HR.Cast(S.Flagellation, Settings.Subtlety.OffGCDasOffGCD.Flagellation) then return "Cast Flagellation" end
+      if HR.Cast(S.Flagellation, Settings.Subtlety.OffGCDasOffGCD.Flagellation, EnergyThreshold) then return "Cast Flagellation" end
     end
     -- CUSTOM CONDITIONS
     
