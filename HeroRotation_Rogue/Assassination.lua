@@ -513,7 +513,7 @@ local function Stealthed (ReturnSpellOnly, ForceStealth)
           end
       end
     end
-    if ComboPointsDeficit >= (1 + 2 * num(S.ShroudedSuffocation:IsAvailable())) and (Target:PMultiplier(S.Garrote) <= 1 or IsDebuffRefreshable(Target, S.Garrote, GarroteThreshold)) then
+    if ComboPointsDeficit >= 1 + 2 * num(S.ShroudedSuffocation:IsAvailable()) and (Target:PMultiplier(S.Garrote) <= 1 or IsDebuffRefreshable(Target, S.Garrote, GarroteThreshold)) then
       if ReturnSpellOnly then
         return S.Garrote
       else
@@ -752,15 +752,15 @@ local function CDs ()
     end
 
     -- # Vanish fallback for Master Assassin
-    --actions.vanish+=/vanish,if=talent.master_assassin&dot.garrote.remains>3&debuff.deathmark.up&dot.kingsbane.remains<=6+3*talent.subterfuge.rank&(debuff.shiv.up|debuff.deathmark.remains<4) extra check for target debuff up to prevent suggestion
-    if S.Vanish:IsCastable() and S.MasterAssassin:IsAvailable() and Target:DebuffRemains(S.Garrote) > 3 and Target:DebuffUp(S.Deathmark) and (Target:DebuffUp(S.Kingsbane) and Target:DebuffRemains(S.Kingsbane) <= (6 + 3 * S.Subterfuge:TalentRank())) and (Target:DebuffUp(S.ShivDebuff) or Target:DebuffRemains(S.Deathmark) < 4) then
+    --actions.vanish+=/vanish,if=talent.master_assassin&dot.garrote.remains>3&debuff.deathmark.up&dot.kingsbane.remains<=6+3*talent.subterfuge.rank&(debuff.shiv.up|debuff.deathmark.remains<4) extra check for target debuff up to prevent suggestion, added 0.5 for more leeway
+    if S.Vanish:IsCastable() and S.MasterAssassin:IsAvailable() and Target:DebuffRemains(S.Garrote) > 0 and Target:DebuffUp(S.Deathmark) and Target:DebuffUp(S.Kingsbane) and Target:DebuffRemains(S.Kingsbane) <= 6.5 + 3 * S.Subterfuge:TalentRank() and (Target:DebuffUp(S.ShivDebuff) or Target:DebuffRemains(S.Deathmark) < 4) then
       ShouldReturn = StealthMacro(S.Vanish)
       if ShouldReturn then return "Cast Vanish (Master Assassin)" .. ShouldReturn end
     end
 
     -- # Vanish fallback for Improved Garrote during Deathmark if no add waves are expected
-    --actions.vanish+=/vanish,if=talent.improved_garrote&cooldown.garrote.up&(dot.garrote.pmultiplier<=1|dot.garrote.refreshable)&(debuff.deathmark.up|cooldown.deathmark.remains<4)&raid_event.adds.in>30
-    if S.Vanish:IsCastable() and S.ImprovedGarrote:IsAvailable() and S.Garrote:CooldownUp() and (Target:PMultiplier(S.Garrote) <= 1 or IsDebuffRefreshable(Target, S.Garrote, GarroteThreshold)) and ((Target:DebuffUp(S.Deathmark) and not S.Kingsbane:IsCastable()) or (S.Deathmark:CooldownRemains() < 4 and InRaid)) then
+    --actions.vanish+=/vanish,if=talent.improved_garrote&cooldown.garrote.up&(dot.garrote.pmultiplier<=1|dot.garrote.refreshable)&(debuff.deathmark.up|cooldown.deathmark.remains<4)&raid_event.adds.in>30 note: added not S.MasterAssassin:IsAvailable() check as it defaults to this here although you should follow the line above)
+    if S.Vanish:IsCastable() and not S.MasterAssassin:IsAvailable() and S.ImprovedGarrote:IsAvailable() and S.Garrote:CooldownUp() and (Target:PMultiplier(S.Garrote) <= 1 or IsDebuffRefreshable(Target, S.Garrote, GarroteThreshold)) and ((Target:DebuffUp(S.Deathmark) and not S.Kingsbane:IsCastable()) or (S.Deathmark:CooldownRemains() < 4 and InRaid)) then
       ShouldReturn = StealthMacro(S.Vanish)
       if ShouldReturn then return "Cast Vanish (Improved Garrote during Deathmark)" .. ShouldReturn end
     end
@@ -774,9 +774,9 @@ end
 
 local function CoreDot()
   -- Maintain Garrote
-  -- actions.core_dot=/garrote,if=combo_points.deficit>=1&(pmultiplier<=1)&refreshable&target.time_to_die-remains>12
+  -- actions.core_dot=/garrote,if=combo_points.deficit>=1&(pmultiplier<=1)&refreshable&target.time_to_die-remains>12 note: testing InRaid or Vanish not castable in order to see if it works as I imagine with Master Assassin
   if S.Garrote:IsCastable() and ComboPointsDeficit >= 1 and Target:PMultiplier(S.Garrote) <= 1 
-    and IsDebuffRefreshable(Target, S.Garrote, GarroteThreshold) 
+    and IsDebuffRefreshable(Target, S.Garrote, GarroteThreshold) and (not S.Vanish:IsCastable() or not InRaid)
     and (Target:FilteredTimeToDie(">", 12, -Target:DebuffRemains(S.Garrote)) or Target:TimeToDieIsNotValid()) then
     if CastPooling(S.Garrote, nil, not TargetInMeleeRange) then return "Cast Garrote (Core)" end
   end
@@ -881,12 +881,6 @@ local function Direct ()
     if Cast(S.Envenom, nil, nil, not TargetInMeleeRange) then return "Cast Envenom 2" end
   end
 
-  --- !!!! --- TODO
-  -- actions.direct+=/variable,name=use_filler,value=combo_points<=variable.effective_spend_cp&!variable.cd_soon|variable.not_pooling|!variable.single_target
-  -- Note: This is used in all following fillers, so we just return false if not true and won't consider these. changed to <= to < as you dont want to mut at 5 or fill when at 5
-  if not ((ActualComboPoints < EffectiveCPSpend and not CDSoon) or NotPooling or not SingleTarget or (Player:BuffUp(S.DarkestNightBuff) and Rogue.CPMaxSpend() and AvoidTea)) then
-    return false
-  end
   --- !!!! ---
   -- # Maintain Caustic Spatter
   -- actions.direct+=/variable,name=use_caustic_filler,value=talent.caustic_spatter&dot.rupture.ticking&(!debuff.caustic_spatter.up|debuff.caustic_spatter.remains<=2)&combo_points.deficit>=1&!variable.single_target&target.time_to_die>2
@@ -900,18 +894,24 @@ local function Direct ()
     if Cast(S.Mutilate, nil, nil, not TargetInMeleeRange) then return "Cast Mutilate (Caustic)" end
   end
 
+  --- !!!! --- TODO
+  -- actions.direct+=/variable,name=use_filler,value=combo_points<=variable.effective_spend_cp&!variable.cd_soon|variable.not_pooling|!variable.single_target
+  -- Note: This is used in all following fillers, so we just return false if not true and won't consider these. changed to <= to < as you dont want to mut at 5 or fill when at 5
+  if not ((ActualComboPoints < EffectiveCPSpend and not CDSoon) or NotPooling or not SingleTarget or (Player:BuffUp(S.DarkestNightBuff) and Rogue.CPMaxSpend() and AvoidTea)) then
+    return false
+  end
   -- # Fan of Knives at 3+ targets, 2+ targets as Deathstalker with Thrown Precision, or with clear the witnesses active
   -- actions.direct+=/fan_of_knives,if=variable.use_filler&!priority_rotation&(spell_targets.fan_of_knives>=3-(talent.momentum_of_despair&talent.thrown_precision)|buff.clear_the_witnesses.up&!talent.vicious_venoms)
   if S.FanofKnives:IsCastable() then
     if HR.AoEON() and not PriorityRotation and (MeleeEnemies10yCount >= 3 - num(S.MomentumOfDespair:IsAvailable() and S.ThrownPrecision:IsAvailable()) or Player:BuffUp(S.ClearTheWitnessesBuff) and not S.ViciousVenoms:IsAvailable()) then
-      if CastPooling(S.FanofKnives) then return "Cast Fan of Knives (AOE)" end
+      if CastPooling(S.FanofKnives, nil, not TargetInAoERange) then return "Cast Fan of Knives (AOE or CTW)" end
     end
     -- # Fan of Knives to apply poisons if inactive on any target (or any bleeding targets with priority rotation) at 3T, or 2T as Deathstalker with Thrown Precision
     -- actions.direct+=/fan_of_knives,target_if=!dot.deadly_poison_dot.ticking&(!priority_rotation|dot.garrote.ticking|dot.rupture.ticking),if=variable.use_filler&spell_targets.fan_of_knives>=3-(talent.momentum_of_despair&talent.thrown_precision)
     if HR.AoEON() and MeleeEnemies10yCount >= 3 - num(S.MomentumOfDespair:IsAvailable() and S.ThrownPrecision:IsAvailable()) then
       for _, CycleUnit in pairs(MeleeEnemies10y) do
         if not CycleUnit:DebuffUp(S.DeadlyPoisonDebuff, true) and (not PriorityRotation or CycleUnit:DebuffUp(S.Garrote) or CycleUnit:DebuffUp(S.Rupture)) then
-          if CastPooling(S.FanofKnives) then return "Cast Fan of Knives (DP Refresh)" end
+          if CastPooling(S.FanofKnives, nil, not TargetInAoERange) then return "Cast Fan of Knives (DP Refresh)" end
         end
       end
     end
