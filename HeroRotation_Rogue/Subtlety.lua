@@ -532,8 +532,8 @@ local function CDs (EnergyThreshold)
         if Cast(PotionSelected, nil, Settings.CommonsDS.DisplayStyle.Potions, EnergyThreshold) then return "Cast Potion"; end
       end
     end
-    -- actions.cds+=/symbols_of_death,if=(buff.symbols_of_death.remains<=3&variable.maintenance&(buff.flagellation_buff.up|!talent.flagellation|cooldown.flagellation.remains>=30-15*!talent.death_perception&cooldown.secret_technique.remains<=8|!talent.death_perception)|fight_remains<=15)
-    if S.SymbolsofDeath:IsCastable() and (Player:BuffRemains(S.SymbolsofDeath) <= 3 and Maintenance() and (Player:BuffUp(S.FlagellationBuff) or not S.Flagellation:IsAvailable() or S.Flagellation:CooldownRemains() >= 30 - (not S.DeathPerception:IsAvailable() and 15 or 0) and S.SecretTechnique:CooldownRemains() <= 8 or not S.DeathPerception:IsAvailable()) or (HL.BossFilteredFightRemains("<=", 15) and InRaid)) then
+    -- actions.cds+=/symbols_of_death,if=(buff.symbols_of_death.remains<=3&variable.maintenance&(buff.flagellation_buff.up&cooldown.secret_technique.remains<8|!talent.flagellation|buff.flagellation_persist.up&talent.unseen_blade|cooldown.flagellation.remains>=30-15*!talent.death_perception&cooldown.secret_technique.remains<=8|!talent.death_perception)|fight_remains<=15)
+    if S.SymbolsofDeath:IsCastable() and (Player:BuffRemains(S.SymbolsofDeath) <= 3 and Maintenance() and (Player:BuffUp(S.FlagellationBuff) and S.SecretTechnique:CooldownRemains() <= 8 or not S.Flagellation:IsAvailable() or Player:BuffUp(S.FlagellationPersistBuff) and S.UnseenBlade:IsAvailable() or S.Flagellation:CooldownRemains() >= 30 - (not S.DeathPerception:IsAvailable() and 15 or 0) and S.SecretTechnique:CooldownRemains() <= 8 or not S.DeathPerception:IsAvailable()) or (HL.BossFilteredFightRemains("<=", 15) and InRaid)) then
       if HR.Cast(S.SymbolsofDeath, Settings.Subtlety.OffGCDasOffGCD.SymbolsofDeath, EnergyThreshold) then return "Cast Symbols of Death No Dust" end
     end
     -- actions.cds+=/shadow_blades,if=variable.maintenance&variable.shd_cp&buff.shadow_dance.up&!buff.premeditation.up
