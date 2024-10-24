@@ -226,9 +226,9 @@ end
 local function ClipEnvenom()
   return Player:BuffUp(S.Envenom) and Player:BuffRemains(S.Envenom) <= 1.5
 end
--- actions+=/variable,name=upper_limit_energy,value=energy.pct>=(50-10*talent.vicious_venoms.rank)
+-- actions+=/variable,name=upper_limit_energy,value=energy.pct>=(50-10*talent.vicious_venoms.rank) note: 50 to 47 to account for delay
 local function UpperLimitEnergy()
-  return Player:EnergyPercentage() >= (50 - 10 * S.ViciousVenoms:TalentRank())
+  return Player:EnergyPercentage() >= (47 - 10 * S.ViciousVenoms:TalentRank())
 end
 -- actions+=/variable,name=avoid_tea,value=energy>40+50+5*talent.vicious_venoms.rank
 local function AvoidTeaVar()
@@ -354,28 +354,28 @@ local function CheckTargetIfTarget(Mode, ModeEvaluation, IfEvaluation)
   return nil
 end
 
+local baseDamageMap = {
+  [584] = 2414811,
+  [587] = 2489600,
+  [590] = 2566685,
+  [593] = 2646114,
+  [597] = 2755894,
+  [600] = 2841156,
+  [603] = 2929054,
+  [606] = 3019638,
+  [610] = 3144769,
+  [613] = 3241983,
+  [616] = 3342181,
+  [619] = 3445456,
+  [623] = 3588099,
+  [626] = 3698923,
+  [629] = 3813138,
+  [632] = 3930865,
+  [636] = 4093467,
+  [639] = 4219779
+}
 -- Functions for calculating trinket damage
 local function GetMadQueensBaseDamage()
-  local baseDamageMap = {
-    [584] = 2414811,
-    [587] = 2489600,
-    [590] = 2566685,
-    [593] = 2646114,
-    [597] = 2755894,
-    [600] = 2841156,
-    [603] = 2929054,
-    [606] = 3019638,
-    [610] = 3144769,
-    [613] = 3241983,
-    [616] = 3342181,
-    [619] = 3445456,
-    [623] = 3588099,
-    [626] = 3698923,
-    [629] = 3813138,
-    [632] = 3930865,
-    [636] = 4093467,
-    [639] = 4219779
-  }
   -- Get the item level of Mad Queen's Mandate
   local itemLevel = I.MadQueensMandate:Level()
   return baseDamageMap[itemLevel] or 0
@@ -592,7 +592,7 @@ local function CDs ()
     if I.MadQueensMandate:IsEquippedAndReady() then
       local calculatedDamage = CalculateMadQueensDamage()
       -- Only cast the trinket if the calculated damage exceeds the target's current health
-      if calculatedDamage >= Target:Health() then
+      if calculatedDamage >= Target:Health() and not Target:IsDummy() then
           if Cast(I.MadQueensMandate, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then
               return "Mad Queen's Mandate";
           end
@@ -648,8 +648,8 @@ local function CDs ()
     local FightRemains = HL.BossFilteredFightRemains("<=", S.Shiv:Charges() * 8)
     
     -- # Shiv for aoe with Arterial Precision
-    -- actions.shiv+=/shiv,if=talent.arterial_precision&variable.shiv_condition&spell_targets.fan_of_knives>=4&dot.crimson_tempest.ticking|fight_remains<=charges*8
-    if S.ArterialPrecision:IsAvailable() and ShivCondition and MeleeEnemies10yCount >= 4 and Target:DebuffUp(S.CrimsonTempest) then
+    -- actions.shiv+=/shiv,if=talent.arterial_precision&variable.shiv_condition&spell_targets.fan_of_knives>=4&dot.crimson_tempest.ticking|fight_remains<=charges*8 note: exlcuded Ovi'nax
+    if S.ArterialPrecision:IsAvailable() and ShivCondition and MeleeEnemies10yCount >= 4 and Target:DebuffUp(S.CrimsonTempest) and not Target:NPCID() == 214506 then
       if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv (Arterial Precision AoE)" end
     end
     -- # Shiv cases for Kingsbane
@@ -884,7 +884,7 @@ local function Direct ()
   --- !!!! --- TODO
   -- actions.direct+=/variable,name=use_filler,value=combo_points<=variable.effective_spend_cp&!variable.cd_soon|variable.not_pooling|!variable.single_target
   -- Note: This is used in all following fillers, so we just return false if not true and won't consider these. changed to <= to < as you dont want to mut at 5 or fill when at 5
-  if not (ActualComboPoints < EffectiveCPSpend and not CDSoon or NotPooling or not SingleTarget or (Player:BuffUp(S.DarkestNightBuff) and Rogue.CPMaxSpend() and AvoidTea)) then
+  if not ((ActualComboPoints < EffectiveCPSpend and not CDSoon) or NotPooling or not SingleTarget or (Player:BuffUp(S.DarkestNightBuff) and Rogue.CPMaxSpend() and AvoidTea)) then
     return false
   end
   --- !!!! ---
