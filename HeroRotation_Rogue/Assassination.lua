@@ -222,20 +222,20 @@ end
 local function InCooldowns()
   return Target:DebuffUp(S.Deathmark) or Target:DebuffUp(S.Kingsbane) or Target:DebuffUp(S.ShivDebuff)
 end
--- actions+=/variable,name=clip_envenom,value=buff.envenom.up&buff.envenom.remains<=1
+-- actions+=/variable,name=clip_envenom,value=buff.envenom.up&buff.envenom.remains<=1 note. added .5 for delay
 local function ClipEnvenom()
   return Player:BuffUp(S.Envenom) and Player:BuffRemains(S.Envenom) <= 1.5
 end
--- actions+=/variable,name=upper_limit_energy,value=energy.pct>=(50-10*talent.vicious_venoms.rank) note: 50 to 47 to account for delay
+-- actions+=/variable,name=upper_limit_energy,value=energy.pct>=(50-10*talent.vicious_venoms.rank) note: 50 to 48 to account for delay
 local function UpperLimitEnergy()
-  return Player:EnergyPercentage() >= (47 - 10 * S.ViciousVenoms:TalentRank())
+  return Player:EnergyPercentage() >= (48 - 10 * S.ViciousVenoms:TalentRank())
 end
 -- actions+=/variable,name=avoid_tea,value=energy>40+50+5*talent.vicious_venoms.rank
 local function AvoidTeaVar()
   -- Check if the AvoidTea setting is enabled
   if Settings.Assassination.AvoidTeaEnabled then
-    -- Return true if energy is greater than the threshold
-    return Player:Energy() > (40 + 50 + 5 * S.ViciousVenoms:TalentRank())
+    -- Return true if energy is greater than the threshold note: added check if you would fall below the threshold and have no charges anymore, there is no reason not to pool energy unless tea is coming up shortly (set at 12 seconds currently).
+    return ((Player:Energy() > 40 + 50 + 5 * S.ViciousVenoms:TalentRank()) or S.ThistleTea:ChargesFractional() <= 0.8)
   else
     -- If the setting is disabled, always return true
     return true
@@ -245,9 +245,9 @@ end
 local function CDSoonVar()
   return S.Kingsbane:CooldownRemains() < 3 and not S.Kingsbane:IsCastable()
 end
--- actions+=/variable,name=not_pooling,value=variable.in_cooldowns|!variable.cd_soon&variable.avoid_tea&buff.darkest_night.up|!variable.cd_soon&variable.avoid_tea&variable.clip_envenom|variable.upper_limit_energy|fight_remains<=20
+-- actions+=/variable,name=not_pooling,value=variable.in_cooldowns|!variable.cd_soon&variable.avoid_tea&(buff.darkest_night.up|variable.clip_envenom)|variable.upper_limit_energy|fight_remains<=20
 local function NotPoolingVar()
-  if InCooldowns() or (not CDSoon and AvoidTea and Player:BuffUp(S.DarkestNight)) or (not CDSoon and AvoidTea and ClipEnvenom()) or UpperLimitEnergy() or HL.BossFilteredFightRemains("<=", 20) then
+  if InCooldowns() or not CDSoon and AvoidTea and (Player:BuffUp(S.DarkestNightBuff) or ClipEnvenom()) or UpperLimitEnergy() or HL.BossFilteredFightRemains("<=", 20) then
       return true
   end
   return false
@@ -897,7 +897,7 @@ local function Direct ()
   --- !!!! --- TODO
   -- actions.direct+=/variable,name=use_filler,value=combo_points<=variable.effective_spend_cp&!variable.cd_soon|variable.not_pooling|!variable.single_target
   -- Note: This is used in all following fillers, so we just return false if not true and won't consider these. changed to <= to < as you dont want to mut at 5 or fill when at 5
-  if not ((ActualComboPoints < EffectiveCPSpend and not CDSoon) or NotPooling or not SingleTarget or (Player:BuffUp(S.DarkestNightBuff) and Rogue.CPMaxSpend() and AvoidTea)) then
+  if not ((ActualComboPoints < EffectiveCPSpend and not CDSoon) or NotPooling or not SingleTarget) then
     return false
   end
   -- # Fan of Knives at 3+ targets, 2+ targets as Deathstalker with Thrown Precision, or with clear the witnesses active
