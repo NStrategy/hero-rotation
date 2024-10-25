@@ -114,14 +114,6 @@ HL:RegisterForEvent(function()
   SetTrinketVariables()
 end, "PLAYER_EQUIPMENT_CHANGED")
 
-HL:RegisterForEvent(function()
-  if S.FateboundInevitability:IsAvailable() then
-    S.ColdBlood = Spell(456330)
-  else
-    S.ColdBlood = Spell(382245)
-  end
-end, "SPELLS_CHANGED", "LEARNED_SPELL_IN_TAB", "PLAYER_LOGIN", "PLAYER_TALENT_UPDATE", "PLAYER_SPECIALIZATION_CHANGED")
-
 -- Interrupts
 local Interrupts = {
   { S.Blind, "Cast Blind (Interrupt)", function () return true end },
@@ -247,7 +239,7 @@ local function CDSoonVar()
 end
 -- actions+=/variable,name=not_pooling,value=variable.in_cooldowns|!variable.cd_soon&variable.avoid_tea&(buff.darkest_night.up|variable.clip_envenom)|variable.upper_limit_energy|fight_remains<=20
 local function NotPoolingVar()
-  if InCooldowns() or not CDSoon and AvoidTea and (Player:BuffUp(S.DarkestNightBuff) or ClipEnvenom()) or UpperLimitEnergy() or HL.BossFilteredFightRemains("<=", 20) then
+  if InCooldowns() or (not CDSoon and AvoidTea and (Player:BuffUp(S.DarkestNightBuff) or ClipEnvenom())) or UpperLimitEnergy() or HL.BossFilteredFightRemains("<=", 20) then
       return true
   end
   return false
@@ -406,9 +398,9 @@ local function Stealthed (ReturnSpellOnly, ForceStealth)
     end
   end
 
-  -- actions.stealthed+=/shiv,if=talent.kingsbane&(dot.kingsbane.ticking)&(!debuff.shiv.up&debuff.shiv.remains<1)&buff.envenom.up
+  -- actions.stealthed+=/shiv,if=talent.kingsbane&(dot.kingsbane.ticking|cooldown.kingsbane.up)&(!debuff.shiv.up&debuff.shiv.remains<1)&buff.envenom.up
   if S.Kingsbane:IsAvailable() and Player:BuffUp(S.Envenom) then
-    if S.Shiv:IsCastable() and (Target:DebuffUp(S.Kingsbane)) and (not Target:DebuffUp(S.ShivDebuff) or (Target:DebuffRemains(S.ShivDebuff) < 1 and Target:DebuffUp(S.ShivDebuff))) then
+    if S.Shiv:IsCastable() and (Target:DebuffUp(S.Kingsbane) or S.Kingsbane:IsCastable()) and (Target:DebuffRemains(S.ShivDebuff) < 1 and not Target:DebuffUp(S.ShivDebuff)) then
       if ReturnSpellOnly then
         return S.Shiv
       else
@@ -416,25 +408,17 @@ local function Stealthed (ReturnSpellOnly, ForceStealth)
       end
     end
   end
-  -- actions.stealthed+=/cold_blood,if=effective_combo_points>=variable.effective_spend_cp&!buff.edge_case.up&cooldown.deathmark.remains>10&!buff.darkest_night.up&(dot.kingsbane.ticking&buff.envenom.remains<=3|buff.master_assassin_aura.up&variable.single_target)
-  if (S.ColdBlood:IsCastable() and not Player:BuffUp(S.ColdBlood)) and ComboPoints >= EffectiveCPSpend 
-    and not HasEdgeCase() and S.Deathmark:CooldownRemains() > 10 and Player:BuffDown(S.DarkestNightBuff) 
-    and ((Target:DebuffUp(S.Kingsbane) and Player:BuffRemains(S.Envenom) <= 3) or (MasterAssassinAuraUp() and SingleTarget)) then
-    if Cast(S.ColdBlood, Settings.CommonsOGCD.OffGCDasOffGCD.ColdBlood) then 
-      return "Cast Cold Blood (Stealthed)" 
-    end
-  end
-  -- actions.stealthed+=/envenom,if=effective_combo_points>=variable.effective_spend_cp&dot.kingsbane.ticking&buff.envenom.remains<=3&(debuff.deathstalkers_mark.up|buff.edge_case.up|buff.cold_blood.up)
-  -- actions.stealthed+=/envenom,if=effective_combo_points>=variable.effective_spend_cp&buff.master_assassin_aura.up&variable.single_target&(debuff.deathstalkers_mark.up|buff.edge_case.up|buff.cold_blood.up)
+  -- actions.stealthed+=/envenom,if=effective_combo_points>=variable.effective_spend_cp&dot.kingsbane.ticking&buff.envenom.remains<=3&(debuff.deathstalkers_mark.up|buff.cold_blood.up)
+  -- actions.stealthed+=/envenom,if=effective_combo_points>=variable.effective_spend_cp&buff.master_assassin_aura.up&variable.single_target&(debuff.deathstalkers_mark.up|buff.cold_blood.up)
   if S.Envenom:IsCastable() and ComboPoints >= EffectiveCPSpend then
-    if Target:DebuffUp(S.Kingsbane) and Player:BuffRemains(S.Envenom) <= 3 and (Target:DebuffUp(S.DeathStalkersMarkDebuff) or HasEdgeCase() or Player:BuffUp(S.ColdBlood)) then
+    if Target:DebuffUp(S.Kingsbane) and Player:BuffRemains(S.Envenom) <= 3 and (Target:DebuffUp(S.DeathStalkersMarkDebuff) or (Player:BuffUp(S.ColdBlood) or Player:BuffUp(S.ColdBloodIE))) then
       if ReturnSpellOnly then
         return S.Envenom
       else
         if Cast(S.Envenom, nil, nil, not TargetInMeleeRange) then return "Cast Envenom (Stealth Kingsbane)" end
       end
     end
-    if SingleTarget and MasterAssassinAuraUp() and (Target:DebuffUp(S.DeathStalkersMarkDebuff) or HasEdgeCase() or Player:BuffUp(S.ColdBlood)) then
+    if SingleTarget and MasterAssassinAuraUp() and (Target:DebuffUp(S.DeathStalkersMarkDebuff) or (Player:BuffUp(S.ColdBlood) or Player:BuffUp(S.ColdBloodIE))) then
       if ReturnSpellOnly then
         return S.Envenom
       else
@@ -444,7 +428,7 @@ local function Stealthed (ReturnSpellOnly, ForceStealth)
   end
 
   -- # Rupture during Indiscriminate Carnage
-  -- actions.stealthed+=/rupture,target_if=effective_combo_points>=variable.effective_spend_cp&buff.indiscriminate_carnage.up&(refreshable||(buff.indiscriminate_carnage.up&active_dot.rupture<spell_targets.fan_of_knives&!variable.single_target))&(!variable.regen_saturated|!variable.scent_saturation|!dot.rupture.ticking)&target.time_to_die-remains>15
+  -- actions.stealthed+=/rupture,target_if=effective_combo_points>=variable.effective_spend_cp&buff.indiscriminate_carnage.up&(refreshable|(buff.indiscriminate_carnage.up&active_dot.rupture<spell_targets.fan_of_knives&!variable.single_target))&(!variable.regen_saturated|!variable.scent_saturation|!dot.rupture.ticking)&target.time_to_die-remains>15
   if S.Rupture:IsCastable() or ForceStealth then
     local function RuptureTargetIfFunc(TargetUnit)
       return TargetUnit:DebuffRemains(S.Rupture)
@@ -562,7 +546,6 @@ local function CDs ()
   if not HR.CDsON() then
     return
   end
-
   -- actions.cds=variable,name=deathmark_ma_condition,value=!talent.master_assassin.enabled|dot.garrote.ticking
   -- actions.cds+=/variable,name=deathmark_kingsbane_condition,value=!talent.kingsbane|cooldown.kingsbane.remains<=2
   -- actions.cds+=/variable,name=deathmark_condition,value=!stealthed.rogue&buff.slice_and_dice.remains>5&dot.rupture.ticking&buff.envenom.up&!debuff.deathmark.up&variable.deathmark_ma_condition&variable.deathmark_kingsbane_condition
@@ -635,7 +618,7 @@ local function CDs ()
       if Cast(S.Deathmark, Settings.Assassination.OffGCDasOffGCD.Deathmark) then return "Cast Deathmark" end
     end
   end
-
+  
   -- Base conditions for Shiv included in CD section
   -- # Check for Applicable Shiv usage
   -- actions.cds+=/call_action_list,name=shiv
@@ -679,6 +662,12 @@ local function CDs ()
     end
   end
 
+  -- # Cold Blood for Edge Case or Envenoms during shiv
+  -- actions.cds+=/cold_blood,use_off_gcd=1,if=(buff.fatebound_coin_tails.stack>0&buff.fatebound_coin_heads.stack>0)|debuff.shiv.up&(cooldown.deathmark.remains>50|!talent.inevitabile_end&effective_combo_points>=variable.effective_spend_cp) Note: !buff.edge_case.up does not exist
+  if ((S.ColdBlood:IsCastable() or S.ColdBloodIE:IsCastable()) and (not Player:BuffUp(S.ColdBlood) and not Player:BuffUp(S.ColdBloodIE))) and ((Player:BuffStack(S.FateboundCoinTails) > 0 and Player:BuffStack(S.FateboundCoinHeads) > 0) or Target:DebuffUp(S.ShivDebuff) and (S.Deathmark:CooldownRemains() > 50 or not S.InevitabileEnd:IsAvailable() and ComboPoints >= EffectiveCPSpend)) then
+    if Cast(S.ColdBlood, Settings.CommonsOGCD.OffGCDasOffGCD.ColdBlood) then return "Cast Cold Blood" end
+  end
+  
   -- actions.cds+=/kingsbane,if=(debuff.shiv.up|cooldown.shiv.remains<6)&buff.envenom.up&(cooldown.deathmark.remains>=45|dot.deathmark.ticking)|fight_remains<=15 Note: based on TC Channel 45 Sec instead of 50; Added DS check so you may use KB alone even when DM is ready. Added Target:DebuffUp(S.Deathmark) so you may always use KB once DM is on the target (Env updatime may be lost due to pooling or mechanics)
   if S.Kingsbane:IsCastable() then
     if (Target:DebuffUp(S.ShivDebuff) or S.Shiv:CooldownRemains() < 6) and (Player:BuffUp(S.Envenom) or Target:DebuffUp(S.Deathmark)) and (S.Deathmark:CooldownRemains() >= 45 or DungeonSlice or Target:DebuffUp(S.Deathmark)) or (HL.BossFilteredFightRemains("<=", 15) and InRaid) then
@@ -731,8 +720,8 @@ local function CDs ()
   if not Player:StealthUp(true, true) and MasterAssassinRemains() <= 0 then
 
     -- # Vanish to fish for Fateful Ending if possible
-    -- actions.vanish+=/vanish,if=!buff.fatebound_lucky_coin.up&(buff.fatebound_coin_tails.stack>=5|buff.fatebound_coin_heads.stack>=5)
-    if S.Vanish:IsCastable() and Player:BuffDown(S.FateboundLuckyCoin) and (Player:BuffStack(S.FateboundCoinTails) >= 5 or Player:BuffStack(S.FateboundCoinHeads) >= 5) then
+    -- actions.vanish+=/vanish,if=!buff.fatebound_lucky_coin.up&effective_combo_points>=variable.effective_spend_cp&(buff.fatebound_coin_tails.stack>=5|buff.fatebound_coin_heads.stack>=5)
+    if S.Vanish:IsCastable() and Player:BuffDown(S.FateboundLuckyCoin) and ComboPoints >= EffectiveCPSpend and (Player:BuffStack(S.FateboundCoinTails) >= 5 or Player:BuffStack(S.FateboundCoinHeads) >= 5) then
       ShouldReturn = StealthMacro(S.Vanish)
       if ShouldReturn then return "Cast Vanish (Fateful Ending Fish)" .. ShouldReturn end
     end
@@ -764,11 +753,6 @@ local function CDs ()
       ShouldReturn = StealthMacro(S.Vanish)
       if ShouldReturn then return "Cast Vanish (Improved Garrote during Deathmark)" .. ShouldReturn end
     end
-  end
-  -- # Cold Blood with similar conditions to Envenom, avoiding munching Edge Case
-  -- actions.cds+=/cold_blood,if=!buff.edge_case.up&cooldown.deathmark.remains>10&!buff.darkest_night.up&combo_points>=variable.effective_spend_cp&(variable.not_pooling|debuff.amplifying_poison.stack>=20|!variable.single_target)&!buff.vanish.up&(!cooldown.kingsbane.up|!variable.single_target)&!cooldown.deathmark.up Note: !buff.edge_case.up does not exist
-  if (S.ColdBlood:IsCastable() and not Player:BuffUp(S.ColdBlood)) and not HasEdgeCase() and S.Deathmark:CooldownRemains() > 10 and Player:BuffDown(S.DarkestNightBuff) and ActualComboPoints >= EffectiveCPSpend and (NotPooling or (Target:DebuffStack(S.AmplifyingPoisonDebuff) + Target:DebuffStack(S.AmplifyingPoisonDebuffDeathmark)) >= 20 or not SingleTarget) and Player:BuffDown(Rogue.VanishBuffSpell()) and (not S.Kingsbane:CooldownUp() or not SingleTarget) and not S.Deathmark:CooldownUp() then
-    if Cast(S.ColdBlood, Settings.CommonsOGCD.OffGCDasOffGCD.ColdBlood) then return "Cast Cold Blood" end
   end
 end
 
@@ -837,7 +821,7 @@ local function AoeDot ()
   if S.Rupture:IsCastable() and ActualComboPoints >= EffectiveCPSpend and Player:BuffDown(S.DarkestNightBuff) then
     local function Evaluate_Rupture_Target(TargetUnit)
       return IsDebuffRefreshable(TargetUnit, S.Rupture, RuptureThreshold) and TargetUnit:PMultiplier(S.Rupture) <= 1
-       and (not TargetUnit:DebuffUp(S.Kingsbane) or Player:BuffUp(S.ColdBlood))
+       and (not TargetUnit:DebuffUp(S.Kingsbane) or (Player:BuffUp(S.ColdBlood) or Player:BuffUp(S.ColdBloodIE)))
        and (not EnergyRegenSaturated and (S.ScentOfBlood:TalentRank() == 2 or S.ScentOfBlood:TalentRank() <= 1 and (IndiscriminateCarnageRemains() > 0.5  or (TargetUnit:FilteredTimeToDie(">", 15, -TargetUnit:DebuffRemains(S.Rupture))))) or TargetUnit:TimeToDieIsNotValid())
        and (TargetUnit:FilteredTimeToDie(">", (7 + (S.DashingScoundrel:TalentRank() * 5) + (EnergyRegenSaturated and 6 or 0)), -TargetUnit:DebuffRemains(S.Rupture)) or TargetUnit:TimeToDieIsNotValid())
     end
@@ -850,7 +834,7 @@ local function AoeDot ()
   if S.Rupture:IsCastable() and ActualComboPoints >= EffectiveCPSpend and Player:BuffDown(S.DarkestNightBuff) then
     local function Evaluate_Rupture_Target(TargetUnit)
       return IsDebuffRefreshable(TargetUnit, S.Rupture, RuptureThreshold) and TargetUnit:PMultiplier(S.Rupture) <= 1
-        and (not TargetUnit:DebuffUp(S.Kingsbane) or Player:BuffUp(S.ColdBlood))
+        and (not TargetUnit:DebuffUp(S.Kingsbane) or (Player:BuffUp(S.ColdBlood) or Player:BuffUp(S.ColdBloodIE)))
         and EnergyRegenSaturated and not ScentSaturated and TargetUnit:FilteredTimeToDie(">", 19, -TargetUnit:DebuffRemains(S.Rupture))
     end
     -- AoE and cycle logic
