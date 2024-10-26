@@ -1,0 +1,25 @@
+Important Files/Fixes
+
+Thank you for taking the time to review this folder! If you updated HeroLib, please follow the instructions below to ensure all necessary fixes for Rogue are applied.
+
+-----------------------
+
+Current Fixes and Files
+
+-----------------------
+
+PMultiplier Fix:
+The PMultiplier file in this folder fixes an issue with Garrote spreading through the main target when having IC and the specific setting enabled. 
+
+Installation Instructions:
+Locate Your PMultiplier File:
+
+Navigate to the following folder in your HeroLib directory:
+HeroLib -> Events -> PMultiplier
+Replace the PMultiplier File:
+
+Copy the new PMultiplier file from this folder.
+Paste it into the PMultiplier location, allowing it to overwrite the existing file.
+Important: Avoid dragging the file, as this might move rather than copy it, which could result in losing this file once you update HeroLib again.
+
+If there are any issues, feel free to reach out on Discord: kekwxqcl
