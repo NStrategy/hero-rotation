@@ -760,7 +760,7 @@ local function CoreDot()
   -- Maintain Garrote
   -- actions.core_dot=/garrote,if=combo_points.deficit>=1&(pmultiplier<=1)&refreshable&target.time_to_die-remains>12 note: testing InRaid or Vanish not castable in order to see if it works as I imagine with Master Assassin
   if S.Garrote:IsCastable() and ComboPointsDeficit >= 1 and Target:PMultiplier(S.Garrote) <= 1 
-    and IsDebuffRefreshable(Target, S.Garrote, GarroteThreshold) and (not S.Vanish:IsCastable() or not InRaid)
+    and IsDebuffRefreshable(Target, S.Garrote, GarroteThreshold)
     and (Target:FilteredTimeToDie(">", 12, -Target:DebuffRemains(S.Garrote)) or Target:TimeToDieIsNotValid()) then
     if CastPooling(S.Garrote, nil, not TargetInMeleeRange) then return "Cast Garrote (Core)" end
   end
@@ -987,15 +987,6 @@ local function APL ()
     if not Player:BuffUp(Rogue.VanishBuffSpell()) then
       ShouldReturn = Rogue.Stealth(Rogue.StealthSpell())
       if ShouldReturn then return ShouldReturn end
-    end
-    -- Opener
-    if Everyone.TargetIsValid() then
-      -- actions.precombat+=/slice_and_dice,precombat_seconds=1
-      if not Player:BuffUp(S.SliceandDice) then
-        if S.SliceandDice:IsReady() and ComboPoints >= 2 then
-          if Cast(S.SliceandDice) then return "Cast Slice and Dice" end
-        end
-      end
     end
   end
 
