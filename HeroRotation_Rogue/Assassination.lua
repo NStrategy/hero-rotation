@@ -436,7 +436,7 @@ local function Stealthed (ReturnSpellOnly, ForceStealth)
     local function RuptureIfFunc(TargetUnit)
       return ComboPoints >= EffectiveCPSpend 
         and Player:BuffUp(S.IndiscriminateCarnageBuff) 
-        and (IsDebuffRefreshable(TargetUnit, S.Rupture, RuptureThreshold) or (IndiscriminateCarnageRemains() > 0.5 and S.Rupture:AuraActiveCount() < MeleeEnemies10yCount and not SingleTarget))
+        and (IsDebuffRefreshable(TargetUnit, S.Rupture, RuptureThreshold) or (IndiscriminateCarnageRemains() > 0.5 and S.Rupture:AuraActiveCount() < MeleeEnemies5yCount and not SingleTarget))
         and (not EnergyRegenSaturated or not ScentSaturated or TargetUnit:DebuffDown(S.Rupture))
         and (TargetUnit:FilteredTimeToDie(">", 15, -TargetUnit:DebuffRemains(S.Rupture)) or TargetUnit:TimeToDieIsNotValid())
     end
@@ -470,7 +470,7 @@ local function Stealthed (ReturnSpellOnly, ForceStealth)
     end
     local function GarroteIfFunc(TargetUnit)
       return (TargetUnit:PMultiplier(S.Garrote) <= 1 or TargetUnit:DebuffRemains(S.Garrote) < 12
-      or (IndiscriminateCarnageRemains() > 0.5 and S.Garrote:AuraActiveCount() < MeleeEnemies10yCount and ComboPointsDeficit >= 1)) and not SingleTarget
+      or (IndiscriminateCarnageRemains() > 0.5 and S.Garrote:AuraActiveCount() < MeleeEnemies5yCount and ComboPointsDeficit >= 1)) and not SingleTarget
       and (TargetUnit:FilteredTimeToDie(">", 2, -TargetUnit:DebuffRemains(S.Garrote)) or TargetUnit:TimeToDieIsNotValid())
     end
     -- Handle AoE logic with Indiscriminate Carnage and check the setting for CastLeftNameplate usage
@@ -938,11 +938,13 @@ local function APL ()
     MeleeEnemies10y = Player:GetEnemiesInMeleeRange(AoERange) -- Fan of Knives & Crimson Tempest
     MeleeEnemies10yCount = #MeleeEnemies10y
     MeleeEnemies5y = Player:GetEnemiesInMeleeRange(MeleeRange) -- Melee cycle
+    MeleeEnemies5yCount = #MeleeEnemies5y
   else
     Enemies30y = {}
     MeleeEnemies10y = {}
     MeleeEnemies10yCount = 1
     MeleeEnemies5y = {}
+    MeleeEnemies5yCount = 1
   end
   -- Rotation Variables Update
   BleedTickTime, ExsanguinatedBleedTickTime = 2 * Player:SpellHaste(), 1 * Player:SpellHaste()
@@ -1044,7 +1046,7 @@ local function APL ()
       --- !!!! ---
       if S.PoisonedKnife:IsCastable() and Target:IsInRange(30) and not Player:StealthUp(true, true)
         and MeleeEnemies10yCount == 0 and Player:EnergyTimeToMax() <= Player:GCD() * 1.5 then
-        if Cast(S.PoisonedKnife) then return "Cast Poisoned Knife" end
+        if Cast(S.PoisonedKnife, nil, nil, not TargetInAoERange) then return "Cast Poisoned Knife" end
       end
     end
 
