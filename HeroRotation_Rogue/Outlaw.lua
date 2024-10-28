@@ -89,6 +89,8 @@ local ShouldReturn; -- Used to get the return string
 local BladeFlurryRange = 6
 local EffectiveComboPoints, ComboPoints, ChargedComboPoints, ComboPointsDeficit
 local Energy, EnergyRegen, EnergyDeficit, EnergyTimeToMax, EnergyMaxOffset
+local DungeonSlice
+local InRaid
 local Interrupts = {
   { S.Blind, "Cast Blind (Interrupt)", function()
     return true
