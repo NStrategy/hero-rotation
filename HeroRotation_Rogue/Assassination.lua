@@ -74,6 +74,7 @@ local RuptureThreshold, GarroteThreshold, CrimsonTempestThreshold
 local PriorityRotation
 local AvoidTea, CDSoon, NotPooling, PoisonedBleeds, EnergyRegenCombined, EnergyTimeToMaxCombined, EnergyRegenSaturated, SingleTarget, ScentSaturated
 local TrinketSyncSlot = 0
+local TrinketItem1, TrinketItem2
 local EnergyIncoming = 0
 local EffectiveCPSpend
 local DungeonSlice
@@ -398,7 +399,7 @@ local function Stealthed (ReturnSpellOnly, ForceStealth)
     end
   end
 
-  -- actions.stealthed+=/shiv,if=talent.kingsbane&(dot.kingsbane.ticking|cooldown.kingsbane.up)&(!debuff.shiv.up&debuff.shiv.remains<1)&buff.envenom.up
+  -- actions.stealthed+=/shiv,if=talent.kingsbane&(dot.kingsbane.ticking|cooldown.kingsbane.up)&(!debuff.shiv.up&debuff.shiv.remains<1)&buff.envenom.up note: added LWS check
   if S.Kingsbane:IsAvailable() and Player:BuffUp(S.Envenom) and S.LightweightShiv:IsAvailable() then
     if S.Shiv:IsCastable() and (Target:DebuffUp(S.Kingsbane) or S.Kingsbane:IsCastable()) and (Target:DebuffRemains(S.ShivDebuff) < 1 and not Target:DebuffUp(S.ShivDebuff)) then
       if ReturnSpellOnly then
@@ -462,15 +463,14 @@ local function Stealthed (ReturnSpellOnly, ForceStealth)
       end
     end
   end
-  -- actions.stealthed+=/garrote,target_if=min:remains,if=stealthed.improved_garrote&(remains<12|pmultiplier<=1|(buff.indiscriminate_carnage.up&active_dot.garrote<spell_targets.fan_of_knives&combo_points.deficit>=1))&!variable.single_target&target.time_to_die-remains>2
+  -- actions.stealthed+=/garrote,target_if=min:remains,if=stealthed.improved_garrote&(remains<12|pmultiplier<=1)&!variable.single_target&target.time_to_die-remains>2
   -- actions.stealthed+=/garrote,if=stealthed.improved_garrote&(pmultiplier<=1|refreshable)&combo_points.deficit>=1+2*talent.shrouded_suffocation
   if (S.Garrote:IsCastable() and ImprovedGarroteRemains() > 0.5) or ForceStealth then
     local function GarroteTargetIfFunc(TargetUnit)
       return TargetUnit:DebuffRemains(S.Garrote)
     end
     local function GarroteIfFunc(TargetUnit)
-      return (TargetUnit:PMultiplier(S.Garrote) <= 1 or TargetUnit:DebuffRemains(S.Garrote) < 12
-      or (IndiscriminateCarnageRemains() > 0.5 and S.Garrote:AuraActiveCount() < MeleeEnemies5yCount and ComboPointsDeficit >= 1)) and not SingleTarget
+      return (TargetUnit:PMultiplier(S.Garrote) <= 1 or TargetUnit:DebuffRemains(S.Garrote) < 12) and not SingleTarget
       and (TargetUnit:FilteredTimeToDie(">", 2, -TargetUnit:DebuffRemains(S.Garrote)) or TargetUnit:TimeToDieIsNotValid())
     end
     -- Handle AoE logic with Indiscriminate Carnage and check the setting for CastLeftNameplate usage
