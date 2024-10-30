@@ -66,6 +66,8 @@ HR.GUISettings.APL.Rogue = {
     NoLeftNameplatewhenICupGarrote = false,
     NoLeftNameplatewhenICupRupture = false,
     AvoidTeaEnabled = true,
+    RuptureCountThreshold = 6,
+    GarroteCountThreshold = 6,
     UsePriorityRotation = "Never", -- Only for Assassination / Subtlety
     PotionType = {
       Selected = "Power",
@@ -166,6 +168,8 @@ CreatePanelOption("CheckButton", CP_Assassination, "APL.Rogue.Assassination.Stea
 CreatePanelOption("CheckButton", CP_Assassination, "APL.Rogue.Assassination.NoLeftNameplatewhenICupGarrote", "Check if you do not want to have left nameplate suggestions of Garrote when spreading with IC", "Disabled left nameplate cast options for Garrote while stealthed")
 CreatePanelOption("CheckButton", CP_Assassination, "APL.Rogue.Assassination.NoLeftNameplatewhenICupRupture", "Check if you do not want to have left nameplate suggestions of Rupture when spreading with IC", "Disabled left nameplate cast options for Rupture while stealthed")
 CreatePanelOption("CheckButton", CP_Assassination, "APL.Rogue.Assassination.AvoidTeaEnabled", "Enable Avoid Tea", "When enabled, you will always try to be above 90 energy. Disabling it results in a 0.2% dmg loss, but will restrict you less")
+CreatePanelOption("Slider", CP_Assassination, "APL.Rogue.Assassination.RuptureCountThreshold", {1, 10, 1}, "Rupture Count Threshold", "This limits the amount of applys FROM STEALTH of Rupture before forcing the main rotation. Default: 6. If you are still in stealth while within the Rupture threshold, it will reapply the Ruptures")
+CreatePanelOption("Slider", CP_Assassination, "APL.Rogue.Assassination.GarroteCountThreshold", {1, 10, 1}, "Garrote Count Threshold", "This limits the amount of applys FROM STEALTH of Garrote before forcing the main rotation. Default: 6. If you are still in stealth while within the Garrote threshold, it will reapply the Garrotes")
 CreatePanelOption("CheckButton", CP_Assassination, "APL.Rogue.Assassination.VanishalwaysasOffGCD", "Must check the Vanish box below (under 'Potion Type') if you want Vanish to be actually shown as OffGCD in Dungeons (elsewhere it is used normally again))", "Allow suggesting Vanish as OffGCD in Dungeons")
 CreatePanelOption("CheckButton", CP_Assassination, "APL.Rogue.Assassination.StealthMacro.Shadowmeld", "Stealth Combo - Shadowmeld", "Allow suggesting Shadowmeld stealth ability combos (recommended)")
 CreateARPanelOptions(CP_Assassination, "APL.Rogue.Assassination")

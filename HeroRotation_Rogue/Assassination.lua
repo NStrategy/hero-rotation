@@ -72,6 +72,7 @@ local BleedTickTime, ExsanguinatedBleedTickTime = 2 * Player:SpellHaste(), 1 * P
 local ComboPoints, ComboPointsDeficit, ActualComboPoints
 local RuptureThreshold, GarroteThreshold, CrimsonTempestThreshold
 local PriorityRotation
+local RuptureCountThreshold, GarroteCountThreshold
 local AvoidTea, CDSoon, NotPooling, PoisonedBleeds, EnergyRegenCombined, EnergyTimeToMaxCombined, EnergyRegenSaturated, SingleTarget, ScentSaturated
 local TrinketSyncSlot = 0
 local TrinketItem1, TrinketItem2
@@ -256,10 +257,6 @@ local function ScentSaturatedVar()
   return Player:BuffStack(S.ScentOfBloodBuff) >= mathmin(20, S.ScentOfBlood:TalentRank() * 2 * MeleeEnemies10yCount)
 end
 
-local function HasEdgeCase()
-  return Player:BuffUp(S.FateboundCoinHeads) and Player:BuffUp(S.FateboundCoinTails)
-end
-
 -- Custom Override for Handling 4pc Pandemics
 local function IsDebuffRefreshable(TargetUnit, Spell, PandemicThreshold)
   local PandemicThreshold = PandemicThreshold or Spell:PandemicThreshold()
@@ -437,7 +434,7 @@ local function Stealthed (ReturnSpellOnly, ForceStealth)
     local function RuptureIfFunc(TargetUnit)
       return ComboPoints >= EffectiveCPSpend 
         and Player:BuffUp(S.IndiscriminateCarnageBuff) 
-        and (IsDebuffRefreshable(TargetUnit, S.Rupture, RuptureThreshold) or (IndiscriminateCarnageRemains() > 0.5 and S.Rupture:AuraActiveCount() < MeleeEnemies5yCount and not SingleTarget))
+        and (IsDebuffRefreshable(TargetUnit, S.Rupture, RuptureThreshold) or (IndiscriminateCarnageRemains() > 0.5 and S.Rupture:AuraActiveCount() < MeleeEnemies10yCount and not SingleTarget))
         and (not EnergyRegenSaturated or not ScentSaturated or TargetUnit:DebuffDown(S.Rupture))
         and (TargetUnit:FilteredTimeToDie(">", 15, -TargetUnit:DebuffRemains(S.Rupture)) or TargetUnit:TimeToDieIsNotValid())
     end
@@ -445,7 +442,7 @@ local function Stealthed (ReturnSpellOnly, ForceStealth)
     if HR.AoEON() then
       local TargetIfUnit = CheckTargetIfTarget("min", RuptureTargetIfFunc, RuptureIfFunc)
       -- Spread Rupture with or without CastLeftNameplate based on settings
-      if TargetIfUnit and IndiscriminateCarnageRemains() > 0.5 then
+      if TargetIfUnit and IndiscriminateCarnageRemains() > 0.5 and ((S.Rupture:AuraActiveCount() < RuptureCountThreshold) or (TargetIfUnit:DebuffUp(S.Rupture) and IsDebuffRefreshable(TargetIfUnit, S.Rupture, RuptureThreshold))) then
         if Settings.Assassination.NoLeftNameplatewhenICupRupture then
           -- Simplified logic: No CastLeftNameplate, still ensure main target gets Rupture
           if RuptureIfFunc(TargetIfUnit) then
@@ -477,7 +474,7 @@ local function Stealthed (ReturnSpellOnly, ForceStealth)
     if HR.AoEON() then
         local TargetIfUnit = CheckTargetIfTarget("min", GarroteTargetIfFunc, GarroteIfFunc)
         -- Spread Garrote with or without CastLeftNameplate based on settings
-        if TargetIfUnit and IndiscriminateCarnageRemains() > 0.5 then
+        if TargetIfUnit and IndiscriminateCarnageRemains() > 0.5 and ((S.Garrote:AuraActiveCount() < GarroteCountThreshold) or (TargetIfUnit:DebuffUp(S.Garrote) and TargetIfUnit:DebuffRemains(S.Garrote) < 12 and (TargetIfUnit:PMultiplier(S.Garrote) == 1.5 or TargetIfUnit:PMultiplier(S.Garrote) == 1))) then
           if Settings.Assassination.NoLeftNameplatewhenICupGarrote then
               -- If NoLeftNameplatewhenICupGarrote is enabled, apply Garrote only on the main target
               if GarroteIfFunc(TargetIfUnit) then
@@ -505,6 +502,10 @@ local function Stealthed (ReturnSpellOnly, ForceStealth)
       end
     end
   end
+  -- # Stealth Maintain Caustic Spatter
+  -- actions.stealthed+=/variable,name=use_caustic_filler_stealth,value=talent.caustic_spatter&(buff.indiscriminate_carnage.remains<5)&dot.rupture.ticking&(!debuff.caustic_spatter.up|debuff.caustic_spatter.remains<=2)&combo_points.deficit>=1&!variable.single_target
+  -- actions.stealthed+=/mutilate,if=variable.use_caustic_filler_stealth
+  -- actions.stealthed+=/ambush,if=variable.use_caustic_filler_stealth
 end
 
 -- # Stealth Macros
@@ -632,7 +633,7 @@ local function CDs ()
     
     -- # Shiv for aoe with Arterial Precision
     -- actions.shiv+=/shiv,if=talent.arterial_precision&variable.shiv_condition&spell_targets.fan_of_knives>=4&dot.crimson_tempest.ticking|fight_remains<=charges*8 note: exlcuded Ovi'nax
-    if S.ArterialPrecision:IsAvailable() and ShivCondition and MeleeEnemies10yCount >= 4 and Target:DebuffUp(S.CrimsonTempest) and not Target:NPCID() == 214506 then
+    if S.ArterialPrecision:IsAvailable() and ShivCondition and MeleeEnemies10yCount >= 4 and S.CrimsonTempest:AnyDebuffUp() and not Target:NPCID() == 214506 then
       if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv (Arterial Precision AoE)" end
     end
     -- # Shiv cases for Kingsbane
@@ -888,14 +889,14 @@ local function Direct ()
   -- actions.direct+=/fan_of_knives,if=variable.use_filler&!priority_rotation&(spell_targets.fan_of_knives>=3-(talent.momentum_of_despair&talent.thrown_precision)|buff.clear_the_witnesses.up&!talent.vicious_venoms)
   if S.FanofKnives:IsCastable() then
     if HR.AoEON() and not PriorityRotation and (MeleeEnemies10yCount >= 3 - num(S.MomentumOfDespair:IsAvailable() and S.ThrownPrecision:IsAvailable()) or Player:BuffUp(S.ClearTheWitnessesBuff) and not S.ViciousVenoms:IsAvailable()) then
-      if CastPooling(S.FanofKnives, nil, not TargetInAoERange) then return "Cast Fan of Knives (AOE or CTW)" end
+      if Cast(S.FanofKnives, nil, nil, not TargetInAoERange) then return "Cast Fan of Knives (AOE or CTW)" end
     end
     -- # Fan of Knives to apply poisons if inactive on any target (or any bleeding targets with priority rotation) at 3T, or 2T as Deathstalker with Thrown Precision
     -- actions.direct+=/fan_of_knives,target_if=!dot.deadly_poison_dot.ticking&(!priority_rotation|dot.garrote.ticking|dot.rupture.ticking),if=variable.use_filler&spell_targets.fan_of_knives>=3-(talent.momentum_of_despair&talent.thrown_precision)
     if HR.AoEON() and MeleeEnemies10yCount >= 3 - num(S.MomentumOfDespair:IsAvailable() and S.ThrownPrecision:IsAvailable()) then
       for _, CycleUnit in pairs(MeleeEnemies10y) do
         if not CycleUnit:DebuffUp(S.DeadlyPoisonDebuff, true) and (not PriorityRotation or CycleUnit:DebuffUp(S.Garrote) or CycleUnit:DebuffUp(S.Rupture)) then
-          if CastPooling(S.FanofKnives, nil, not TargetInAoERange) then return "Cast Fan of Knives (DP Refresh)" end
+          if Cast(S.FanofKnives, nil, nil, not TargetInAoERange) then return "Cast Fan of Knives (DP Refresh)" end
         end
       end
     end
@@ -958,6 +959,8 @@ local function APL ()
   EffectiveCPSpend = mathmax(Rogue.CPMaxSpend() - 2, 5 * num(S.HandOfFate:IsAvailable()))
   DungeonSlice = Player:IsInParty() and Player:IsInDungeonArea() and not Player:IsInRaid()
   InRaid = Player:IsInRaid() and not Player:IsInDungeonArea()
+  RuptureCountThreshold = Settings.Assassination.RuptureCountThreshold
+  GarroteCountThreshold = Settings.Assassination.GarroteCountThreshold
   
 
   -- Defensives
@@ -1083,11 +1086,12 @@ end
 local function Init ()
   S.Deathmark:RegisterAuraTracking()
   S.Garrote:RegisterAuraTracking()
+  S.CrimsonTempest:RegisterAuraTracking()
   S.Rupture:RegisterAuraTracking()
   S.Kingsbane:RegisterAuraTracking()
   S.Shiv:RegisterAuraTracking()
 
-  HR.Print("You are using a fork [Version 3.0]: THIS IS NOT THE OFFICIAL VERSION - if there are issues, message me on Discord: kekwxqcl")
+  HR.Print("You are using a fork [Version 3.1]: THIS IS NOT THE OFFICIAL VERSION - if there are issues, message me on Discord: kekwxqcl")
 end
 
 HR.SetAPL(259, APL, Init)
