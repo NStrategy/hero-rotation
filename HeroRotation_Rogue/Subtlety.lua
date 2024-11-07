@@ -449,12 +449,6 @@ end
 
 -- # Cooldowns
 local function CDs ()
-  -- actions.cds+=/cold_blood,if=cooldown.secret_technique.up&buff.shadow_dance.up&combo_points>=6&variable.secret
-  if S.ColdBlood:IsCastable() and S.SecretTechnique:CooldownUp() and Player:BuffUp(S.ShadowDanceBuff) and ComboPoints >= 6 and Secret then
-    if Cast(S.ColdBlood, Settings.CommonsOGCD.OffGCDasOffGCD.ColdBlood) then
-      return "Cast Cold Blood"
-    end
-  end
 
   -- actions.cds+=/potion,if=buff.bloodlust.react|fight_remains<30|buff.flagellation_buff.up
   if Settings.Commons.Enabled.Potions then
@@ -484,6 +478,13 @@ local function CDs ()
     end
   end
 
+  -- actions.cds+=/cold_blood,if=cooldown.secret_technique.up&buff.shadow_dance.up&combo_points>=6&variable.secret
+  if S.ColdBlood:IsCastable() and S.SecretTechnique:CooldownUp() and Player:BuffUp(S.ShadowDanceBuff) and ComboPoints >= 6 and Secret then
+    if Cast(S.ColdBlood, Settings.CommonsOGCD.OffGCDasOffGCD.ColdBlood) then
+      return "Cast Cold Blood"
+    end
+  end
+  
   -- actions.cds+=/thistle_tea,if=buff.shadow_dance.remains>2&!buff.thistle_tea.up
   if S.ThistleTea:IsCastable() then
     if Player:BuffRemains(S.ShadowDanceBuff) > 2 and Player:BuffDown(S.ThistleTea) then

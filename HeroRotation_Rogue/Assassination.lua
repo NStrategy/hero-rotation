@@ -960,7 +960,6 @@ local function APL ()
   InRaid = Player:IsInRaid() and not Player:IsInDungeonArea()
   RuptureCountThreshold = Settings.Assassination.RuptureCountThreshold
   GarroteCountThreshold = Settings.Assassination.GarroteCountThreshold
-  
 
   -- Defensives
   -- Crimson Vial
