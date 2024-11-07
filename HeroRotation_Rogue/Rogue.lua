@@ -308,8 +308,6 @@ Spell.Rogue.Subtlety = MergeTableByKey(Spell.Rogue.Commons, {
   ReplicatingShadows      = Spell(382506),
   SecretStratagem         = Spell(394320),
   SecretTechnique         = Spell(280719),
-  Sepsis                  = Spell(385408),
-  SepsisBuff              = Spell(375939),
   Shadowcraft             = Spell(426594),
   ShadowFocus             = Spell(108209),
   ShurikenTornado         = Spell(277925),
@@ -462,12 +460,6 @@ do
   local AssassinationSpell = Spell.Rogue.Assassination
   local SubtletySpell = Spell.Rogue.Subtlety
 
-  local function ComputeNighstalkerPMultiplier ()
-    if AssassinationSpell.Nightstalker:IsAvailable() and Player:StealthUp(true, false, true) then
-      return 1 + (0.05 * AssassinationSpell.Nightstalker:TalentRank())
-    end
-    return 1
-  end
   local function ComputeImprovedGarrotePMultiplier ()
     if AssassinationSpell.ImprovedGarrote:IsAvailable() and (Player:BuffUp(AssassinationSpell.ImprovedGarroteAura, nil, true)
       or Player:BuffUp(AssassinationSpell.ImprovedGarroteBuff, nil, true)) then
@@ -476,9 +468,8 @@ do
     return 1
   end
 
-  AssassinationSpell.Rupture:RegisterPMultiplier( ComputeNighstalkerPMultiplier, { SubtletySpell.FinalityRuptureBuff, 1.3 } )
-  AssassinationSpell.Garrote:RegisterPMultiplier( ComputeNighstalkerPMultiplier, ComputeImprovedGarrotePMultiplier )
-  AssassinationSpell.CrimsonTempest:RegisterPMultiplier( ComputeNighstalkerPMultiplier )
+  AssassinationSpell.Rupture:RegisterPMultiplier( { SubtletySpell.FinalityRuptureBuff, 1.3 } )
+  AssassinationSpell.Garrote:RegisterPMultiplier( ComputeImprovedGarrotePMultiplier )
 end
 
 --- ======= SIMC CUSTOM FUNCTION / EXPRESSION =======

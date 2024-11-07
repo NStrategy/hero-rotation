@@ -796,7 +796,6 @@ local function AoeDot ()
     end
     local function CrimsonTempestIfFunc(TargetUnit)
       return IsDebuffRefreshable(TargetUnit, S.CrimsonTempest, CrimsonTempestThreshold)
-           and TargetUnit:PMultiplier(S.CrimsonTempest) <= 1
            and (TargetUnit:FilteredTimeToDie(">", 6, -TargetUnit:DebuffRemains(S.CrimsonTempest)) or TargetUnit:TimeToDieIsNotValid())  
     end
     if HR.AoEON() then
