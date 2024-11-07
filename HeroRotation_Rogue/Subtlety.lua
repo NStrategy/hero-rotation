@@ -190,7 +190,7 @@ end
 -- Black Blood (215968) or/and (216856), Crystal Shard (214443), Earth Burst Totem (214287),
 -- Spinemaw Larva (167117), Gormling Larva (165560), Carrion Worm (164702), Brittlebone Warrior (163122) or/and (168445), Brittlebone Mage (163126),
 -- Brittlebone Crossbowman (166079), Shuffling Corpse (171500), Spare Parts (166266), Invoked Shadowflame Spirit (40357), Mutated Hatchling (224853) or/and (39388)
--- Scrimshaw Gutter (133990), Irontide Curseblade (138247), Irontide Powdershot (138254)
+-- Scrimshaw Gutter (133990), Irontide Curseblade (138247), Irontide Powdershot (138254), Shattershell Scarab (218884)
 local NPCIDTable = {
   [216205] = true, [221986] = true, [439815] = true, [220626] = true, [223674] = true, [221344] = true,
   [220199] = true, [216329] = true, [222700] = true, [220065] = true, [222974] = true, [219198] = true,
@@ -198,17 +198,11 @@ local NPCIDTable = {
   [215826] = true, [215968] = true, [216856] = true, [214443] = true, [214287] = true,
   [167117] = true, [165560] = true, [164702] = true, [163122] = true, [168445] = true, [163126] = true,
   [166079] = true, [171500] = true, [166266] = true,  [40357] = true, [224853] = true,  [39388] = true,
-  [133990] = true, [138247] = true, [138254] = true
+  [133990] = true, [138247] = true, [138254] = true, [218884] = true
 }
 local function Skip_Rupture_NPC(Unit) -- Exclude Rupture Dot for certain NPCs
   local NPCID = Unit:NPCID()
   return NPCIDTable[NPCID] or false -- Check if the NPC ID is in the table
-end
-
--- APL Action Lists (and Variables)
-local function Stealth_Threshold ()
-  -- actions+=/ variable,name=stealth_threshold,value=20+talent.vigor.rank*25+talent.thistle_tea*20+talent.shadowcraft*20
-  return 20 + S.Vigor:TalentRank() * 25 + num(S.ThistleTea:IsAvailable()) * 20 + num(S.Shadowcraft:IsAvailable()) * 20
 end
 
 local function SnD_Condition ()
@@ -240,7 +234,7 @@ end
 -- ReturnSpellOnly and StealthSpell parameters are to Predict Finisher in case of Stealth Macros
 local function Finish (ReturnSpellOnly, ForceStealth)
   -- actions.finish=secret_technique,if=variable.secret
-  if S.SecretTechnique:IsReady() and (Secret or ForceStealth) then
+  if S.SecretTechnique:IsCastable() and (Secret or ForceStealth) then
       if ReturnSpellOnly then
         return S.SecretTechnique
       end
@@ -317,10 +311,9 @@ end
 -- # Builders
 local function Build (ReturnSpellOnly, ForceStealth)
 
-  -- actions.build=shadowstrike,cycle_targets=1,if=debuff.find_weakness.remains<=2&variable.targets=2&talent.unseen_blade|!used_for_danse&talent.danse_macabre
+  -- actions.build=shadowstrike,cycle_targets=1,if=debuff.find_weakness.remains<=2&variable.targets=2&talent.unseen_blade|!used_for_danse&!talent.premeditation
   if S.Shadowstrike:IsReady() and HR.AoEON() and (Player:StealthUp(true, false) or ForceStealth) then
-    if MeleeEnemies10yCount == 2 and S.UnseenBlade:IsAvailable()
-      or not Used_For_Danse(S.Shadowstrike) and S.DanseMacabre:IsAvailable() then
+    if MeleeEnemies10yCount == 2 and S.UnseenBlade:IsAvailable() or not Used_For_Danse(S.Shadowstrike) and not S.Premeditation:IsAvailable() then
       for _, CycleUnit in pairs(MeleeEnemies10y) do
         if CycleUnit:GUID() ~= Target:GUID() and CycleUnit:DebuffRemains(S.FindWeaknessDebuff) <= 2 then
           CastLeftNameplate(CycleUnit, S.Shadowstrike)
@@ -330,9 +323,7 @@ local function Build (ReturnSpellOnly, ForceStealth)
   end
 
   -- actions.build+=/shuriken_storm,if=talent.deathstalkers_mark&!buff.premeditation.up&variable.targets>=(2+3*buff.shadow_dance.up)|buff.clear_the_witnesses.up&!buff.symbols_of_death.up|buff.flawless_form.up&variable.targets>=3&!variable.stealth
-  if S.ShurikenStorm:IsReady() and HR.AoEON() and S.DeathStalkersMark:IsAvailable() and not Player:BuffUp(S.PremeditationBuff)
-    and MeleeEnemies10yCount >= (2 + 3 * num(Player:BuffUp(S.ShadowDanceBuff))) or Player:BuffUp(S.ClearTheWitnessesBuff)
-    and not Player:BuffUp(S.SymbolsofDeath) or Player:BuffUp(S.FlawlessFormBuff) and MeleeEnemies10yCount >= 3 and not Stealth then
+  if S.ShurikenStorm:IsCastable() and HR.AoEON() and S.DeathStalkersMark:IsAvailable() and not Player:BuffUp(S.PremeditationBuff) and MeleeEnemies10yCount >= (2 + 3 * num(Player:BuffUp(S.ShadowDanceBuff))) or Player:BuffUp(S.ClearTheWitnessesBuff) and not Player:BuffUp(S.SymbolsofDeath) or Player:BuffUp(S.FlawlessFormBuff) and MeleeEnemies10yCount >= 3 and not Stealth then
     if ReturnSpellOnly then
       return S.ShurikenStorm
     else
@@ -343,10 +334,8 @@ local function Build (ReturnSpellOnly, ForceStealth)
   end
 
   -- actions.build+=/shuriken_tornado,if=buff.lingering_darkness.up|talent.deathstalkers_mark&cooldown.shadow_blades.remains>=32&variable.targets>=2|talent.unseen_blade&buff.symbols_of_death.up&variable.targets>=4
-  if S.ShurikenTornado:IsReady() and S.ShurikenTornado:IsAvailable() then
-    if Player:BuffUp(S.LingeringDarknessBuff) or S.DeathStalkersMark:IsAvailable()
-      and S.ShadowBlades:CooldownRemains() >= 32 and MeleeEnemies10yCount >= 2 or S.UnseenBlade:IsAvailable()
-      and Player:BuffUp(S.SymbolsofDeath) and MeleeEnemies10yCount >= 4 then
+  if S.ShurikenTornado:IsCastable() and S.ShurikenTornado:IsAvailable() then
+    if Player:BuffUp(S.LingeringDarknessBuff) or S.DeathStalkersMark:IsAvailable() and S.ShadowBlades:CooldownRemains() >= 32 and MeleeEnemies10yCount >= 2 or S.UnseenBlade:IsAvailable() and Player:BuffUp(S.SymbolsofDeath) and MeleeEnemies10yCount >= 4 then
       if ReturnSpellOnly then
         return S.ShurikenTornado
       else
@@ -369,7 +358,7 @@ local function Build (ReturnSpellOnly, ForceStealth)
   end
 
   -- actions.build+=/goremaws_bite,if=combo_points.deficit>=3
-  if HR.CDsON() and S.GoremawsBite:IsAvailable() and S.GoremawsBite:IsReady() then
+  if HR.CDsON() and S.GoremawsBite:IsAvailable() and S.GoremawsBite:IsCastable() then
     if ComboPointsDeficit >= 3 then
       if ReturnSpellOnly then
         return S.GoremawsBite
@@ -450,6 +439,12 @@ end
 -- # Cooldowns
 local function CDs ()
 
+  -- actions.cds+=/cold_blood,if=cooldown.secret_technique.up&buff.shadow_dance.up&combo_points>=6&variable.secret
+  if S.ColdBlood:IsCastable() and S.SecretTechnique:CooldownUp() and Player:BuffUp(S.ShadowDanceBuff) and ComboPoints >= 6 and Secret then
+    if Cast(S.ColdBlood, Settings.CommonsOGCD.OffGCDasOffGCD.ColdBlood) then
+      return "Cast Cold Blood"
+    end
+  end
   -- actions.cds+=/potion,if=buff.bloodlust.react|fight_remains<30|buff.flagellation_buff.up
   if Settings.Commons.Enabled.Potions then
     local PotionSelected = Everyone.PotionSelected()
@@ -460,9 +455,9 @@ local function CDs ()
     end
   end
 
-  -- actions.cds+=/symbols_of_death,if=(buff.symbols_of_death.remains<=3&variable.maintenance&(buff.flagellation_buff.up|!talent.flagellation|cooldown.flagellation.remains>=30-15*!talent.death_perception&cooldown.secret_technique.remains<=8|!talent.death_perception)|fight_remains<=15)
+  -- actions.cds+=/symbols_of_death,if=(buff.symbols_of_death.remains<=3&variable.maintenance&(buff.flagellation_buff.up&cooldown.secret_technique.remains<8|!talent.flagellation|buff.flagellation_persist.up&talent.unseen_blade|cooldown.flagellation.remains>=30-15*!talent.death_perception&cooldown.secret_technique.remains<8|!talent.death_perception)|fight_remains<=15)
   if S.SymbolsofDeath:IsCastable() then
-    if (Player:BuffRemains(S.SymbolsofDeath) <= 3 and Maintenance and (Player:BuffUp(S.FlagellationBuff) or not S.Flagellation:IsAvailable() or S.Flagellation:CooldownRemains() >= 30 - 15 * num(not S.DeathPerception:IsAvailable()) and S.SecretTechnique:CooldownRemains() <= 8 or not S.DeathPerception:IsAvailable()) or HL.BossFilteredFightRemains("<=", 15)) then
+    if (Player:BuffRemains(S.SymbolsofDeath) <= 3 and Maintenance and (Player:BuffUp(S.FlagellationBuff) and S.SecretTechnique:CooldownRemains() < 8 or not S.Flagellation:IsAvailable() or Player:BuffUp(S.FlagellationPersistBuff) and S.UnseenBlade:IsAvailable() or S.Flagellation:CooldownRemains() >= 30 - 15 * num(not S.DeathPerception:IsAvailable()) and S.SecretTechnique:CooldownRemains() < 8 or not S.DeathPerception:IsAvailable()) or HL.BossFilteredFightRemains("<=", 15)) then
       if Cast(S.SymbolsofDeath, Settings.Subtlety.OffGCDasOffGCD.SymbolsofDeath) then
         return "Cast Symbols of Death"
       end
@@ -475,13 +470,6 @@ local function CDs ()
       if Cast(S.ShadowBlades, Settings.Subtlety.OffGCDasOffGCD.ShadowBlades) then
         return "Cast Shadow Blades"
       end
-    end
-  end
-
-  -- actions.cds+=/cold_blood,if=cooldown.secret_technique.up&buff.shadow_dance.up&combo_points>=6&variable.secret
-  if S.ColdBlood:IsCastable() and S.SecretTechnique:CooldownUp() and Player:BuffUp(S.ShadowDanceBuff) and ComboPoints >= 6 and Secret then
-    if Cast(S.ColdBlood, Settings.CommonsOGCD.OffGCDasOffGCD.ColdBlood) then
-      return "Cast Cold Blood"
     end
   end
   
@@ -503,10 +491,7 @@ local function CDs ()
     end
   end
 
-  return false
-end
-
-local function Race()
+  --local function Race()
   -- actions.cds+=/blood_fury,if=variable.racial_sync
   if S.BloodFury:IsReady() and RacialSync then
     if Cast(S.BloodFury, Settings.CommonsOGCD.OffGCDasOffGCD.Racials) then
@@ -534,10 +519,8 @@ local function Race()
       return "Cast Ancestral Call"
     end
   end
-end
-
--- # Items
-local function Items()
+  -- # Items
+  -- local function Items()
   if Settings.Commons.Enabled.Trinkets then
     -- actions.items=use_item,name=treacherous_transmitter,if=cooldown.flagellation.remains<=2|fight_remains<=15
     if I.TreacherousTransmitter:IsEquippedAndReady() then
@@ -612,11 +595,9 @@ end
 -- # Stealth Cooldowns
 local function Stealth_CDs ()
   if HR.CDsON() then
-    -- actions.stealth_cds=shadow_dance,if=variable.shd_cp&variable.maintenance&cooldown.secret_technique.remains<=24
-    -- &(buff.symbols_of_death.remains>=6|buff.flagellation_persist.remains>=6)|fight_remains<=10
+    -- actions.stealth_cds=shadow_dance,if=variable.shd_cp&variable.maintenance&cooldown.secret_technique.remains<=24&(buff.symbols_of_death.remains>=6|buff.flagellation_persist.remains>=6)|fight_remains<=10
     if S.ShadowDance:IsCastable() then
-      if ShdCp and Maintenance and S.SecretTechnique:CooldownRemains() <= 24 and (Player:BuffRemains(S.SymbolsofDeath) >= 6
-        or Player:BuffRemains(S.FlagellationPersistBuff) >= 6) or HL.BossFilteredFightRemains("<=", 10) then
+      if ShdCp and Maintenance and S.SecretTechnique:CooldownRemains() <= 24 and (Player:BuffRemains(S.SymbolsofDeath) >= 6 or Player:BuffRemains(S.FlagellationPersistBuff) >= 6) or HL.BossFilteredFightRemains("<=", 10) then
         ShouldReturn = StealthMacro(S.ShadowDance)
         if ShouldReturn then
           return "Shadow Dance Macro " .. ShouldReturn
@@ -689,11 +670,6 @@ local Interrupts = {
 
 -- APL Main
 local function APL ()
-  -- Reset pooling cache
-  PoolingAbility = nil
-  PoolingFinisher = nil
-  PoolingEnergy = 0
-
   -- Unit Update
   MeleeRange = 5
   AoERange = 10
@@ -716,7 +692,6 @@ local function APL ()
   EffectiveComboPoints = Rogue.EffectiveComboPoints(ComboPoints)
   ComboPointsDeficit = Player:ComboPointsDeficit()
   PriorityRotation = UsePriorityRotation()
-  StealthEnergyRequired = Player:EnergyMax() - Stealth_Threshold()
   DungeonSlice = Player:IsInParty() and Player:IsInDungeonArea()
   InRaid = Player:IsInRaid()
 
@@ -816,20 +791,6 @@ local function APL ()
       return "CDs: " .. ShouldReturn
     end
 
-    -- # Racials
-    --actions+=/call_action_list,name=race
-    ShouldReturn = Race()
-    if ShouldReturn then
-      return "Racials: " .. ShouldReturn
-    end
-
-    -- # Items (Trinkets)
-    -- actions+=/call_action_list,name=items
-    ShouldReturn = Items()
-    if ShouldReturn then
-      return "Items: " .. ShouldReturn
-    end
-
     -- # Cooldowns for Stealth
     -- actions+=/call_action_list,name=stealth_cds,if=!variable.stealth
     if not Player:StealthUp(true, false) then
@@ -877,7 +838,7 @@ end
 local function Init ()
   S.Rupture:RegisterAuraTracking()
 
-  HR.Print("You are using a fork [Version 3.0]: THIS IS NOT THE OFFICIAL VERSION - if there are issues, message me on Discord: kekwxqcl.")
+  HR.Print("You are using a fork [Version 3.1]: THIS IS NOT THE OFFICIAL VERSION - if there are issues, message me on Discord: kekwxqcl.")
 end
 
 HR.SetAPL(261, APL, Init)
