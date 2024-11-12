@@ -471,10 +471,11 @@ local function Stealthed (ReturnSpellOnly, ForceStealth)
       and (TargetUnit:FilteredTimeToDie(">", 2, -TargetUnit:DebuffRemains(S.Garrote)) or TargetUnit:TimeToDieIsNotValid())
     end
     -- Handle AoE logic with Indiscriminate Carnage and check the setting for CastLeftNameplate usage
+    -- Extra check for ComboPoints so you may not spam it anyway.
     if HR.AoEON() then
         local TargetIfUnit = CheckTargetIfTarget("min", GarroteTargetIfFunc, GarroteIfFunc)
         -- Spread Garrote with or without CastLeftNameplate based on settings
-        if TargetIfUnit and IndiscriminateCarnageRemains() > 0.5 and ((S.Garrote:AuraActiveCount() < GarroteCountThreshold) or (TargetIfUnit:DebuffUp(S.Garrote) and TargetIfUnit:DebuffRemains(S.Garrote) < 12 and (TargetIfUnit:PMultiplier(S.Garrote) == 1.5 or TargetIfUnit:PMultiplier(S.Garrote) == 1))) then
+        if TargetIfUnit and ComboPointsDeficit >= 1 and IndiscriminateCarnageRemains() > 0.5 and ((S.Garrote:AuraActiveCount() < GarroteCountThreshold) or (TargetIfUnit:DebuffUp(S.Garrote) and TargetIfUnit:DebuffRemains(S.Garrote) < 12 and (TargetIfUnit:PMultiplier(S.Garrote) == 1.5 or TargetIfUnit:PMultiplier(S.Garrote) == 1))) then
           if Settings.Assassination.NoLeftNameplatewhenICupGarrote then
               -- If NoLeftNameplatewhenICupGarrote is enabled, apply Garrote only on the main target
               if GarroteIfFunc(TargetIfUnit) then
@@ -671,7 +672,7 @@ local function CDs ()
   
   -- actions.cds+=/kingsbane,if=(debuff.shiv.up|cooldown.shiv.remains<6)&buff.envenom.up&(cooldown.deathmark.remains>=45|dot.deathmark.ticking)|fight_remains<=15 Note: based on TC Channel 45 Sec instead of 50; Added DS check so you may use KB alone even when DM is ready. Added Target:DebuffUp(S.Deathmark) so you may always use KB once DM is on the target (Env updatime may be lost due to pooling or mechanics)
   if S.Kingsbane:IsCastable() then
-    if (Target:DebuffUp(S.ShivDebuff) or S.Shiv:CooldownRemains() < 6) and (Player:BuffUp(S.Envenom) or Target:DebuffUp(S.Deathmark)) and (S.Deathmark:CooldownRemains() >= 45 or DungeonSlice or Target:DebuffUp(S.Deathmark)) or (HL.BossFilteredFightRemains("<=", 15) and InRaid) then
+    if (Target:DebuffUp(S.ShivDebuff) or S.Shiv:CooldownRemains() < 6) and (Player:BuffUp(S.Envenom) or Target:DebuffUp(S.Deathmark)) and (S.Deathmark:CooldownRemains() >= 45 or (DungeonSlice and not S.Deathmark:IsCastable()) or Target:DebuffUp(S.Deathmark)) or (HL.BossFilteredFightRemains("<=", 15) and InRaid) then
       if Cast(S.Kingsbane, Settings.Assassination.GCDasOffGCD.Kingsbane) then return "Cast Kingsbane" end
     end
   end
@@ -743,7 +744,7 @@ local function CDs ()
 
     -- # Vanish fallback for Master Assassin
     --actions.vanish+=/vanish,if=talent.master_assassin&dot.garrote.remains>3&debuff.deathmark.up&dot.kingsbane.remains<=6+3*talent.subterfuge.rank&(debuff.shiv.up|debuff.deathmark.remains<4) extra check for target debuff up to prevent suggestion, added 0.5 for more leeway
-    if S.Vanish:IsCastable() and S.MasterAssassin:IsAvailable() and Target:DebuffRemains(S.Garrote) > 0 and Target:DebuffUp(S.Deathmark) and Target:DebuffUp(S.Kingsbane) and Target:DebuffRemains(S.Kingsbane) <= 6.5 + 3 * S.Subterfuge:TalentRank() and (Target:DebuffUp(S.ShivDebuff) or Target:DebuffRemains(S.Deathmark) < 4) then
+    if S.Vanish:IsCastable() and S.MasterAssassin:IsAvailable() and Target:DebuffRemains(S.Garrote) > 0 and Target:DebuffUp(S.Deathmark) and Target:DebuffUp(S.Kingsbane) and Target:DebuffRemains(S.Kingsbane) <= 6.5 + 3 * S.Subterfuge:TalentRank() and (Target:DebuffUp(S.ShivDebuff) or (Target:DebuffRemains(S.Deathmark) < 4 and Target:DebuffUp(S.Deathmark))) then
       ShouldReturn = StealthMacro(S.Vanish)
       if ShouldReturn then return "Cast Vanish (Master Assassin)" .. ShouldReturn end
     end
