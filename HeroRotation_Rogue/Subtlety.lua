@@ -456,8 +456,8 @@ local function CDs ()
   end
 
   -- actions.cds+=/symbols_of_death,if=(buff.symbols_of_death.remains<=3&variable.maintenance&(buff.flagellation_buff.up&cooldown.secret_technique.remains<8|!talent.flagellation|buff.flagellation_persist.up&talent.unseen_blade|cooldown.flagellation.remains>=30-15*!talent.death_perception&cooldown.secret_technique.remains<8|!talent.death_perception)|fight_remains<=15)
-  if S.SymbolsofDeath:IsCastable() then
-    if (Player:BuffRemains(S.SymbolsofDeath) <= 3 and Maintenance and (Player:BuffUp(S.FlagellationBuff) and S.SecretTechnique:CooldownRemains() < 8 or not S.Flagellation:IsAvailable() or Player:BuffUp(S.FlagellationPersistBuff) and S.UnseenBlade:IsAvailable() or S.Flagellation:CooldownRemains() >= 30 - 15 * num(not S.DeathPerception:IsAvailable()) and S.SecretTechnique:CooldownRemains() < 8 or not S.DeathPerception:IsAvailable()) or HL.BossFilteredFightRemains("<=", 15)) then
+  if S.SymbolsofDeath:IsCastable() and Player:BuffRemains(S.SymbolsofDeath) <= 3 and Maintenance then
+    if Player:BuffUp(S.FlagellationBuff) and S.SecretTechnique:CooldownRemains() < 8 or not S.Flagellation:IsAvailable() or (Player:BuffUp(S.FlagellationPersistBuff) and S.UnseenBlade:IsAvailable()) or (S.Flagellation:CooldownRemains() >= 30 - 15 * num(not S.DeathPerception:IsAvailable()) and S.SecretTechnique:CooldownRemains() < 8) or not S.DeathPerception:IsAvailable() then
       if Cast(S.SymbolsofDeath, Settings.Subtlety.OffGCDasOffGCD.SymbolsofDeath) then
         return "Cast Symbols of Death"
       end
@@ -465,11 +465,9 @@ local function CDs ()
   end
 
   -- actions.cds+=/shadow_blades,if=variable.maintenance&variable.shd_cp&buff.shadow_dance.up&!buff.premeditation.up
-  if S.ShadowBlades:IsCastable() then
-    if Maintenance and ShdCp and Player:BuffUp(S.ShadowDanceBuff) and not Player:BuffUp(S.PremeditationBuff) then
-      if Cast(S.ShadowBlades, Settings.Subtlety.OffGCDasOffGCD.ShadowBlades) then
-        return "Cast Shadow Blades"
-      end
+  if S.ShadowBlades:IsCastable() and Maintenance and ShdCp and Player:BuffUp(S.ShadowDanceBuff) and not Player:BuffUp(S.PremeditationBuff) then
+    if Cast(S.ShadowBlades, Settings.Subtlety.OffGCDasOffGCD.ShadowBlades) then
+      return "Cast Shadow Blades"
     end
   end
   
@@ -483,11 +481,9 @@ local function CDs ()
   end
 
   -- actions.cds+=/flagellation,if=combo_points>=5|fight_remains<=25
-  if S.Flagellation:IsAvailable() and S.Flagellation:IsReady() then
-    if ComboPoints >= 5 or HL.BossFilteredFightRemains("<=", 25) then
-      if Cast(S.Flagellation, Settings.Subtlety.OffGCDasOffGCD.Flagellation) then
-        return "Cast Flagellation"
-      end
+  if S.Flagellation:IsAvailable() and S.Flagellation:IsCastable() and ComboPoints >= 5 then
+    if Cast(S.Flagellation, Settings.Subtlety.OffGCDasOffGCD.Flagellation) then
+      return "Cast Flagellation"
     end
   end
 
@@ -524,7 +520,7 @@ local function CDs ()
   if Settings.Commons.Enabled.Trinkets then
     -- actions.items=use_item,name=treacherous_transmitter,if=cooldown.flagellation.remains<=2|fight_remains<=15
     if I.TreacherousTransmitter:IsEquippedAndReady() then
-      if S.Flagellation:CooldownRemains() <= 2 or Player:BuffUp(S.FlagellationBuff) or Player:BuffUp(S.FlagellationPersistBuff) or(HL.BossFilteredFightRemains("<=", 15) and InRaid) then
+      if S.Flagellation:CooldownRemains() <= 2 or Player:BuffUp(S.FlagellationBuff) or Player:BuffUp(S.FlagellationPersistBuff) or (HL.BossFilteredFightRemains("<=", 15) and InRaid) then
         if Cast(I.TreacherousTransmitter, nil, Settings.CommonsDS.DisplayStyle.Trinkets) then
           return "Treacherous Transmitter"
         end
@@ -545,7 +541,7 @@ local function CDs ()
     -- |trinket.treacherous_transmitter.cooldown.remains>20)|fight_remains<=15
     if I.MadQueensMandate:IsEquippedAndReady() then
       if (not S.LingeringDarkness:IsAvailable() or Player:BuffUp(S.LingeringDarknessBuff) or I.TreacherousTransmitter:IsEquipped())
-        and (not I.TreacherousTransmitter:IsEquipped() or I.TreacherousTransmitter:CooldownRemains() > 20) or HL.BossFilteredFightRemains("<=", 15) then
+        and (not I.TreacherousTransmitter:IsEquipped() or I.TreacherousTransmitter:CooldownRemains() > 20) or (HL.BossFilteredFightRemains("<=", 15) and InRaid) then
         if Cast(I.MadQueensMandate, nil, Settings.CommonsDS.DisplayStyle.Trinkets, not Target:IsInRange(50)) then
           return "Mad Queens Mandate"
         end
@@ -596,8 +592,8 @@ end
 local function Stealth_CDs ()
   if HR.CDsON() then
     -- actions.stealth_cds=shadow_dance,if=variable.shd_cp&variable.maintenance&cooldown.secret_technique.remains<=24&(buff.symbols_of_death.remains>=6|buff.flagellation_persist.remains>=6)|fight_remains<=10
-    if S.ShadowDance:IsCastable() then
-      if ShdCp and Maintenance and S.SecretTechnique:CooldownRemains() <= 24 and (Player:BuffRemains(S.SymbolsofDeath) >= 6 or Player:BuffRemains(S.FlagellationPersistBuff) >= 6) or HL.BossFilteredFightRemains("<=", 10) then
+    if S.ShadowDance:IsCastable() and ShdCp and Maintenance and S.SecretTechnique:CooldownRemains() <= 24 then
+      if Player:BuffRemains(S.SymbolsofDeath) >= 6 or Player:BuffRemains(S.FlagellationPersistBuff) >= 6 then
         ShouldReturn = StealthMacro(S.ShadowDance)
         if ShouldReturn then
           return "Shadow Dance Macro " .. ShouldReturn
@@ -606,13 +602,11 @@ local function Stealth_CDs ()
     end
 
     --actions.stealth_cds+=/vanish,if=energy>=40&!buff.subterfuge.up&effective_combo_points<=3
-    if S.Vanish:IsCastable() then
-      if Player:Energy() >= 40 and not Player:BuffUp(S.Subterfuge) and EffectiveComboPoints <= 3 then
+    if S.Vanish:IsCastable() and Player:Energy() >= 40 and not Player:BuffUp(S.Subterfuge) and EffectiveComboPoints <= 3 then
         ShouldReturn = StealthMacro(S.Vanish)
         if ShouldReturn then
           return "Vanish Macro " .. ShouldReturn
         end
-      end
     end
 
     --actions.stealth_cds+=/shadowmeld,if=energy>=40&combo_points.deficit>=3
@@ -802,7 +796,7 @@ local function APL ()
 
     -- # Finishing Rules
     -- actions+=/call_action_list,name=finish,if=!buff.darkest_night.up&effective_combo_points>=6|buff.darkest_night.up&combo_points==cp_max_spend
-    if not Player:BuffUp(S.DarkestNightBuff) and EffectiveComboPoints >= 6 or Player:BuffUp(S.DarkestNightBuff) and ComboPoints == Rogue.CPMaxSpend() then
+    if (not Player:BuffUp(S.DarkestNightBuff) and EffectiveComboPoints >= 6) or (Player:BuffUp(S.DarkestNightBuff) and ComboPoints == Rogue.CPMaxSpend()) then
       ShouldReturn = Finish()
       if ShouldReturn then
         return "Finish: " .. ShouldReturn
