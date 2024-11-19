@@ -119,6 +119,7 @@ Spell.Rogue.Commons = {
   FollowTheBlood          = Spell(457068),
   LingeringDarkness       = Spell(457056),
   LingeringDarknessBuff   = Spell(457273),
+  MeanStreak              = Spell(453428),
   MomentumOfDespair       = Spell(457067),
   MomentumOfDespairBuff   = Spell(457115),
   TakeEmBySurprise        = Spell(382742),
