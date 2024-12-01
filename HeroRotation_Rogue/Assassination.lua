@@ -657,10 +657,10 @@ local function CDs ()
     if not S.Kingsbane:IsAvailable() and not S.ArterialPrecision:IsAvailable() and ShivCondition and (not S.CrimsonTempest:IsAvailable() or SingleTarget or Target:DebuffUp(S.CrimsonTempest)) then
       if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv (Fallback)" end
     end
-    -- actions.shiv+=/shiv,if=fight_remains<=cooldown.shiv.charges*8
-    if FightRemains and InRaid then
-      if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv (End of Fight)" end
-    end
+    -- actions.shiv+=/shiv,if=fight_remains<=cooldown.shiv.charges*8 note: Seems to cause issues in Bossfights in Raid. Disabled for now.
+    -- if FightRemains and InRaid then
+      -- if Cast(S.Shiv, Settings.Assassination.GCDasOffGCD.Shiv) then return "Cast Shiv (End of Fight)" end
+    -- end
   end
 
   -- # Cold Blood for Edge Case or Envenoms during shiv
