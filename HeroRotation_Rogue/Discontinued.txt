@@ -1,0 +1,5 @@
+Hi,
+
+I stopped playing Wow, so this fork will not be worked on anymore. I will keep it up for whoever wants to implement custom conditions and code I made.
+
+Kind regards
